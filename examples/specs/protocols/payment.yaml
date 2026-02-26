@@ -1,0 +1,47 @@
+kind: protocol
+metadata:
+  name: payment
+  version: 1.0.0
+  owner: payments-team
+
+input:
+  order_id:
+    type: string
+    required: true
+    format: uuid
+  amount_cents:
+    type: integer
+    required: true
+    min: 1
+  currency:
+    type: string
+    required: true
+    enum: [usd, eur, gbp]
+  method:
+    type: string
+    required: true
+    enum: [stripe, paypal, crypto]
+
+output:
+  transaction_id:
+    type: string
+  status:
+    type: string
+    enum: [succeeded, declined, pending]
+  charged_amount_cents:
+    type: integer
+  provider_reference:
+    type: string
+
+writes:
+  - resource: payment_transaction
+    mutation: create
+  - resource: order
+    mutation: set
+    by: status
+
+guarantees:
+  - exactly one charge attempt per invocation
+  - idempotent when called with the same order_id
+  - charged_amount_cents equals input amount_cents on success
+  - transaction is recorded regardless of outcome

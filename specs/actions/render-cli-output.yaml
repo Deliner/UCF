@@ -1,0 +1,25 @@
+kind: action
+metadata:
+  name: render-cli-output
+  version: 0.1.0
+  owner: ucf-core
+
+input:
+  data:
+    type: object
+    required: true
+    description: structured result to render (issues, findings, graph, etc.)
+  format:
+    type: string
+    required: false
+    enum: [table, tree, mermaid, json]
+
+output:
+  rendered:
+    type: boolean
+
+preconditions:
+  - data is not empty
+
+postconditions:
+  - output is printed to stdout via Rich console

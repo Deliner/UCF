@@ -1,0 +1,21 @@
+kind: action
+metadata:
+  name: send-notification
+  version: 1.0.0
+  owner: platform-team
+
+input:
+  user_id:
+    type: string
+    required: true
+    format: uuid
+  template:
+    type: string
+    required: true
+  order_id:
+    type: string
+    required: false
+
+writes:
+  - resource: notification
+    mutation: create

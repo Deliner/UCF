@@ -1,0 +1,20 @@
+kind: action
+metadata:
+  name: clear-cart
+  version: 1.0.0
+  owner: commerce-team
+
+platform:
+  http:
+    method: DELETE
+    path: /carts/{cart_id}
+
+input:
+  cart_id:
+    type: string
+    required: true
+    format: uuid
+
+writes:
+  - resource: cart
+    mutation: delete

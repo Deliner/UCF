@@ -1,0 +1,36 @@
+kind: action
+metadata:
+  name: trace-usecase
+  version: 0.1.0
+  owner: ucf-core
+
+input:
+  usecase:
+    type: object
+    required: true
+    description: a UseCaseSpec instance
+  registry:
+    type: object
+    required: true
+    description: populated SpecRegistry
+
+output:
+  findings:
+    type: array
+    description: list of Finding (severity, category, step_id, message)
+  final_context:
+    type: object
+    description: ContextSnapshot after executing all steps
+
+reads:
+  - resource: spec_registry
+    fields: [components, actions, protocols]
+
+preconditions:
+  - usecase has at least one step
+  - registry contains the actions/protocols referenced by steps
+
+postconditions:
+  - every step has been virtually executed against the context
+  - data gaps, dead data, and branch divergences are reported
+  - final_context contains all slots produced by all steps

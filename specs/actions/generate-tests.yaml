@@ -1,0 +1,47 @@
+kind: action
+metadata:
+  name: generate-tests
+  version: 0.1.0
+  owner: ucf-core
+
+input:
+  usecase:
+    type: object
+    required: true
+    description: a UseCaseSpec instance
+  registry:
+    type: object
+    required: true
+    description: populated SpecRegistry with resolved components and actions
+  output_dir:
+    type: string
+    required: true
+
+output:
+  interface_path:
+    type: string
+    description: path to generated interface.py
+  orchestrator_path:
+    type: string
+    description: path to generated test_orchestrator.py
+  impl_path:
+    type: string
+    description: path to impl.py (created only if missing)
+  files_written:
+    type: integer
+
+writes:
+  - resource: filesystem
+    mutation: create
+    by: output_dir
+
+preconditions:
+  - usecase has at least one step
+  - output_dir is a valid writable path
+  - registry contains the actions/protocols/components referenced by usecase
+
+postconditions:
+  - interface.py exists with abstract class and dataclasses
+  - test_orchestrator.py exists with pytest test classes
+  - impl.py exists (created if absent, never overwritten)
+  - all generated files are valid Python

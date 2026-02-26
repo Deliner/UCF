@@ -1,0 +1,39 @@
+kind: action
+metadata:
+  name: compute-impact
+  version: 0.1.0
+  owner: ucf-core
+
+input:
+  graph:
+    type: object
+    required: true
+  target:
+    type: string
+    required: true
+    description: node id like "action/add-to-cart"
+
+output:
+  direct_dependents:
+    type: array
+  transitive_dependents:
+    type: array
+  invariants:
+    type: array
+  conflicts:
+    type: array
+  total_impact:
+    type: integer
+
+reads:
+  - resource: dependency_graph
+    fields: [nodes, edges, predecessors, ancestors]
+
+preconditions:
+  - graph is a valid DependencyGraph
+  - target exists as a node in graph
+
+postconditions:
+  - direct_dependents contains all immediate predecessors of target
+  - transitive_dependents contains all ancestors except direct ones
+  - total_impact == len(direct) + len(transitive) + len(invariants)

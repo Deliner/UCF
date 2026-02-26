@@ -1,0 +1,34 @@
+"""Implementation for use case: {{ usecase_name }}.
+
+Fill in the method bodies below. This file is never overwritten by `ucf generate`.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+from .interface import {{ interface_class }}{% for dc in dataclasses %}, {{ dc.class_name }}{% endfor %}
+
+
+class {{ impl_class }}({{ interface_class }}):
+
+    # ── State Setup ──
+{% for method in setup_methods %}
+
+    def {{ method.name }}(self{{ method.params_str }}) -> {{ method.return_type }}:
+        raise NotImplementedError("Fill in: {{ method.name }}")
+{% endfor %}
+
+    # ── Actions ──
+{% for method in action_methods %}
+
+    def {{ method.name }}(self{{ method.params_str }}) -> {{ method.return_type }}:
+        raise NotImplementedError("Fill in: {{ method.name }}")
+{% endfor %}
+
+    # ── Verifications ──
+{% for method in verify_methods %}
+
+    def {{ method.name }}(self{{ method.params_str }}) -> None:
+        raise NotImplementedError("Fill in: {{ method.name }}")
+{% endfor %}

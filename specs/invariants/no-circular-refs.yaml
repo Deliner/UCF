@@ -1,0 +1,11 @@
+kind: invariant
+metadata:
+  name: no-circular-refs
+  severity: critical
+
+type: data
+
+rule: $ref resolution chain must be acyclic and depth <= 3
+
+applies_to:
+  - action: actions/resolve-refs

@@ -1,0 +1,46 @@
+kind: usecase
+metadata:
+  name: generate-test-code
+  version: 0.1.0
+  owner: ucf-core
+  actor: developer
+  tags: [core, cli, generator]
+
+requires:
+  - $ref: components/loaded-registry
+    as: loader
+    params:
+      specs_dir: $inputs.specs_dir
+
+preconditions:
+  - at least one usecase spec is loaded
+  - output directory is writable
+
+steps:
+  - id: generate
+    use: actions/generate-tests
+    input:
+      usecase: $inputs.target_usecase
+      registry: $loader.registry
+      output_dir: $inputs.output_dir
+    output:
+      interface_path: interface_path
+      orchestrator_path: orchestrator_path
+      impl_path: impl_path
+      files_written: files_written
+
+  - id: render-result
+    use: actions/render-cli-output
+    depends_on: [generate]
+    input:
+      data:
+        interface_path: $steps.generate.interface_path
+        orchestrator_path: $steps.generate.orchestrator_path
+        impl_path: $steps.generate.impl_path
+        files_written: $steps.generate.files_written
+      format: tree
+
+postconditions:
+  - for each usecase, interface.py + test_orchestrator.py are generated
+  - impl.py stubs are created only if they do not already exist
+  - generated code is deterministic given the same spec input

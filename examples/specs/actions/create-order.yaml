@@ -1,0 +1,42 @@
+kind: action
+metadata:
+  name: create-order
+  version: 1.0.0
+  owner: commerce-team
+
+platform:
+  http:
+    method: POST
+    path: /orders
+
+input:
+  user_id:
+    type: string
+    required: true
+    format: uuid
+  cart_id:
+    type: string
+    required: true
+    format: uuid
+  items:
+    type: array
+    required: true
+  total_cents:
+    type: integer
+    required: true
+  reservation_id:
+    type: string
+    required: true
+
+output:
+  order_id:
+    type: string
+  order_status:
+    type: string
+
+writes:
+  - resource: order
+    mutation: create
+
+postconditions:
+  - order exists with status pending

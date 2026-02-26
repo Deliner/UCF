@@ -1,0 +1,44 @@
+kind: usecase
+metadata:
+  name: trace-data-flow
+  version: 0.1.0
+  owner: ucf-core
+  actor: developer
+  tags: [core, cli, tracer]
+
+requires:
+  - $ref: components/loaded-registry
+    as: loader
+    params:
+      specs_dir: $inputs.specs_dir
+
+preconditions:
+  - at least one usecase spec is loaded
+  - if --usecase is given, that use case exists in registry
+
+steps:
+  - id: trace
+    use: actions/trace-usecase
+    input:
+      usecase: $inputs.target_usecase
+      registry: $loader.registry
+    output:
+      findings: findings
+      final_context: final_context
+
+  - id: render-trace
+    use: actions/render-cli-output
+    depends_on: [trace]
+    input:
+      data:
+        findings: $steps.trace.findings
+        context: $steps.trace.final_context
+      format: tree
+
+postconditions:
+  - every step in the use case has been traced
+  - data gaps and dead data are reported
+  - branch divergences between happy path and alt flows are reported
+
+invariants:
+  - $ref: invariants/refs-resolvable

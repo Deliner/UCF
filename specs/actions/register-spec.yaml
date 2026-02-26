@@ -1,0 +1,29 @@
+kind: action
+metadata:
+  name: register-spec
+  version: 0.1.0
+  owner: ucf-core
+
+input:
+  spec:
+    type: object
+    required: true
+  source_path:
+    type: string
+    required: false
+
+output:
+  ref_key:
+    type: string
+    description: registry key like "actions/add-to-cart"
+
+writes:
+  - resource: spec_registry
+    mutation: create
+    by: ref_key
+
+preconditions:
+  - spec is a valid AnySpec instance
+
+postconditions:
+  - spec is retrievable from registry by kind+name and by ref_key

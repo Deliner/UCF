@@ -1,0 +1,11 @@
+kind: invariant
+metadata:
+  name: graph-acyclic
+  severity: high
+
+type: data
+
+rule: dependency graph (depends_on edges only) must be a DAG — no cycles
+
+applies_to:
+  - action: actions/build-dependency-graph

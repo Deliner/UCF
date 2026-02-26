@@ -1,0 +1,31 @@
+kind: action
+metadata:
+  name: confirm-order
+  version: 1.0.0
+  owner: commerce-team
+
+platform:
+  http:
+    method: POST
+    path: /orders/{order_id}/confirm
+
+input:
+  order_id:
+    type: string
+    required: true
+    format: uuid
+  transaction_id:
+    type: string
+    required: true
+
+output:
+  confirmed_at:
+    type: string
+
+writes:
+  - resource: order
+    mutation: set
+    by: status
+
+postconditions:
+  - order status is confirmed

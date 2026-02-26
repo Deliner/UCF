@@ -1,0 +1,58 @@
+kind: component
+metadata:
+  name: loaded-registry
+  version: 0.1.0
+  owner: ucf-core
+
+parameters:
+  specs_dir:
+    type: string
+    required: true
+    description: path to the directory containing YAML spec files
+
+provides:
+  registry:
+    type: object
+    description: SpecRegistry populated with all successfully parsed specs
+  loaded_count:
+    type: integer
+    description: number of specs successfully loaded
+  load_errors:
+    type: array
+    description: list of SpecParseError for files that failed to load
+
+steps:
+  - id: scan-files
+    use: actions/load-yaml-file
+    input:
+      path: $parameters.specs_dir
+    output:
+      raw_data: raw_data
+      source_path: source_path
+
+  - id: resolve
+    use: actions/resolve-refs
+    depends_on: [scan-files]
+    input:
+      raw_data: $steps.scan-files.raw_data
+      source_path: $steps.scan-files.source_path
+    output:
+      resolved_data: resolved_data
+
+  - id: parse
+    use: actions/parse-spec
+    depends_on: [resolve]
+    input:
+      resolved_data: $steps.resolve.resolved_data
+      source_path: $steps.scan-files.source_path
+    output:
+      spec: spec
+
+  - id: register
+    use: actions/register-spec
+    depends_on: [parse]
+    input:
+      spec: $steps.parse.spec
+      source_path: $steps.scan-files.source_path
+    output:
+      ref_key: ref_key

@@ -1,0 +1,24 @@
+kind: action
+metadata:
+  name: update-order-status
+  version: 1.0.0
+  owner: commerce-team
+
+platform:
+  http:
+    method: PATCH
+    path: /orders/{order_id}/status
+
+input:
+  order_id:
+    type: string
+    required: true
+    format: uuid
+  status:
+    type: string
+    required: true
+
+writes:
+  - resource: order
+    mutation: set
+    by: status

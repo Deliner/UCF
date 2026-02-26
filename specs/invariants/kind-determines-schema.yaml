@@ -1,0 +1,11 @@
+kind: invariant
+metadata:
+  name: kind-determines-schema
+  severity: critical
+
+type: data
+
+rule: spec.kind in [action, event, component, protocol, usecase, invariant]
+
+applies_to:
+  - action: actions/parse-spec

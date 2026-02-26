@@ -1,0 +1,35 @@
+kind: event
+metadata:
+  name: message-created
+  version: 1.0.0
+  owner: messaging-team
+
+trigger:
+  after: send-message
+
+payload:
+  message_id:
+    type: string
+    format: uuid
+  conversation_id:
+    type: string
+    format: uuid
+  sender_id:
+    type: string
+    format: uuid
+  recipient_id:
+    type: string
+    format: uuid
+  body:
+    type: string
+  sent_at:
+    type: string
+    format: iso8601
+
+delivery:
+  - channel: websocket
+    condition: recipient is currently connected
+  - channel: push-notification
+    condition: recipient is not connected and has push enabled
+  - channel: internal
+    condition: always

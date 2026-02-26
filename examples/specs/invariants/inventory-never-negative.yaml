@@ -1,0 +1,14 @@
+kind: invariant
+metadata:
+  name: inventory-never-negative
+  severity: critical
+
+type: aggregate
+
+rule: sum(inventory.quantity) for any product_id >= 0
+
+applies_to:
+  - resource: inventory
+  - action: actions/reserve-inventory
+  - action: actions/release-inventory
+  - usecase: use-cases/purchase-product

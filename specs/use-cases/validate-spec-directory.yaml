@@ -1,0 +1,77 @@
+kind: usecase
+metadata:
+  name: validate-spec-directory
+  version: 0.1.0
+  owner: ucf-core
+  actor: developer
+  tags: [core, cli, validation]
+
+requires:
+  - $ref: components/loaded-registry
+    as: loader
+    params:
+      specs_dir: $inputs.specs_dir
+
+preconditions:
+  - specs_dir exists and contains at least one .yaml file
+
+steps:
+  - id: validate
+    use: actions/validate-spec
+    input:
+      registry: $loader.registry
+    output:
+      issues: issues
+      error_count: error_count
+      warning_count: warning_count
+      info_count: info_count
+
+  - id: render-results
+    use: actions/render-cli-output
+    depends_on: [validate]
+    input:
+      data:
+        loaded_count: $loader.loaded_count
+        load_errors: $loader.load_errors
+        issues: $steps.validate.issues
+        error_count: $steps.validate.error_count
+        warning_count: $steps.validate.warning_count
+        info_count: $steps.validate.info_count
+      format: table
+
+alternative_flows:
+  - name: parse_failures
+    trigger: $loader.load_errors is not empty
+    steps:
+      - id: render-errors
+        use: actions/render-cli-output
+        input:
+          data:
+            load_errors: $loader.load_errors
+          format: table
+
+      - id: validate-partial
+        use: actions/validate-spec
+        depends_on: [render-errors]
+        input:
+          registry: $loader.registry
+        output:
+          issues: issues
+
+      - id: render-partial-results
+        use: actions/render-cli-output
+        depends_on: [validate-partial]
+        input:
+          data:
+            issues: $steps.validate-partial.issues
+          format: table
+
+postconditions:
+  - all loaded specs have been validated
+  - all issues are reported with severity, category, and suggestion
+  - exit code is 1 if any errors exist, 0 otherwise
+
+invariants:
+  - $ref: invariants/spec-names-unique
+  - $ref: invariants/refs-resolvable
+  - $ref: invariants/kind-determines-schema

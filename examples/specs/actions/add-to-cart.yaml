@@ -1,0 +1,75 @@
+kind: action
+metadata:
+  name: add-to-cart
+  version: 1.0.0
+  owner: commerce-team
+
+platform:
+  http:
+    method: POST
+    path: /carts/{cart_id}/items
+
+input:
+  cart_id:
+    type: string
+    required: true
+    format: uuid
+  product_id:
+    type: string
+    required: true
+    format: uuid
+  quantity:
+    type: integer
+    required: true
+    min: 1
+    max: 99
+
+output:
+  cart_id:
+    type: string
+  item_id:
+    type: string
+  product_id:
+    type: string
+  quantity:
+    type: integer
+  unit_price:
+    type: number
+  total_items:
+    type: integer
+
+errors:
+  - status: 404
+    code: PRODUCT_NOT_FOUND
+    condition: product with given product_id does not exist
+  - status: 409
+    code: OUT_OF_STOCK
+    condition: available inventory for product_id is less than requested quantity
+  - status: 422
+    code: CART_LIMIT_EXCEEDED
+    condition: total_items would exceed 50
+
+reads:
+  - resource: product
+    fields: [id, price, inventory_count]
+  - resource: cart
+    fields: [id, items, total_items]
+
+writes:
+  - resource: cart_item
+    mutation: create
+    by: product_id
+  - resource: cart
+    mutation: increment
+    by: quantity
+
+preconditions:
+  - product.inventory_count >= quantity
+  - cart.total_items + quantity <= 50
+
+postconditions:
+  - cart.total_items == $old.cart.total_items + quantity
+  - cart_item exists with product_id and quantity
+
+emits:
+  - event: item-added-to-cart

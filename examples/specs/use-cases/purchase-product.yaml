@@ -1,0 +1,119 @@
+kind: usecase
+metadata:
+  name: purchase-product
+  version: 1.0.0
+  owner: commerce-team
+  actor: buyer
+  tags: [commerce, checkout, critical-path]
+
+requires:
+  - $ref: components/authenticated-user
+    as: auth
+    params:
+      role: buyer
+      require_mfa: false
+
+preconditions:
+  - cart is not empty
+  - all items in cart are in stock
+
+steps:
+  - id: load-cart
+    use: actions/get-cart
+    input:
+      user_id: $auth.user_id
+    output:
+      cart_id: cart_id
+      items: items
+      total_cents: total_cents
+
+  - id: reserve-inventory
+    use: actions/reserve-inventory
+    depends_on: [load-cart]
+    input:
+      items: $steps.load-cart.items
+    output:
+      reservation_id: reservation_id
+      reserved_until: reserved_until
+    postcondition: all items are reserved for 15 minutes
+
+  - id: create-order
+    use: actions/create-order
+    depends_on: [reserve-inventory]
+    input:
+      user_id: $auth.user_id
+      cart_id: $steps.load-cart.cart_id
+      items: $steps.load-cart.items
+      total_cents: $steps.load-cart.total_cents
+      reservation_id: $steps.reserve-inventory.reservation_id
+    output:
+      order_id: order_id
+      order_status: order_status
+    postcondition: order exists with status pending
+
+  - id: charge-payment
+    use: protocols/payment
+    depends_on: [create-order]
+    input:
+      order_id: $steps.create-order.order_id
+      amount_cents: $steps.load-cart.total_cents
+      currency: usd
+      method: $inputs.payment_method
+    output:
+      transaction_id: transaction_id
+      payment_status: status
+
+  - id: confirm-order
+    use: actions/confirm-order
+    depends_on: [charge-payment]
+    when: $steps.charge-payment.payment_status == "succeeded"
+    input:
+      order_id: $steps.create-order.order_id
+      transaction_id: $steps.charge-payment.transaction_id
+    output:
+      confirmed_at: confirmed_at
+    postcondition: order status is confirmed
+
+  - id: clear-cart
+    use: actions/clear-cart
+    depends_on: [confirm-order]
+    input:
+      cart_id: $steps.load-cart.cart_id
+
+alternative_flows:
+  - name: payment_declined
+    trigger: $steps.charge-payment.payment_status == "declined"
+    steps:
+      - id: release-inventory-declined
+        use: actions/release-inventory
+        input:
+          reservation_id: $steps.reserve-inventory.reservation_id
+
+      - id: mark-order-failed
+        use: actions/update-order-status
+        depends_on: [release-inventory-declined]
+        input:
+          order_id: $steps.create-order.order_id
+          status: payment_declined
+
+      - id: notify-buyer-declined
+        use: actions/send-notification
+        depends_on: [mark-order-failed]
+        input:
+          user_id: $auth.user_id
+          template: payment_declined
+          order_id: $steps.create-order.order_id
+
+postconditions:
+  - order exists with status confirmed or failed
+  - inventory is either committed or released
+  - payment transaction is recorded
+
+invariants:
+  - $ref: invariants/inventory-never-negative
+  - $ref: invariants/order-total-matches-items
+
+concurrency:
+  - conflict: two buyers purchasing the last unit of the same product
+    strategy: optimistic-lock
+    description: inventory reservation uses version-based optimistic locking

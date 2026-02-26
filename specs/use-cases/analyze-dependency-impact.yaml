@@ -1,0 +1,58 @@
+kind: usecase
+metadata:
+  name: analyze-dependency-impact
+  version: 0.1.0
+  owner: ucf-core
+  actor: developer
+  tags: [core, cli, graph]
+
+requires:
+  - $ref: components/loaded-registry
+    as: loader
+    params:
+      specs_dir: $inputs.specs_dir
+
+preconditions:
+  - target spec exists in registry
+
+steps:
+  - id: build-graph
+    use: actions/build-dependency-graph
+    input:
+      registry: $loader.registry
+    output:
+      graph: graph
+      node_count: node_count
+      edge_count: edge_count
+
+  - id: impact
+    use: actions/compute-impact
+    depends_on: [build-graph]
+    input:
+      graph: $steps.build-graph.graph
+      target: $inputs.target
+    output:
+      direct_dependents: direct_dependents
+      transitive_dependents: transitive_dependents
+      invariants: invariants
+      total_impact: total_impact
+
+  - id: render-impact
+    use: actions/render-cli-output
+    depends_on: [impact]
+    input:
+      data:
+        target: $inputs.target
+        direct: $steps.impact.direct_dependents
+        transitive: $steps.impact.transitive_dependents
+        invariants: $steps.impact.invariants
+        total: $steps.impact.total_impact
+      format: tree
+
+postconditions:
+  - all direct and transitive dependents of target are listed
+  - constraining invariants are listed
+  - total impact count is reported
+
+invariants:
+  - $ref: invariants/graph-acyclic

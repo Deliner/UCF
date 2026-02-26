@@ -1,0 +1,14 @@
+kind: invariant
+metadata:
+  name: refs-resolvable
+  severity: high
+
+type: relationship
+
+rule: |
+  forward: every $ref in a spec must point to an existing file
+  inverse: removing a spec file is forbidden while other specs reference it
+
+applies_to:
+  - action: actions/resolve-refs
+  - action: actions/validate-spec

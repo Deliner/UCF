@@ -1,0 +1,32 @@
+kind: action
+metadata:
+  name: reserve-inventory
+  version: 1.0.0
+  owner: commerce-team
+
+platform:
+  http:
+    method: POST
+    path: /inventory/reserve
+
+input:
+  items:
+    type: array
+    required: true
+
+output:
+  reservation_id:
+    type: string
+  reserved_until:
+    type: string
+
+writes:
+  - resource: inventory
+    mutation: decrement
+    by: quantity
+
+preconditions:
+  - all items have sufficient stock
+
+postconditions:
+  - reservation exists with 15 minute expiry

@@ -1,0 +1,48 @@
+kind: usecase
+metadata:
+  name: detect-conflicts
+  version: 0.1.0
+  owner: ucf-core
+  actor: developer
+  tags: [core, cli, graph, conflicts]
+
+requires:
+  - $ref: components/loaded-registry
+    as: loader
+    params:
+      specs_dir: $inputs.specs_dir
+
+preconditions:
+  - registry has at least two specs with writes
+
+steps:
+  - id: build-graph
+    use: actions/build-dependency-graph
+    input:
+      registry: $loader.registry
+    output:
+      graph: graph
+
+  - id: detect
+    use: actions/detect-write-conflicts
+    depends_on: [build-graph]
+    input:
+      graph: $steps.build-graph.graph
+      registry: $loader.registry
+    output:
+      conflicts: conflicts
+      conflict_count: conflict_count
+
+  - id: render-conflicts
+    use: actions/render-cli-output
+    depends_on: [detect]
+    input:
+      data:
+        conflicts: $steps.detect.conflicts
+        conflict_count: $steps.detect.conflict_count
+      format: table
+
+postconditions:
+  - all write-write conflicts between independent specs are listed
+  - intra-usecase conflicts are filtered out
+  - each conflict pair identifies the shared resource

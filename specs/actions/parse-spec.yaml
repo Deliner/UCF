@@ -1,0 +1,41 @@
+kind: action
+metadata:
+  name: parse-spec
+  version: 0.1.0
+  owner: ucf-core
+
+input:
+  resolved_data:
+    type: object
+    required: true
+  source_path:
+    type: string
+    required: true
+
+output:
+  spec:
+    type: object
+    description: validated Pydantic model instance (AnySpec)
+  kind:
+    type: string
+  name:
+    type: string
+
+errors:
+  - status: 1
+    code: MISSING_KIND
+    condition: data has no 'kind' field
+  - status: 1
+    code: UNKNOWN_KIND
+    condition: kind is not one of action, event, component, protocol, usecase, invariant
+  - status: 1
+    code: VALIDATION_ERROR
+    condition: data does not conform to the Pydantic schema for its kind
+
+preconditions:
+  - resolved_data is a dict with no unresolved $ref entries
+
+postconditions:
+  - spec is a valid instance of the appropriate model class
+  - kind matches spec.kind
+  - name matches spec.metadata.name

@@ -1,0 +1,33 @@
+kind: action
+metadata:
+  name: detect-write-conflicts
+  version: 0.1.0
+  owner: ucf-core
+
+input:
+  graph:
+    type: object
+    required: true
+  registry:
+    type: object
+    required: true
+
+output:
+  conflicts:
+    type: array
+    description: list of (spec_a, spec_b, resource) tuples
+  conflict_count:
+    type: integer
+
+reads:
+  - resource: spec_registry
+    fields: [actions, protocols, usecases]
+  - resource: dependency_graph
+    fields: [nodes, edges]
+
+preconditions:
+  - graph is built from registry
+
+postconditions:
+  - conflicts only contains pairs of independent specs (not parent-child)
+  - each pair writes to the same resource

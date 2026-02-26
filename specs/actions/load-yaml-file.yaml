@@ -1,0 +1,44 @@
+kind: action
+metadata:
+  name: load-yaml-file
+  version: 0.1.0
+  owner: ucf-core
+
+platform:
+  cli:
+    command: "ucf validate {path}"
+    exit_code: 0
+
+input:
+  path:
+    type: string
+    required: true
+    description: path to a .yaml spec file
+
+output:
+  raw_data:
+    type: object
+    description: parsed YAML as a dict
+  source_path:
+    type: string
+
+errors:
+  - status: 1
+    code: FILE_NOT_FOUND
+    condition: file at path does not exist
+  - status: 1
+    code: YAML_SYNTAX_ERROR
+    condition: file is not valid YAML
+  - status: 1
+    code: NOT_A_MAPPING
+    condition: YAML root is not a dict
+
+reads:
+  - resource: filesystem
+    fields: [path, content]
+
+preconditions:
+  - path ends with .yaml or .yml
+
+postconditions:
+  - raw_data is a dict with at least a 'kind' key

@@ -1,0 +1,33 @@
+kind: action
+metadata:
+  name: validate-spec
+  version: 0.1.0
+  owner: ucf-core
+
+input:
+  registry:
+    type: object
+    required: true
+    description: populated SpecRegistry
+
+output:
+  issues:
+    type: array
+    description: list of ValidationIssue (severity, category, spec_name, message)
+  error_count:
+    type: integer
+  warning_count:
+    type: integer
+  info_count:
+    type: integer
+
+reads:
+  - resource: spec_registry
+    fields: [all_specs, usecases, components, protocols, events, invariants, actions]
+
+preconditions:
+  - registry has at least one spec loaded
+
+postconditions:
+  - every spec in registry has been checked for naming, refs, and structure
+  - issues list is sorted by severity (errors first)

@@ -1,0 +1,24 @@
+kind: action
+metadata:
+  name: release-inventory
+  version: 1.0.0
+  owner: commerce-team
+
+platform:
+  http:
+    method: POST
+    path: /inventory/release
+
+input:
+  reservation_id:
+    type: string
+    required: true
+
+writes:
+  - resource: inventory
+    mutation: increment
+    by: quantity
+
+postconditions:
+  - reservation is cancelled
+  - inventory quantities are restored

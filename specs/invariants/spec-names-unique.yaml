@@ -1,0 +1,14 @@
+kind: invariant
+metadata:
+  name: spec-names-unique
+  severity: critical
+
+type: uniqueness
+
+entity: spec
+unique_fields: [kind, name]
+rule: count(spec where kind = K and name = N) <= 1
+
+applies_to:
+  - resource: spec_registry
+  - action: actions/register-spec

@@ -1,0 +1,56 @@
+kind: component
+metadata:
+  name: authenticated-user
+  version: 1.0.0
+  owner: platform-team
+
+parameters:
+  role:
+    type: string
+    required: true
+    enum: [buyer, seller, admin]
+  require_mfa:
+    type: boolean
+    required: false
+
+provides:
+  user_id:
+    type: string
+    description: authenticated user identifier
+  user_email:
+    type: string
+    description: verified email of the user
+  user_role:
+    type: string
+    description: role assigned to the user
+  session_token:
+    type: string
+    description: active session token
+
+steps:
+  - id: validate-session
+    use: actions/validate-session-token
+    input:
+      token: $context.authorization_header
+    output:
+      user_id: user_id
+      email: user_email
+      role: user_role
+      session: session_token
+
+  - id: check-role
+    use: actions/authorize-role
+    input:
+      user_id: $steps.validate-session.user_id
+      required_role: $parameters.role
+    output:
+      authorized: authorized
+
+  - id: verify-mfa
+    use: actions/verify-mfa-code
+    when: $parameters.require_mfa == true
+    input:
+      user_id: $steps.validate-session.user_id
+      mfa_code: $context.mfa_header
+    output:
+      mfa_verified: mfa_verified

@@ -1,0 +1,33 @@
+kind: invariant
+metadata:
+  name: order-valid-transitions
+  severity: critical
+
+type: state-machine
+
+entity: order
+field: status
+states: [pending, confirmed, shipped, delivered, cancelled, return_requested, returned]
+
+transitions:
+  pending: [confirmed, cancelled]
+  confirmed: [shipped, cancelled]
+  shipped: [delivered, return_requested]
+  delivered: [return_requested]
+  return_requested: [returned, delivered]
+
+forbidden:
+  - from: cancelled
+    to: any
+    reason: terminal state
+  - from: returned
+    to: any
+    reason: terminal state
+  - from: pending
+    to: shipped
+    reason: must confirm before shipping
+
+applies_to:
+  - resource: order
+  - action: actions/confirm-order
+  - action: actions/update-order-status

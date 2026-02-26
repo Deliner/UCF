@@ -1,0 +1,33 @@
+kind: action
+metadata:
+  name: get-cart
+  version: 1.0.0
+  owner: commerce-team
+
+platform:
+  http:
+    method: GET
+    path: /carts/{cart_id}
+
+input:
+  user_id:
+    type: string
+    required: true
+    format: uuid
+
+output:
+  cart_id:
+    type: string
+  items:
+    type: array
+  total_cents:
+    type: integer
+  total_items:
+    type: integer
+
+reads:
+  - resource: cart
+    fields: [id, user_id, items, total_cents, total_items]
+
+preconditions:
+  - cart exists for user_id

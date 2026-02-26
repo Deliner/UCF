@@ -1,0 +1,42 @@
+kind: action
+metadata:
+  name: resolve-refs
+  version: 0.1.0
+  owner: ucf-core
+
+input:
+  raw_data:
+    type: object
+    required: true
+  source_path:
+    type: string
+    required: true
+  depth:
+    type: integer
+    required: false
+    min: 0
+    max: 3
+
+output:
+  resolved_data:
+    type: object
+    description: data with all $ref entries replaced by loaded content
+
+errors:
+  - status: 1
+    code: REF_NOT_FOUND
+    condition: $ref points to a file that does not exist
+  - status: 1
+    code: MAX_DEPTH_EXCEEDED
+    condition: $ref chain exceeds 3 levels
+
+reads:
+  - resource: filesystem
+    fields: [path, content]
+
+preconditions:
+  - raw_data is a valid dict
+  - depth <= 3
+
+postconditions:
+  - resolved_data contains no $ref entries (all resolved or errored)

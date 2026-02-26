@@ -1,0 +1,12 @@
+kind: invariant
+metadata:
+  name: order-total-matches-items
+  severity: critical
+
+type: aggregate
+
+rule: order.total_cents == sum(order_item.price_cents * order_item.quantity)
+
+applies_to:
+  - resource: order
+  - usecase: use-cases/purchase-product
