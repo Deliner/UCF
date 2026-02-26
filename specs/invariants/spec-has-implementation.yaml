@@ -1,0 +1,17 @@
+kind: invariant
+metadata:
+  name: spec-has-implementation
+  version: 0.1.0
+  owner: ucf-core
+  severity: medium
+
+type: relationship
+
+rule: >
+  Every use case and action spec should have at least one corresponding
+  implementation file, discoverable via @implements marker, convention-based
+  path matching, or explicit implemented_by field.
+
+applies_to:
+  - action: actions/detect-drift
+  - usecase: use-cases/detect-spec-code-drift

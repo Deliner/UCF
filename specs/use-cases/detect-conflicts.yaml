@@ -15,6 +15,9 @@ requires:
 preconditions:
   - registry has at least two specs with writes
 
+assumed_preconditions:
+  - registry has at least two specs with writes
+
 steps:
   - id: build-graph
     use: actions/build-dependency-graph
@@ -46,3 +49,8 @@ postconditions:
   - all write-write conflicts between independent specs are listed
   - intra-usecase conflicts are filtered out
   - each conflict pair identifies the shared resource
+
+terminal: true
+
+invariants:
+  - $ref: invariants/required-inputs-validated

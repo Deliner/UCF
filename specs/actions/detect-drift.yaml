@@ -1,0 +1,48 @@
+kind: action
+metadata:
+  name: detect-drift
+  version: 0.1.0
+  owner: ucf-core
+
+input:
+  registry:
+    type: object
+    required: true
+    description: populated SpecRegistry
+  spec_to_code:
+    type: object
+    required: true
+    description: spec ref -> code paths mapping from build-spec-code-map
+  code_to_spec:
+    type: object
+    required: true
+    description: code path -> spec refs mapping from build-spec-code-map
+
+output:
+  unimplemented_specs:
+    type: array
+    description: specs with no corresponding implementation code
+  orphan_code:
+    type: array
+    description: code files with @implements markers pointing to nonexistent specs
+  stale_mappings:
+    type: array
+    description: mappings where spec or code has changed since last sync
+  drift_count:
+    type: integer
+    description: total number of drift issues found
+
+reads:
+  - resource: spec_registry
+    fields: [all_specs]
+  - resource: filesystem
+    fields: [file_mtimes]
+
+preconditions:
+  - spec_to_code and code_to_spec mappings have been built
+  - registry is populated
+
+postconditions:
+  - every spec without a code mapping is listed in unimplemented_specs
+  - every code file referencing a missing spec is listed in orphan_code
+  - drift_count equals len(unimplemented_specs) + len(orphan_code) + len(stale_mappings)

@@ -1,0 +1,30 @@
+kind: action
+metadata:
+  name: ui-filter-spec-catalog
+  version: 0.1.0
+  owner: ucf-core
+  tags: [web, ui, catalog]
+
+platform:
+  ui:
+    steps:
+      - click: kind-tab
+      - fill: search-input
+      - assert: spec-table rows match filter
+
+input:
+  kind:
+    type: string
+    required: false
+  search_text:
+    type: string
+    required: false
+
+output:
+  filtered_view:
+    type: boolean
+    description: true when the view reflects the filter state
+
+postconditions:
+  - table rows match selected kind tab
+  - table rows match search text

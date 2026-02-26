@@ -1,0 +1,11 @@
+kind: invariant
+metadata:
+  name: extends-no-step-id-clash
+  severity: high
+
+type: uniqueness
+
+rule: when a child UC extends a parent, all step IDs across both must be unique — no child step may reuse a parent step ID
+
+applies_to:
+  - action: actions/resolve-uc-extends

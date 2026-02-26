@@ -1,0 +1,50 @@
+kind: action
+metadata:
+  name: resolve-uc-extends
+  version: 0.1.0
+  owner: ucf-core
+  tags: [core, composition]
+
+input:
+  usecase:
+    type: object
+    required: true
+    description: UseCaseSpec instance with an extends field
+  registry:
+    type: object
+    required: true
+    description: SpecRegistry containing all loaded specs
+
+output:
+  flattened:
+    type: object
+    description: New UseCaseSpec with parent steps prepended, postconditions merged, requires merged, invariants merged
+  extends_chain:
+    type: array
+    description: Ordered list of UC names from root ancestor to child
+  parent_step_ids:
+    type: array
+    description: Step IDs inherited from parent UCs
+
+preconditions:
+  - usecase has a non-null extends field
+  - registry contains the referenced parent use case
+
+postconditions:
+  - flattened UC contains all parent steps before child steps
+  - parent postconditions appear in flattened postconditions
+  - parent requires are merged without duplicates
+  - parent invariants are merged without duplicates
+  - step ID order preserves parent order then child order
+  - extends_chain lists ancestor names from root to child
+
+errors:
+  - status: 404
+    code: PARENT_NOT_FOUND
+    condition: extends reference does not resolve to a known use case
+  - status: 409
+    code: CIRCULAR_EXTENDS
+    condition: extends chain contains a cycle
+  - status: 409
+    code: STEP_ID_CLASH
+    condition: child step ID duplicates a parent step ID

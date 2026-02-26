@@ -1,0 +1,45 @@
+kind: action
+metadata:
+  name: generate-skeleton-specs
+  version: 0.1.0
+  owner: ucf-core
+
+input:
+  functions:
+    type: array
+    required: true
+    description: list of discovered function signatures from AST scan
+  classes:
+    type: array
+    required: true
+    description: list of discovered class signatures from AST scan
+  output_dir:
+    type: string
+    required: true
+    description: directory to write generated YAML spec files
+
+output:
+  action_specs:
+    type: array
+    description: list of generated action spec file paths
+  component_specs:
+    type: array
+    description: list of generated component spec file paths
+  specs_written:
+    type: integer
+    description: total number of spec files written
+
+writes:
+  - resource: filesystem
+    mutation: create
+    by: output_dir
+
+preconditions:
+  - at least one function or class has been discovered
+  - output_dir is a valid writable path
+
+postconditions:
+  - each public function produces an action spec with input/output derived from type annotations
+  - each class with public methods produces a component spec with provides derived from its methods
+  - generated specs are valid YAML conforming to UCF schema
+  - existing spec files in output_dir are never overwritten

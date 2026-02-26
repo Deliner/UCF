@@ -1,0 +1,27 @@
+kind: action
+metadata:
+  name: ui-toggle-detail-tab
+  version: 0.1.0
+  owner: ucf-core
+  tags: [web, ui, detail]
+
+platform:
+  ui:
+    steps:
+      - click: detail-tab
+      - assert: tab panel visible
+
+input:
+  tab_name:
+    type: string
+    required: true
+    description: tab to activate (overview, schema, relationships, implementation)
+
+output:
+  active_tab:
+    type: string
+    description: name of the currently active tab
+
+postconditions:
+  - selected tab panel is visible
+  - previously active tab panel is hidden

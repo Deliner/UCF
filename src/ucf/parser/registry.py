@@ -1,4 +1,8 @@
-"""Central registry of all loaded specs with lookup by kind, name, and ref path."""
+"""Central registry of all loaded specs with lookup by kind, name, and ref path.
+
+@implements("actions/register-spec")
+@implements("components/loaded-registry")
+"""
 
 from __future__ import annotations
 
@@ -34,6 +38,14 @@ class SpecRegistry:
         kind = spec.kind
         name = spec.metadata.name
 
+        existing = self._by_kind.get(kind, {}).get(name)
+        if existing is not None:
+            import warnings
+            warnings.warn(
+                f"Duplicate spec '{kind}/{name}' — overwriting previous definition",
+                stacklevel=2,
+            )
+
         self._by_kind.setdefault(kind, {})[name] = spec
 
         plural = _KIND_PLURAL.get(type(spec), f"{kind}s")
@@ -46,8 +58,25 @@ class SpecRegistry:
     def get(self, kind: str, name: str) -> AnySpec | None:
         return self._by_kind.get(kind, {}).get(name)
 
+    _SINGULAR_TO_PLURAL = {
+        "action": "actions",
+        "event": "events",
+        "component": "components",
+        "protocol": "protocols",
+        "usecase": "use-cases",
+        "invariant": "invariants",
+    }
+
     def resolve_ref(self, ref: str) -> AnySpec | None:
-        return self._by_ref.get(ref)
+        result = self._by_ref.get(ref)
+        if result is not None:
+            return result
+        parts = ref.split("/", 1)
+        if len(parts) == 2:
+            plural = self._SINGULAR_TO_PLURAL.get(parts[0])
+            if plural:
+                return self._by_ref.get(f"{plural}/{parts[1]}")
+        return None
 
     def get_path(self, ref: str) -> Path | None:
         return self._paths.get(ref)

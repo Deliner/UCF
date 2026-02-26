@@ -1,0 +1,17 @@
+kind: invariant
+metadata:
+  name: every-input-partition-covered
+  version: "1.0"
+  owner: ucf-framework
+  tags: [completeness]
+  severity: medium
+
+type: relationship
+
+rule: >
+  For every input FieldDef on an ActionSpec, the equivalence partitions
+  derived from its type, required flag, min/max, and enum constraints must
+  each be exercised by at least one UseCaseSpec step or alternative_flow.
+
+applies_to:
+  - resource: spec-registry

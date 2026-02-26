@@ -16,6 +16,10 @@ preconditions:
   - at least one usecase spec is loaded
   - if --usecase is given, that use case exists in registry
 
+assumed_preconditions:
+  - at least one usecase spec is loaded
+  - if --usecase is given, that use case exists in registry
+
 steps:
   - id: trace
     use: actions/trace-usecase
@@ -40,5 +44,8 @@ postconditions:
   - data gaps and dead data are reported
   - branch divergences between happy path and alt flows are reported
 
+terminal: true
+
 invariants:
   - $ref: invariants/refs-resolvable
+  - $ref: invariants/required-inputs-validated

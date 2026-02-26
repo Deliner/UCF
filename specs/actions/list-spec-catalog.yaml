@@ -1,0 +1,57 @@
+kind: action
+metadata:
+  name: list-spec-catalog
+  version: 0.1.0
+  owner: ucf-core
+  tags: [web, api, catalog]
+
+platform:
+  http:
+    method: GET
+    path: /api/specs
+  cli:
+    command: ucf info
+
+input:
+  registry:
+    type: object
+    required: true
+    description: loaded SpecRegistry
+  kind_filter:
+    type: string
+    required: false
+    description: filter by spec kind (action, usecase, component, etc.)
+  search_query:
+    type: string
+    required: false
+    description: search term to match against spec names
+
+output:
+  specs:
+    type: array
+    description: list of spec summaries matching filters
+  total_count:
+    type: integer
+    description: total number of matching specs
+  kind_counts:
+    type: object
+    description: count of specs per kind
+
+errors:
+  - code: REGISTRY_NOT_LOADED
+    status: 503
+    condition: registry has not been initialized
+    description: registry has not been initialized yet
+  - code: INVALID_KIND_FILTER
+    status: 422
+    condition: kind_filter is not a recognized spec kind
+    description: kind_filter value is not a recognized spec kind
+
+preconditions:
+  - registry is loaded with at least one spec
+
+postconditions:
+  - returned specs match kind filter if provided
+  - returned specs match search query if provided
+  - total_count equals length of specs list
+  - kind_counts sums to total_count when no filter applied

@@ -1,0 +1,48 @@
+kind: action
+metadata:
+  name: get-spec-relationships
+  version: 0.1.0
+  owner: ucf-core
+  tags: [web, api, graph]
+
+platform:
+  http:
+    method: GET
+    path: /api/specs/{kind}/{name}/rels
+
+input:
+  registry:
+    type: object
+    required: true
+  graph:
+    type: object
+    required: true
+    description: built DependencyGraph
+  spec_ref:
+    type: string
+    required: true
+    description: spec reference (e.g. actions/my-action)
+
+output:
+  upstream:
+    type: array
+    description: specs that this spec depends on
+  downstream:
+    type: array
+    description: specs that depend on this spec
+  edge_count:
+    type: integer
+    description: total number of relationship edges
+
+errors:
+  - status: 404
+    code: SPEC_NOT_FOUND
+    condition: spec_ref does not resolve in registry
+
+preconditions:
+  - graph is built from registry
+
+postconditions:
+  - upstream lists all specs this spec references
+  - downstream lists all specs that reference this spec
+  - edge_count equals sum of upstream and downstream

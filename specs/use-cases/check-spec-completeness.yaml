@@ -1,0 +1,106 @@
+kind: usecase
+metadata:
+  name: check-spec-completeness
+  version: "1.0"
+  owner: ucf-framework
+  actor: developer
+  tags: [completeness, analysis]
+
+trigger: developer wants to verify spec set covers all user behaviors
+
+preconditions:
+  - specs directory contains valid, parseable specs
+
+assumed_preconditions:
+  - specs directory contains valid, parseable specs
+
+steps:
+  - id: analyze-errors
+    use: actions/analyze-error-reachability
+    input:
+      registry: $registry.registry
+    output:
+      error_coverages: error_coverages
+      error_findings: error_findings
+
+  - id: analyze-partitions
+    use: actions/analyze-input-partitions
+    input:
+      registry: $registry.registry
+    output:
+      partition_coverages: partition_coverages
+      partition_findings: partition_findings
+
+  - id: analyze-states
+    use: actions/analyze-state-coverage
+    input:
+      registry: $registry.registry
+    output:
+      state_graph: state_graph
+      state_findings: state_findings
+
+  - id: analyze-platform
+    use: actions/analyze-platform-completeness
+    input:
+      registry: $registry.registry
+    output:
+      platform_scenarios: platform_scenarios
+      platform_findings: platform_findings
+
+  - id: analyze-invariants
+    use: actions/analyze-invariant-necessity
+    input:
+      registry: $registry.registry
+    output:
+      invariant_coverages: invariant_coverages
+      invariant_findings: invariant_findings
+
+  - id: analyze-resources
+    use: actions/analyze-resource-conflicts
+    input:
+      registry: $registry.registry
+    output:
+      resource_conflicts: resource_conflicts
+      resource_findings: resource_findings
+
+  - id: aggregate
+    use: actions/check-spec-completeness
+    input:
+      registry: $registry.registry
+    output:
+      report: report
+
+  - id: render-report
+    use: actions/render-cli-output
+    depends_on: [aggregate]
+    input:
+      data:
+        report: $steps.aggregate.report
+      format: tree
+
+alternative_flows:
+  - name: no-actions-loaded
+    trigger: registry contains no action specs
+    handles_error: NO_ACTIONS_LOADED
+    steps:
+      - id: render-empty
+        use: actions/render-cli-output
+        input:
+          data:
+            message: no action specs found, completeness analysis requires at least one action
+          format: tree
+
+requires:
+  - $ref: components/loaded-registry
+    as: registry
+
+postconditions:
+  - developer sees a completeness report identifying behavioral gaps
+  - every uncovered error, partition, state, or platform scenario is reported
+
+terminal: true
+
+invariants:
+  - $ref: invariants/every-error-has-alt-flow
+  - $ref: invariants/every-input-partition-covered
+  - $ref: invariants/required-inputs-validated

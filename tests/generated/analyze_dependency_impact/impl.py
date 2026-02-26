@@ -68,10 +68,10 @@ class AnalyzeDependencyImpactImpl(AnalyzeDependencyImpactInterface):
             total_impact=total,
         )
 
-    def action_render_impact(self, *args: Any, **kwargs: Any) -> None:
+    def action_render_impact(self, data: Any, format: Any) -> None:
         pass
 
-    def verify_all_direct_and_transitive_dependents_of_target_are(self) -> None:
+    def verify_all_direct_and_transitive_dependents_of_target_are_listed(self) -> None:
         assert self._impact is not None
         assert isinstance(self._impact.direct_dependents, list)
         assert isinstance(self._impact.transitive_dependents, list)
@@ -82,18 +82,25 @@ class AnalyzeDependencyImpactImpl(AnalyzeDependencyImpactInterface):
 
     def verify_total_impact_count_is_reported(self) -> None:
         assert self._impact is not None
-        total = (
-            len(self._impact.direct_dependents)
-            + len(self._impact.transitive_dependents)
-            + len(self._impact.invariants)
-        )
-        assert total >= 0
+        direct = set(self._impact.direct_dependents)
+        transitive = set(self._impact.transitive_dependents)
+        # Direct and transitive sets must be disjoint (transitive are non-direct ancestors)
+        overlap = direct & transitive
+        assert not overlap, f"Nodes appear in both direct and transitive: {overlap}"
+        assert self._impact.target, "impact result must have a target spec name"
 
     def verify_graph_acyclic(self) -> None:
         import networkx as nx
 
         assert self._graph is not None
         assert nx.is_directed_acyclic_graph(self._graph.g)
+
+    def verify_required_inputs_validated(self) -> None:
+        from pydantic import ValidationError
+        from ucf.models.action import ActionSpec
+        # Framework enforces required inputs via Pydantic: ActionSpec without metadata must fail
+        with pytest.raises(ValidationError):
+            ActionSpec.model_validate({})
 
 
 @pytest.fixture

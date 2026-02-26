@@ -1,12 +1,22 @@
-"""Structural and semantic validation of UCF specs."""
+"""Structural and semantic validation of UCF specs.
+
+@implements("actions/validate-spec")
+@implements("invariants/spec-names-unique")
+@implements("invariants/refs-resolvable")
+@implements("invariants/kind-determines-schema")
+@implements("invariants/no-circular-refs")
+@implements("invariants/graph-acyclic")
+@implements("invariants/no-circular-extends")
+@implements("invariants/extends-no-step-id-clash")
+@implements("invariants/required-inputs-validated")
+"""
 
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 
-from ucf.models.action import ActionSpec
 from ucf.models.component import ComponentSpec
 from ucf.models.event import EventSpec
 from ucf.models.invariant import InvariantSpec
@@ -32,6 +42,7 @@ class IssueCategory(str, Enum):
     STEP_ORDER = "step_order"
     TYPE_MISMATCH = "type_mismatch"
     INVARIANT_BINDING = "invariant_binding"
+    COMPLETENESS = "completeness"
 
 
 @dataclass(frozen=True)
@@ -98,6 +109,15 @@ class SpecValidator:
 
     def _validate_naming(self, spec: AnySpec) -> None:
         name = spec.metadata.name
+        if not name:
+            self._issue(
+                IssueSeverity.ERROR,
+                IssueCategory.MISSING_FIELD,
+                "<unnamed>",
+                "Spec has an empty name",
+                "Add a non-empty 'name' field to metadata",
+            )
+            return
         if not KEBAB_RE.match(name):
             self._issue(
                 IssueSeverity.WARNING,
@@ -125,6 +145,9 @@ class SpecValidator:
     def _validate_usecase(self, uc: UseCaseSpec) -> None:
         name = uc.metadata.name
 
+        if uc.extends:
+            self._validate_extends(uc)
+
         if not uc.steps:
             self._issue(
                 IssueSeverity.ERROR, IssueCategory.MISSING_FIELD, name,
@@ -138,7 +161,16 @@ class SpecValidator:
                 "Add postconditions to verify the expected outcome",
             )
 
-        step_ids = {s.id for s in uc.steps}
+        seen_step_ids: set[str] = set()
+        for step in uc.steps:
+            if step.id in seen_step_ids:
+                self._issue(
+                    IssueSeverity.ERROR, IssueCategory.DUPLICATE, name,
+                    f"Duplicate step id '{step.id}' in use case",
+                )
+            seen_step_ids.add(step.id)
+
+        step_ids = seen_step_ids
         for step in uc.steps:
             self._validate_step_ref(step.use, name)
             for dep in step.depends_on:
@@ -163,21 +195,64 @@ class SpecValidator:
                     f"Invariant ref '{ref_str}' not found in registry",
                 )
 
+    def _validate_extends(self, uc: UseCaseSpec) -> None:
+        name = uc.metadata.name
+        ref = uc.extends
+        if not ref:
+            return
+        parent_ref = ref.replace("$ref:", "")
+        parent = self.registry.resolve_ref(parent_ref)
+        if parent is None:
+            self._issue(
+                IssueSeverity.ERROR, IssueCategory.BROKEN_REF, name,
+                f"extends reference '{ref}' does not resolve to a known use case",
+            )
+            return
+        if not isinstance(parent, UseCaseSpec):
+            self._issue(
+                IssueSeverity.ERROR, IssueCategory.TYPE_MISMATCH, name,
+                f"extends reference '{ref}' resolves to a {parent.kind}, not a use case",
+            )
+            return
+
+        visited: set[str] = {name}
+        current = parent
+        while current is not None and current.extends:
+            if current.metadata.name in visited:
+                self._issue(
+                    IssueSeverity.ERROR, IssueCategory.BROKEN_REF, name,
+                    f"circular extends chain detected: {' -> '.join(visited)} -> {current.metadata.name}",
+                )
+                return
+            visited.add(current.metadata.name)
+            next_ref = current.extends.replace("$ref:", "")
+            resolved = self.registry.resolve_ref(next_ref)
+            current = resolved if isinstance(resolved, UseCaseSpec) else None
+
+        parent_step_ids = {s.id for s in parent.steps}
+        child_step_ids = {s.id for s in uc.steps}
+        clash = parent_step_ids & child_step_ids
+        if clash:
+            self._issue(
+                IssueSeverity.ERROR, IssueCategory.DUPLICATE, name,
+                f"step IDs conflict with parent: {sorted(clash)}",
+            )
+
     def _validate_step_ref(self, use: str, spec_name: str) -> None:
         if not use:
+            self._issue(
+                IssueSeverity.ERROR, IssueCategory.MISSING_FIELD, spec_name,
+                "Step has empty 'use' field",
+            )
             return
 
         ref_spec = self.registry.resolve_ref(use)
         if ref_spec is None:
-            parts = use.split("/")
-            if len(parts) == 2:
-                kind_hint, action_name = parts
-                if kind_hint in ("actions", "protocols"):
-                    self._issue(
-                        IssueSeverity.INFO, IssueCategory.BROKEN_REF, spec_name,
-                        f"Step references '{use}' which is not loaded",
-                        f"Ensure {use}.yaml exists in specs/",
-                    )
+            self._issue(
+                IssueSeverity.WARNING, IssueCategory.BROKEN_REF, spec_name,
+                f"Step references '{use}' which is not loaded",
+                f"Ensure {use}.yaml exists in specs/",
+            )
 
     def _validate_component(self, comp: ComponentSpec) -> None:
         name = comp.metadata.name
@@ -227,28 +302,62 @@ class SpecValidator:
             if binding.action:
                 ref = binding.action
                 if not ref.startswith("actions/"):
-                    ref = f"actions/{ref.split('/')[-1]}"
-                # Soft check — action might not be loaded
+                    ref = f"actions/{ref}"
+                if not self.registry.resolve_ref(ref):
+                    self._issue(
+                        IssueSeverity.INFO, IssueCategory.BROKEN_REF, name,
+                        f"Invariant applies_to references '{ref}' which is not loaded",
+                    )
 
     def _check_orphans(self) -> None:
-        referenced_actions: set[str] = set()
+        referenced_refs: set[str] = set()
 
         for uc in self.registry.usecases():
             for step in uc.steps:
-                referenced_actions.add(step.use)
+                referenced_refs.add(step.use)
             for alt in uc.alternative_flows:
                 for step in alt.steps:
-                    referenced_actions.add(step.use)
+                    referenced_refs.add(step.use)
+            for req in uc.requires:
+                if isinstance(req, dict):
+                    referenced_refs.add(req.get("$ref", ""))
+                else:
+                    referenced_refs.add(req.ref)
+            for inv_ref in uc.invariants:
+                if isinstance(inv_ref, dict):
+                    ref_str = inv_ref.get("$ref", inv_ref.get("metadata", {}).get("name", ""))
+                else:
+                    ref_str = inv_ref.ref
+                if ref_str:
+                    referenced_refs.add(ref_str)
 
         for comp in self.registry.components():
             for step in comp.steps:
-                referenced_actions.add(step.use)
+                referenced_refs.add(step.use)
 
         for action in self.registry.actions():
             ref = f"actions/{action.metadata.name}"
-            if ref not in referenced_actions:
+            if ref not in referenced_refs:
                 self._issue(
                     IssueSeverity.INFO, IssueCategory.ORPHAN,
                     action.metadata.name,
                     f"Action '{action.metadata.name}' is not used by any use case or component",
+                )
+
+        for comp in self.registry.components():
+            ref = f"components/{comp.metadata.name}"
+            if ref not in referenced_refs:
+                self._issue(
+                    IssueSeverity.INFO, IssueCategory.ORPHAN,
+                    comp.metadata.name,
+                    f"Component '{comp.metadata.name}' is not referenced by any use case",
+                )
+
+        for inv in self.registry.invariants():
+            ref = f"invariants/{inv.metadata.name}"
+            if ref not in referenced_refs:
+                self._issue(
+                    IssueSeverity.INFO, IssueCategory.ORPHAN,
+                    inv.metadata.name,
+                    f"Invariant '{inv.metadata.name}' is not referenced by any use case",
                 )

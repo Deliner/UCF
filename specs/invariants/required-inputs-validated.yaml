@@ -1,0 +1,43 @@
+kind: invariant
+metadata:
+  name: required-inputs-validated
+  version: "1.0"
+  owner: ucf-framework
+  tags: [validation, input]
+  severity: high
+
+type: data
+
+rule: >
+  All required string inputs must be non-empty. All required array inputs
+  must be non-null. Optional inputs may be absent but when present must
+  conform to their FieldDef constraints (enum values, min/max bounds).
+
+applies_to:
+  - action: actions/load-yaml-file
+  - action: actions/parse-spec
+  - action: actions/resolve-refs
+  - action: actions/register-spec
+  - action: actions/validate-spec
+  - action: actions/build-dependency-graph
+  - action: actions/compute-impact
+  - action: actions/generate-tests
+  - action: actions/generate-negative-tests
+  - action: actions/generate-skeleton-specs
+  - action: actions/validate-generated-code
+  - action: actions/get-spec-detail
+  - action: actions/get-spec-relationships
+  - action: actions/list-spec-catalog
+  - action: actions/render-cli-output
+  - action: actions/detect-drift
+  - action: actions/scan-source-directory
+  - action: actions/build-spec-code-map
+  - action: actions/scan-python-ast
+  - action: actions/resolve-uc-extends
+  - action: actions/ui-filter-spec-catalog
+  - action: actions/ui-interact-with-graph
+  - action: actions/ui-navigate-to-related-spec
+  - action: actions/ui-navigate-to-spec
+  - action: actions/ui-toggle-detail-tab
+  - action: actions/ui-toggle-graph-view
+  - action: actions/check-spec-completeness

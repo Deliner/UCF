@@ -1,0 +1,43 @@
+kind: action
+metadata:
+  name: validate-generated-code
+  version: 0.1.0
+  owner: ucf-core
+
+input:
+  interface_code:
+    type: string
+    required: true
+    description: content of the generated interface.py
+  orchestrator_code:
+    type: string
+    required: true
+    description: content of the generated test_orchestrator.py
+  impl_code:
+    type: string
+    required: true
+    description: content of the generated impl.py
+
+output:
+  is_valid:
+    type: boolean
+    description: all generated files are syntactically valid Python
+  issues:
+    type: array
+    description: list of quality issues found in the generated code
+  issue_count:
+    type: integer
+
+reads:
+  - resource: generated_code
+    fields: [syntax, scoping, naming]
+
+preconditions:
+  - all three code strings are non-empty
+
+postconditions:
+  - every generated file compiles without SyntaxError
+  - orchestrator does not reference undefined variables
+  - all method calls in orchestrator match interface signatures
+  - verify method names do not end mid-word due to truncation
+  - nested dict step inputs are passed as dict, not expanded positionally

@@ -1,0 +1,50 @@
+kind: action
+metadata:
+  name: get-spec-detail
+  version: 0.1.0
+  owner: ucf-core
+  tags: [web, api, detail]
+
+platform:
+  http:
+    method: GET
+    path: /api/specs/{kind}/{name}
+  cli:
+    command: ucf info
+
+input:
+  registry:
+    type: object
+    required: true
+  kind:
+    type: string
+    required: true
+    description: spec kind (action, usecase, component, etc.)
+  name:
+    type: string
+    required: true
+    description: spec name in kebab-case
+
+output:
+  spec:
+    type: object
+    description: parsed spec model
+  raw_yaml:
+    type: string
+    description: original YAML source
+  impl_status:
+    type: string
+    description: implementation status (mapped, unimplemented, no-marker)
+
+errors:
+  - status: 404
+    code: SPEC_NOT_FOUND
+    condition: no spec matches the given kind and name
+
+preconditions:
+  - registry is loaded
+
+postconditions:
+  - returned spec matches requested kind and name
+  - raw_yaml is valid YAML that parses to the same spec
+  - impl_status reflects actual drift state

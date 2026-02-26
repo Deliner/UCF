@@ -1,0 +1,76 @@
+kind: usecase
+metadata:
+  name: generate-negative-test-code
+  version: 0.1.0
+  owner: ucf-core
+  actor: developer
+  tags: [core, generator, errors]
+
+requires:
+  - $ref: components/loaded-registry
+    as: loader
+    params:
+      specs_dir: $inputs.specs_dir
+
+preconditions:
+  - at least one usecase spec is loaded
+  - at least one action spec has error definitions
+
+assumed_preconditions:
+  - at least one usecase spec is loaded
+  - at least one action spec has error definitions
+
+steps:
+  - id: extract-errors
+    use: actions/extract-error-definitions
+    input:
+      usecase: $inputs.target_usecase
+      registry: $loader.registry
+    output:
+      error_defs: error_defs
+      error_count: error_count
+
+  - id: generate
+    use: actions/generate-negative-tests
+    depends_on: [extract-errors]
+    input:
+      error_defs: $steps.extract-errors.error_defs
+      interface_class: $inputs.interface_class
+      usecase_name: $inputs.usecase_name
+    output:
+      negative_test_code: negative_test_code
+      error_methods: error_methods
+      test_count: test_count
+
+  - id: render-results
+    use: actions/render-cli-output
+    depends_on: [generate]
+    input:
+      data:
+        error_count: $steps.extract-errors.error_count
+        test_count: $steps.generate.test_count
+        error_methods: $steps.generate.error_methods
+      format: table
+
+alternative_flows:
+  - name: no-errors-defined
+    trigger: error_count is zero
+    steps:
+      - id: render-empty
+        use: actions/render-cli-output
+        input:
+          data:
+            message: no error definitions found in action specs
+            error_count: $steps.extract-errors.error_count
+          format: tree
+
+postconditions:
+  - for each action error, a TestError class is generated
+  - the interface has abstract error methods for each error scenario
+  - error test methods receive the error condition as a docstring
+  - generated code compiles without SyntaxError
+
+terminal: true
+
+invariants:
+  - $ref: invariants/required-inputs-validated

@@ -1,0 +1,47 @@
+kind: usecase
+metadata:
+  name: browse-spec-catalog-web
+  version: 0.1.0
+  owner: ucf-core
+  actor: developer
+  tags: [web, ui, catalog]
+
+extends: $ref:use-cases/browse-spec-catalog
+
+steps:
+  - id: filter-by-kind
+    use: actions/ui-filter-spec-catalog
+    input:
+      kind: $inputs.selected_kind
+      search_text: $inputs.search_text
+    output:
+      filtered_view: filtered_view
+
+  - id: navigate-to-spec
+    use: actions/ui-navigate-to-spec
+    depends_on: [filter-by-kind]
+    input:
+      spec_kind: $inputs.selected_kind
+      spec_name: $inputs.selected_spec_name
+    output:
+      navigated: navigated
+
+alternative_flows:
+  - name: no-filters-applied
+    trigger: kind and search_text are both absent on initial page load
+    steps:
+      - id: show-all
+        use: actions/ui-filter-spec-catalog
+        input: {}
+        output:
+          filtered_view: filtered_view
+
+postconditions:
+  - clicking a kind tab filters the spec table
+  - clicking a spec row navigates to its detail page
+  - search input filters specs by name match
+
+terminal: true
+
+invariants:
+  - $ref: invariants/required-inputs-validated

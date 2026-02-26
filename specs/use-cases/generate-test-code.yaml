@@ -16,6 +16,10 @@ preconditions:
   - at least one usecase spec is loaded
   - output directory is writable
 
+assumed_preconditions:
+  - at least one usecase spec is loaded
+  - output directory is writable
+
 steps:
   - id: generate
     use: actions/generate-tests
@@ -44,3 +48,8 @@ postconditions:
   - for each usecase, interface.py + test_orchestrator.py are generated
   - impl.py stubs are created only if they do not already exist
   - generated code is deterministic given the same spec input
+
+terminal: true
+
+invariants:
+  - $ref: invariants/required-inputs-validated

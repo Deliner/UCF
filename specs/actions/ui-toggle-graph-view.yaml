@@ -1,0 +1,27 @@
+kind: action
+metadata:
+  name: ui-toggle-graph-view
+  version: 0.1.0
+  owner: ucf-core
+  tags: [web, ui, graph]
+
+platform:
+  ui:
+    steps:
+      - click: view-toggle
+      - assert: graph rendering switches between D3 and Mermaid
+
+input:
+  target_view:
+    type: string
+    required: true
+    description: view mode to switch to (interactive or static)
+
+output:
+  active_view:
+    type: string
+    description: currently active view mode
+
+postconditions:
+  - graph renders in the selected view mode
+  - toggle button reflects current state

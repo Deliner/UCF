@@ -53,7 +53,7 @@ class DetectConflictsInterface(ABC):
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_all_write_write_conflicts_between_independent_spec(self) -> None:
+    def verify_all_write_write_conflicts_between_independent_specs_are(self) -> None:
         ...
 
     @abstractmethod
@@ -62,4 +62,8 @@ class DetectConflictsInterface(ABC):
 
     @abstractmethod
     def verify_each_conflict_pair_identifies_the_shared_resource(self) -> None:
+        ...
+
+    @abstractmethod
+    def verify_required_inputs_validated(self) -> None:
         ...

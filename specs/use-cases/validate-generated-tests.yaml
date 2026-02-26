@@ -1,0 +1,80 @@
+kind: usecase
+metadata:
+  name: validate-generated-tests
+  version: 0.1.0
+  owner: ucf-core
+  actor: developer
+  tags: [core, generator, quality]
+
+requires:
+  - $ref: components/loaded-registry
+    as: loader
+    params:
+      specs_dir: $inputs.specs_dir
+
+preconditions:
+  - at least one usecase spec is loaded
+  - output directory is writable
+
+assumed_preconditions:
+  - at least one usecase spec is loaded
+  - output directory is writable
+
+steps:
+  - id: generate
+    use: actions/generate-tests
+    input:
+      usecase: $inputs.target_usecase
+      registry: $loader.registry
+      output_dir: $inputs.output_dir
+    output:
+      interface_path: interface_path
+      orchestrator_path: orchestrator_path
+      impl_path: impl_path
+      files_written: files_written
+
+  - id: validate
+    use: actions/validate-generated-code
+    depends_on: [generate]
+    input:
+      interface_code: $steps.generate.interface_path
+      orchestrator_code: $steps.generate.orchestrator_path
+      impl_code: $steps.generate.impl_path
+    output:
+      is_valid: is_valid
+      issues: issues
+      issue_count: issue_count
+
+  - id: render-results
+    use: actions/render-cli-output
+    depends_on: [validate]
+    input:
+      data:
+        is_valid: $steps.validate.is_valid
+        issues: $steps.validate.issues
+        issue_count: $steps.validate.issue_count
+      format: table
+
+alternative_flows:
+  - name: validation-failures
+    trigger: is_valid is false
+    steps:
+      - id: render-failures
+        use: actions/render-cli-output
+        input:
+          data:
+            issues: $steps.validate.issues
+            issue_count: $steps.validate.issue_count
+          format: table
+
+postconditions:
+  - generated interface.py compiles without SyntaxError
+  - generated test_orchestrator.py compiles without SyntaxError
+  - orchestrator does not reference undefined variables
+  - nested dict inputs are passed as single dict arguments
+  - verify method names are readable and not truncated mid-word
+
+terminal: true
+
+invariants:
+  - $ref: invariants/required-inputs-validated

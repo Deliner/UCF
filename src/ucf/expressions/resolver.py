@@ -46,9 +46,14 @@ class ResolvedExpression:
 _EXPR_RE = re.compile(r"\$([a-zA-Z_][a-zA-Z0-9_\-]*)(?:\.([a-zA-Z0-9_.\-]+))?")
 
 
+_FULL_EXPR_RE = re.compile(
+    r"^\$([a-zA-Z_][a-zA-Z0-9_\-]*)(?:\.([a-zA-Z0-9_.\-]+))?$"
+)
+
+
 def parse_expression(expr: str) -> ResolvedExpression | None:
     """Parse a single $ expression. Returns None if not a valid expression."""
-    m = _EXPR_RE.match(expr.strip())
+    m = _FULL_EXPR_RE.match(expr.strip())
     if not m:
         return None
 
@@ -96,31 +101,36 @@ class ExpressionContext:
     def can_resolve(self, expr: ResolvedExpression) -> bool:
         ns = expr.namespace if isinstance(expr.namespace, str) else expr.namespace.value
 
-        if ns not in self.available and ns not in (
-            "generated", "old", "context"
-        ):
-            return ns in {
-                alias for alias in self.available if alias not in (
-                    n.value for n in ExpressionNamespace
-                )
-            }
-
-        if ns in ("generated", "context"):
+        if ns in ("generated", "context", "old"):
             return True
+
+        if ns not in self.available:
+            component_aliases = {
+                alias for alias in self.available
+                if alias not in {n.value for n in ExpressionNamespace}
+            }
+            if ns in component_aliases:
+                fields = self.available.get(ns, set())
+                if not expr.path:
+                    return True
+                return self._match_path(expr.path, fields)
+            return False
 
         fields = self.available.get(ns, set())
         if not expr.path:
             return True
 
-        full_path = ".".join(expr.path)
+        return self._match_path(expr.path, fields)
+
+    @staticmethod
+    def _match_path(path: list[str], fields: set[str]) -> bool:
+        full_path = ".".join(path)
         if full_path in fields:
             return True
-
-        for i in range(len(expr.path), 0, -1):
-            partial = ".".join(expr.path[:i])
+        for i in range(len(path), 0, -1):
+            partial = ".".join(path[:i])
             if partial in fields:
                 return True
-
         return False
 
 

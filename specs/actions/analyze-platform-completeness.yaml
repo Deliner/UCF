@@ -1,0 +1,24 @@
+kind: action
+metadata:
+  name: analyze-platform-completeness
+  version: "1.0"
+  owner: ucf-framework
+  tags: [completeness, analysis]
+
+input:
+  registry:
+    type: object
+    required: true
+    description: loaded SpecRegistry with all specs
+
+output:
+  platform_scenarios:
+    type: array
+    description: platform-implied scenarios and their coverage
+  findings:
+    type: array
+    description: findings for uncovered platform scenarios
+
+reads:
+  - resource: spec-registry
+    fields: [actions, usecases]

@@ -1,0 +1,44 @@
+kind: action
+metadata:
+  name: generate-negative-tests
+  version: 0.1.0
+  owner: ucf-core
+
+input:
+  error_defs:
+    type: array
+    required: true
+    description: list of (step_id, action_name, ErrorDef) extracted from action specs
+  interface_class:
+    type: string
+    required: true
+    description: name of the interface class to reference in test
+  usecase_name:
+    type: string
+    required: true
+
+output:
+  negative_test_code:
+    type: string
+    description: generated Python test code for error paths
+  error_methods:
+    type: array
+    description: list of error method signatures added to the interface
+  test_count:
+    type: integer
+    description: number of negative test classes generated
+
+writes:
+  - resource: filesystem
+    mutation: create
+    by: generated_test_file
+
+preconditions:
+  - at least one error definition exists
+  - interface_class name is valid
+
+postconditions:
+  - each error definition produces a test class named TestError_{ErrorCode}
+  - each test class calls an action_error_{step_id}_{code} method
+  - the interface gains abstract methods for each error scenario
+  - generated code is syntactically valid Python

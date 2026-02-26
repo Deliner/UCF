@@ -1,0 +1,104 @@
+kind: usecase
+metadata:
+  name: explore-dependency-graph
+  version: 0.1.0
+  owner: ucf-core
+  actor: developer
+  tags: [web, graph]
+
+requires:
+  - $ref: components/loaded-registry
+    as: loader
+    params:
+      specs_dir: $inputs.specs_dir
+  - $ref: components/built-graph
+    as: graph_builder
+    params:
+      registry: $loader.registry
+
+preconditions:
+  - registry contains at least one spec
+
+assumed_preconditions:
+  - registry contains at least one spec
+
+steps:
+  - id: build-json
+    use: actions/build-graph-json
+    input:
+      registry: $loader.registry
+      graph: $graph_builder.graph
+    output:
+      nodes: nodes
+      links: links
+      node_count: node_count
+      edge_count: edge_count
+
+  - id: render-graph
+    use: actions/render-cli-output
+    depends_on: [build-json]
+    input:
+      data:
+        nodes: $steps.build-json.nodes
+        links: $steps.build-json.links
+        node_count: $steps.build-json.node_count
+        edge_count: $steps.build-json.edge_count
+        graph_node_count: $graph_builder.node_count
+        graph_edge_count: $graph_builder.edge_count
+      format: tree
+
+alternative_flows:
+  - name: mermaid-output
+    trigger: developer requests mermaid format output
+    steps:
+      - id: render-mermaid
+        use: actions/render-cli-output
+        input:
+          data:
+            nodes: $steps.build-json.nodes
+            links: $steps.build-json.links
+          format: mermaid
+
+  - name: json-output
+    trigger: developer requests json format output
+    steps:
+      - id: render-json
+        use: actions/render-cli-output
+        input:
+          data:
+            nodes: $steps.build-json.nodes
+            links: $steps.build-json.links
+          format: json
+
+  - name: empty-graph
+    trigger: graph has zero edges
+    steps:
+      - id: render-empty
+        use: actions/render-cli-output
+        input:
+          data:
+            message: no dependency edges found
+          format: table
+
+  - name: registry-not-loaded
+    trigger: registry has not been initialized when graph endpoint is called
+    handles_error: REGISTRY_NOT_LOADED
+    steps:
+      - id: render-error
+        use: actions/render-cli-output
+        input:
+          data:
+            error: registry not loaded
+          format: table
+
+postconditions:
+  - developer sees all specs as graph nodes
+  - developer sees all dependency edges as links
+  - nodes carry kind and name metadata
+  - links reference valid node identifiers
+
+terminal: true
+
+invariants:
+  - $ref: invariants/graph-acyclic
+  - $ref: invariants/required-inputs-validated

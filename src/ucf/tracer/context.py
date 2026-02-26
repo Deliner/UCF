@@ -29,6 +29,13 @@ class FindingCategory(str, Enum):
     FORBIDDEN_TRANSITION = "forbidden_transition"
     CROSS_UC_MUTATION_CONFLICT = "cross_uc_mutation_conflict"
     MISSING_POSTCONDITION = "missing_postcondition"
+    UNCOVERED_ERROR = "uncovered_error"
+    UNCOVERED_INPUT_PARTITION = "uncovered_input_partition"
+    UNREACHABLE_STATE = "unreachable_state"
+    DEAD_END_STATE = "dead_end_state"
+    UNCOVERED_HTTP_SCENARIO = "uncovered_http_scenario"
+    UNTESTABLE_INVARIANT = "untestable_invariant"
+    UNGUARDED_RESOURCE_CONFLICT = "unguarded_resource_conflict"
 
 
 @dataclass

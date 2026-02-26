@@ -1,0 +1,81 @@
+kind: usecase
+metadata:
+  name: inspect-spec-detail
+  version: 0.1.0
+  owner: ucf-core
+  actor: developer
+  tags: [web, detail]
+
+requires:
+  - $ref: components/loaded-registry
+    as: loader
+    params:
+      specs_dir: $inputs.specs_dir
+  - $ref: components/built-graph
+    as: graph_builder
+    params:
+      registry: $loader.registry
+
+preconditions:
+  - target spec exists in registry
+
+assumed_preconditions:
+  - target spec exists in registry
+
+steps:
+  - id: get-detail
+    use: actions/get-spec-detail
+    input:
+      registry: $loader.registry
+      kind: $inputs.kind
+      name: $inputs.name
+    output:
+      spec: spec
+      raw_yaml: raw_yaml
+      impl_status: impl_status
+
+  - id: get-rels
+    use: actions/get-spec-relationships
+    depends_on: [get-detail]
+    input:
+      registry: $loader.registry
+      graph: $graph_builder.graph
+      spec_ref: $inputs.spec_ref
+    output:
+      upstream: upstream
+      downstream: downstream
+      edge_count: edge_count
+
+  - id: render-detail
+    use: actions/render-cli-output
+    depends_on: [get-detail, get-rels]
+    input:
+      data:
+        spec: $steps.get-detail.spec
+        raw_yaml: $steps.get-detail.raw_yaml
+        impl_status: $steps.get-detail.impl_status
+        upstream: $steps.get-rels.upstream
+        downstream: $steps.get-rels.downstream
+      format: tree
+
+alternative_flows:
+  - name: spec-not-found
+    trigger: requested spec does not exist
+    steps:
+      - id: render-404
+        use: actions/render-cli-output
+        input:
+          data:
+            message: spec not found
+          format: table
+
+postconditions:
+  - developer sees parsed spec metadata and schema
+  - developer sees raw YAML source
+  - developer sees upstream and downstream relationships
+  - developer sees implementation status
+
+terminal: true
+
+invariants:
+  - $ref: invariants/required-inputs-validated

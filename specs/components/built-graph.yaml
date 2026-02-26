@@ -1,0 +1,32 @@
+kind: component
+metadata:
+  name: built-graph
+  version: 0.1.0
+  owner: ucf-core
+
+parameters:
+  registry:
+    type: object
+    required: true
+    description: loaded SpecRegistry
+
+provides:
+  graph:
+    type: object
+    description: DependencyGraph built from registry
+  node_count:
+    type: integer
+    description: number of nodes in the graph
+  edge_count:
+    type: integer
+    description: number of edges in the graph
+
+steps:
+  - id: build
+    use: actions/build-dependency-graph
+    input:
+      registry: $parameters.registry
+    output:
+      graph: graph
+      node_count: node_count
+      edge_count: edge_count

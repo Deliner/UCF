@@ -45,3 +45,8 @@ postconditions:
   - test_orchestrator.py exists with pytest test classes
   - impl.py exists (created if absent, never overwritten)
   - all generated files are valid Python
+  - nested dict inputs in steps produce a single dict argument, not flat expansion
+  - alt-flow tests only reference variables defined in their own scope
+  - postcondition verify method names are readable and not truncated mid-word
+  - preconditions generate guard assertions at the top of the happy-path test
+  - action error definitions generate negative test classes

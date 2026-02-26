@@ -55,10 +55,10 @@ class DetectConflictsImpl(DetectConflictsInterface):
             conflict_count=len(self._conflicts),
         )
 
-    def action_render_conflicts(self, *args: Any, **kwargs: Any) -> None:
+    def action_render_conflicts(self, data: Any, format: Any) -> None:
         pass
 
-    def verify_all_write_write_conflicts_between_independent_spec(self) -> None:
+    def verify_all_write_write_conflicts_between_independent_specs_are(self) -> None:
         for a, b, resource in self._conflicts:
             assert a != b, f"Self-conflict: {a}"
 
@@ -79,6 +79,13 @@ class DetectConflictsImpl(DetectConflictsInterface):
     def verify_each_conflict_pair_identifies_the_shared_resource(self) -> None:
         for a, b, resource in self._conflicts:
             assert resource, f"Missing resource in conflict: {a} <-> {b}"
+
+    def verify_required_inputs_validated(self) -> None:
+        from pydantic import ValidationError
+        from ucf.models.action import ActionSpec
+        # Framework enforces required inputs via Pydantic: ActionSpec without metadata must fail
+        with pytest.raises(ValidationError):
+            ActionSpec.model_validate({})
 
 
 @pytest.fixture

@@ -21,6 +21,7 @@ class ComponentRequirement(BaseModel):
 class AlternativeFlow(BaseModel):
     name: str
     trigger: str
+    handles_error: str | None = None
     steps: list[StepDef] = Field(default_factory=list)
 
 
@@ -33,12 +34,15 @@ class ConcurrencyDef(BaseModel):
 class UseCaseSpec(BaseModel):
     kind: Literal["usecase"] = "usecase"
     metadata: Metadata
+    extends: str | None = None
     trigger: str | None = None
     input_from_event: dict[str, str] = Field(default_factory=dict)
     requires: list[ComponentRequirement | dict[str, Any]] = Field(default_factory=list)
     preconditions: list[str] = Field(default_factory=list)
+    assumed_preconditions: list[str] = Field(default_factory=list)
     steps: list[StepDef] = Field(default_factory=list)
     alternative_flows: list[AlternativeFlow] = Field(default_factory=list)
     postconditions: list[str] = Field(default_factory=list)
+    terminal: bool = False
     invariants: list[Ref | dict[str, Any]] = Field(default_factory=list)
     concurrency: list[ConcurrencyDef] = Field(default_factory=list)

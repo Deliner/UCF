@@ -1,0 +1,27 @@
+kind: action
+metadata:
+  name: ui-navigate-to-related-spec
+  version: 0.1.0
+  owner: ucf-core
+  tags: [web, ui, navigation]
+
+platform:
+  ui:
+    steps:
+      - click: relationship-link
+      - assert: navigated to related spec detail
+
+input:
+  related_ref:
+    type: string
+    required: true
+    description: ref of the related spec to navigate to
+
+output:
+  navigated:
+    type: boolean
+    description: true when the browser navigated to the related spec
+
+postconditions:
+  - browser URL reflects the related spec
+  - related spec detail page is displayed

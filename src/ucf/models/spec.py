@@ -1,10 +1,11 @@
-"""Discriminated union of all spec types + factory function."""
+"""Discriminated union of all spec types + factory function.
+
+@implements("actions/parse-spec")
+"""
 
 from __future__ import annotations
 
-from typing import Annotated
-
-from pydantic import TypeAdapter, ValidationError
+from pydantic import ValidationError
 
 from ucf.models.action import ActionSpec
 from ucf.models.component import ComponentSpec
@@ -33,6 +34,11 @@ class SpecParseError(Exception):
 
 def parse_spec(data: dict, *, source_path: str | None = None) -> AnySpec:
     """Parse a raw dict into the appropriate spec model based on `kind`."""
+    if not isinstance(data, dict):
+        raise SpecParseError(
+            f"Expected a YAML mapping, got {type(data).__name__}",
+            path=source_path,
+        )
     kind = data.get("kind")
     if kind is None:
         raise SpecParseError(f"Missing 'kind' field", path=source_path)

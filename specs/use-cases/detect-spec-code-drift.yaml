@@ -1,0 +1,101 @@
+kind: usecase
+metadata:
+  name: detect-spec-code-drift
+  version: 0.1.0
+  owner: ucf-core
+  actor: developer
+  tags: [core, cli, drift, phase6]
+
+requires:
+  - $ref: components/loaded-registry
+    as: loader
+    params:
+      specs_dir: $inputs.specs_dir
+
+  - $ref: components/scanned-codebase
+    as: scanner
+    params:
+      source_dir: $inputs.source_dir
+
+preconditions:
+  - specs directory contains at least one spec
+  - source directory is readable
+
+assumed_preconditions:
+  - specs directory contains at least one spec
+  - source directory is readable
+
+steps:
+  - id: build-map
+    use: actions/build-spec-code-map
+    input:
+      registry: $loader.registry
+      implementations: $scanner.implementations
+    output:
+      spec_to_code: spec_to_code
+      code_to_spec: code_to_spec
+      mapped_count: mapped_count
+
+  - id: detect
+    use: actions/detect-drift
+    depends_on: [build-map]
+    input:
+      registry: $loader.registry
+      spec_to_code: $steps.build-map.spec_to_code
+      code_to_spec: $steps.build-map.code_to_spec
+    output:
+      unimplemented_specs: unimplemented_specs
+      orphan_code: orphan_code
+      stale_mappings: stale_mappings
+      drift_count: drift_count
+
+  - id: render-drift
+    use: actions/render-cli-output
+    depends_on: [detect]
+    input:
+      data:
+        unimplemented_specs: $steps.detect.unimplemented_specs
+        orphan_code: $steps.detect.orphan_code
+        stale_mappings: $steps.detect.stale_mappings
+        drift_count: $steps.detect.drift_count
+        mapped_count: $steps.build-map.mapped_count
+      format: table
+
+alternative_flows:
+  - name: custom-convention
+    trigger: developer provides a custom convention pattern
+    steps:
+      - id: build-map-custom
+        use: actions/build-spec-code-map
+        input:
+          registry: $loader.registry
+          implementations: $scanner.implementations
+          convention: $inputs.convention
+        output:
+          spec_to_code: spec_to_code
+          code_to_spec: code_to_spec
+          mapped_count: mapped_count
+
+  - name: no-drift-found
+    trigger: drift_count is zero
+    steps:
+      - id: render-clean
+        use: actions/render-cli-output
+        input:
+          data:
+            message: all specs are mapped to implementations
+            mapped_count: $steps.build-map.mapped_count
+          format: tree
+
+postconditions:
+  - every spec without an implementation is reported as unimplemented
+  - every @implements marker referencing a missing spec is reported as orphan
+  - drift_count correctly sums unimplemented + orphan + stale
+  - output is rendered in the requested format
+
+terminal: true
+
+invariants:
+  - $ref: invariants/spec-has-implementation
+  - $ref: invariants/implementation-has-spec
+  - $ref: invariants/required-inputs-validated

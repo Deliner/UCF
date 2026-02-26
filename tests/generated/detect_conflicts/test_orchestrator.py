@@ -30,10 +30,11 @@ class TestHappyPath:
 
         build_graph = uc.action_build_graph(loader.registry)
         detect = uc.action_detect(build_graph.graph, loader.registry)
-        render_conflicts = uc.action_render_conflicts(detect.conflicts, detect.conflict_count, format='table')
+        render_conflicts = uc.action_render_conflicts(data={'conflicts': detect.conflicts, 'conflict_count': detect.conflict_count}, format='table')
 
-        uc.verify_all_write_write_conflicts_between_independent_spec()
+        uc.verify_all_write_write_conflicts_between_independent_specs_are()
         uc.verify_intra_usecase_conflicts_are_filtered_out()
         uc.verify_each_conflict_pair_identifies_the_shared_resource()
+        uc.verify_required_inputs_validated()
 
 

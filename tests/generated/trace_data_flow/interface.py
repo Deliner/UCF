@@ -52,9 +52,13 @@ class TraceDataFlowInterface(ABC):
         ...
 
     @abstractmethod
-    def verify_branch_divergences_between_happy_path_and_alt_flow(self) -> None:
+    def verify_branch_divergences_between_happy_path_and_alt_flows_are(self) -> None:
         ...
 
     @abstractmethod
     def verify_refs_resolvable(self) -> None:
+        ...
+
+    @abstractmethod
+    def verify_required_inputs_validated(self) -> None:
         ...

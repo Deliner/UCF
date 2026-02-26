@@ -46,13 +46,17 @@ class GenerateTestCodeInterface(ABC):
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_for_each_usecase_interface_py_test_orchestrator(self) -> None:
+    def verify_for_each_usecase_interface_py_test_orchestrator_py_are(self) -> None:
         ...
 
     @abstractmethod
-    def verify_impl_py_stubs_are_created_only_if_they_do_not_alre(self) -> None:
+    def verify_impl_py_stubs_are_created_only_if_they_do_not_already_exist(self) -> None:
         ...
 
     @abstractmethod
-    def verify_generated_code_is_deterministic_given_the_same_spe(self) -> None:
+    def verify_generated_code_is_deterministic_given_the_same_spec_input(self) -> None:
+        ...
+
+    @abstractmethod
+    def verify_required_inputs_validated(self) -> None:
         ...

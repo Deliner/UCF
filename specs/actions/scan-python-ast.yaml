@@ -1,0 +1,40 @@
+kind: action
+metadata:
+  name: scan-python-ast
+  version: 0.1.0
+  owner: ucf-core
+
+input:
+  source_dir:
+    type: string
+    required: true
+    description: root directory of the Python source code to scan
+  patterns:
+    type: array
+    required: false
+    description: glob patterns to match source files (default ["**/*.py"])
+
+output:
+  functions:
+    type: array
+    description: list of discovered function signatures (name, params, return_type, docstring, file_path, line)
+  classes:
+    type: array
+    description: list of discovered class signatures (name, methods, bases, docstring, file_path, line)
+  scanned_count:
+    type: integer
+    description: number of source files scanned
+
+reads:
+  - resource: filesystem
+    fields: [source_files]
+
+preconditions:
+  - source_dir exists and is readable
+  - source files are valid Python
+
+postconditions:
+  - every Python file matching patterns has been scanned via AST parsing
+  - each public function is extracted with its name, parameters, return type annotation, and docstring
+  - each public class is extracted with its name, base classes, public methods, and docstring
+  - private names (starting with _) are excluded unless they are __init__

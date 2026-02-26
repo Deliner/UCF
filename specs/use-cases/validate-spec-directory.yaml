@@ -15,6 +15,9 @@ requires:
 preconditions:
   - specs_dir exists and contains at least one .yaml file
 
+assumed_preconditions:
+  - specs_dir exists and contains at least one .yaml file
+
 steps:
   - id: validate
     use: actions/validate-spec
@@ -40,7 +43,105 @@ steps:
       format: table
 
 alternative_flows:
-  - name: parse_failures
+  - name: file-not-found
+    trigger: file at path does not exist
+    handles_error: FILE_NOT_FOUND
+    steps:
+      - id: render-file-error
+        use: actions/render-cli-output
+        input:
+          data:
+            message: spec file not found
+          format: tree
+
+  - name: yaml-syntax-error
+    trigger: file is not valid YAML
+    handles_error: YAML_SYNTAX_ERROR
+    steps:
+      - id: render-yaml-error
+        use: actions/render-cli-output
+        input:
+          data:
+            message: YAML syntax error in spec file
+          format: tree
+
+  - name: not-a-mapping
+    trigger: YAML root is not a dict
+    handles_error: NOT_A_MAPPING
+    steps:
+      - id: render-mapping-error
+        use: actions/render-cli-output
+        input:
+          data:
+            message: spec file root is not a YAML mapping
+          format: tree
+
+  - name: missing-kind
+    trigger: data has no kind field
+    handles_error: MISSING_KIND
+    steps:
+      - id: render-kind-missing
+        use: actions/render-cli-output
+        input:
+          data:
+            message: spec is missing required kind field
+          format: tree
+
+  - name: unknown-kind
+    trigger: kind is not one of action, event, component, protocol, usecase, invariant
+    handles_error: UNKNOWN_KIND
+    steps:
+      - id: render-unknown-kind
+        use: actions/render-cli-output
+        input:
+          data:
+            message: spec has unrecognized kind value
+          format: tree
+
+  - name: validation-error
+    trigger: data does not conform to the Pydantic schema for its kind
+    handles_error: VALIDATION_ERROR
+    steps:
+      - id: render-validation-error
+        use: actions/render-cli-output
+        input:
+          data:
+            message: spec data fails schema validation
+          format: tree
+
+  - name: ref-not-found
+    trigger: ref points to a file that does not exist
+    handles_error: REF_NOT_FOUND
+    steps:
+      - id: render-ref-error
+        use: actions/render-cli-output
+        input:
+          data:
+            message: referenced spec file not found
+          format: tree
+
+  - name: max-depth-exceeded
+    trigger: ref chain exceeds 3 levels
+    handles_error: MAX_DEPTH_EXCEEDED
+    steps:
+      - id: render-depth-error
+        use: actions/render-cli-output
+        input:
+          data:
+            message: ref resolution chain too deep
+          format: tree
+
+  - name: negative-depth
+    trigger: depth is below minimum (negative value)
+    steps:
+      - id: render-depth-invalid
+        use: actions/render-cli-output
+        input:
+          data:
+            message: ref resolution depth cannot be negative
+          format: tree
+
+  - name: parse-failures
     trigger: $loader.load_errors is not empty
     steps:
       - id: render-errors
@@ -71,7 +172,11 @@ postconditions:
   - all issues are reported with severity, category, and suggestion
   - exit code is 1 if any errors exist, 0 otherwise
 
+terminal: true
+
 invariants:
   - $ref: invariants/spec-names-unique
   - $ref: invariants/refs-resolvable
   - $ref: invariants/kind-determines-schema
+  - $ref: invariants/no-circular-refs
+  - $ref: invariants/required-inputs-validated

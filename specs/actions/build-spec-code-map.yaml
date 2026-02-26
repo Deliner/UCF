@@ -1,0 +1,44 @@
+kind: action
+metadata:
+  name: build-spec-code-map
+  version: 0.1.0
+  owner: ucf-core
+
+input:
+  registry:
+    type: object
+    required: true
+    description: populated SpecRegistry
+  implementations:
+    type: array
+    required: true
+    description: list of ImplementationEntry from scan-source-directory
+  convention:
+    type: string
+    required: false
+    description: path convention pattern for matching (e.g. "specs/{kind}/{name}.yaml -> src/{kind}/{name}.py")
+
+output:
+  spec_to_code:
+    type: object
+    description: mapping of spec ref -> list of code file paths
+  code_to_spec:
+    type: object
+    description: mapping of code file path -> list of spec refs
+  mapped_count:
+    type: integer
+    description: number of specs with at least one code mapping
+
+reads:
+  - resource: spec_registry
+    fields: [all_specs]
+
+preconditions:
+  - registry has at least one spec loaded
+  - implementations list has been populated by scan-source-directory
+
+postconditions:
+  - every @implements marker is mapped to its spec
+  - convention-based matches are included when no explicit marker exists
+  - explicit implemented_by fields in specs take precedence
+  - each mapping is bidirectional (spec->code and code->spec)

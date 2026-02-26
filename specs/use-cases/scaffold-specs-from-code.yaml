@@ -1,0 +1,87 @@
+kind: usecase
+metadata:
+  name: scaffold-specs-from-code
+  version: 0.1.0
+  owner: ucf-core
+  actor: developer
+  tags: [core, cli, scaffold, brownfield]
+
+preconditions:
+  - source directory exists and contains Python files
+  - output directory is writable
+
+assumed_preconditions:
+  - source directory exists and contains Python files
+  - output directory is writable
+
+steps:
+  - id: scan
+    use: actions/scan-python-ast
+    input:
+      source_dir: $inputs.source_dir
+      patterns: $inputs.patterns
+    output:
+      functions: functions
+      classes: classes
+      scanned_count: scanned_count
+
+  - id: generate
+    use: actions/generate-skeleton-specs
+    depends_on: [scan]
+    input:
+      functions: $steps.scan.functions
+      classes: $steps.scan.classes
+      output_dir: $inputs.output_dir
+    output:
+      action_specs: action_specs
+      component_specs: component_specs
+      specs_written: specs_written
+
+  - id: render-results
+    use: actions/render-cli-output
+    depends_on: [generate]
+    input:
+      data:
+        scanned_count: $steps.scan.scanned_count
+        functions_found: $steps.scan.functions
+        classes_found: $steps.scan.classes
+        action_specs: $steps.generate.action_specs
+        component_specs: $steps.generate.component_specs
+        specs_written: $steps.generate.specs_written
+      format: tree
+
+alternative_flows:
+  - name: default-patterns
+    trigger: patterns is absent or not provided
+    steps:
+      - id: scan-defaults
+        use: actions/scan-python-ast
+        input:
+          source_dir: $inputs.source_dir
+        output:
+          functions: functions
+          classes: classes
+          scanned_count: scanned_count
+
+  - name: no-code-found
+    trigger: scanned_count is zero or no functions and classes found
+    steps:
+      - id: render-empty
+        use: actions/render-cli-output
+        input:
+          data:
+            message: no Python code found in source directory
+            scanned_count: $steps.scan.scanned_count
+          format: tree
+
+postconditions:
+  - every public function in the source directory has a corresponding action spec skeleton
+  - every class with public methods has a corresponding component spec skeleton
+  - generated specs are valid YAML that passes ucf validate
+  - existing specs are never overwritten
+  - output reports the number of files scanned and specs generated
+
+terminal: true
+
+invariants:
+  - $ref: invariants/required-inputs-validated

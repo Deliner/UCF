@@ -1,0 +1,43 @@
+kind: action
+metadata:
+  name: scan-source-directory
+  version: 0.1.0
+  owner: ucf-core
+
+input:
+  source_dir:
+    type: string
+    required: true
+    description: root directory of the source code to scan
+  patterns:
+    type: array
+    required: false
+    description: glob patterns to match source files (default ["**/*.py"])
+  marker:
+    type: string
+    required: false
+    description: decorator/comment marker to detect (default "@implements")
+
+output:
+  implementations:
+    type: array
+    description: list of ImplementationEntry (file_path, spec_ref, line_number)
+  scanned_count:
+    type: integer
+    description: number of source files scanned
+  marker_count:
+    type: integer
+    description: number of @implements markers found
+
+reads:
+  - resource: filesystem
+    fields: [source_files]
+
+preconditions:
+  - source_dir exists and is readable
+  - at least one pattern is provided or the default is used
+
+postconditions:
+  - every source file matching the patterns has been scanned
+  - each @implements marker is extracted with its spec reference and location
+  - files without markers are counted but not included in implementations

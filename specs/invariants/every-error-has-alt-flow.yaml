@@ -1,0 +1,17 @@
+kind: invariant
+metadata:
+  name: every-error-has-alt-flow
+  version: "1.0"
+  owner: ucf-framework
+  tags: [completeness]
+  severity: medium
+
+type: relationship
+
+rule: >
+  For every ErrorDef on an ActionSpec, at least one UseCaseSpec that references
+  the action must have an alternative_flow whose handles_error matches the
+  error code or whose trigger semantically maps to the error condition.
+
+applies_to:
+  - resource: spec-registry

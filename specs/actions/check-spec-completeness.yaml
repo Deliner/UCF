@@ -1,0 +1,25 @@
+kind: action
+metadata:
+  name: check-spec-completeness
+  version: "1.0"
+  owner: ucf-framework
+  tags: [completeness, orchestrator]
+
+input:
+  registry:
+    type: object
+    required: true
+    description: loaded SpecRegistry with all specs
+
+output:
+  report:
+    type: object
+    description: unified completeness report with all analysis results
+
+platform:
+  cli:
+    command: ucf completeness <specs_dir>
+
+reads:
+  - resource: spec-registry
+    fields: [actions, usecases, invariants, components]

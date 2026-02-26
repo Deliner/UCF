@@ -1,0 +1,35 @@
+kind: usecase
+metadata:
+  name: inspect-spec-detail-web
+  version: 0.1.0
+  owner: ucf-core
+  actor: developer
+  tags: [web, ui, detail]
+
+extends: $ref:use-cases/inspect-spec-detail
+
+steps:
+  - id: toggle-tab
+    use: actions/ui-toggle-detail-tab
+    input:
+      tab_name: $inputs.tab_name
+    output:
+      active_tab: active_tab
+
+  - id: navigate-related
+    use: actions/ui-navigate-to-related-spec
+    depends_on: [toggle-tab]
+    input:
+      related_ref: $inputs.related_ref
+    output:
+      navigated: navigated
+
+postconditions:
+  - clicking a tab switches the detail panel content
+  - clicking a relationship link navigates to that spec
+  - all tabs render without errors
+
+terminal: true
+
+invariants:
+  - $ref: invariants/required-inputs-validated

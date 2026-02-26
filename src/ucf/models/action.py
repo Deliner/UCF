@@ -4,9 +4,17 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
-from ucf.models.base import EmitRef, ErrorDef, FieldDef, Metadata, ResourceRead, ResourceWrite
+from ucf.models.base import (
+    EmitRef,
+    ErrorDef,
+    FieldDef,
+    FieldType,
+    Metadata,
+    ResourceRead,
+    ResourceWrite,
+)
 
 
 class HttpBinding(BaseModel):
@@ -68,3 +76,27 @@ class ActionSpec(BaseModel):
     preconditions: list[str] = Field(default_factory=list)
     postconditions: list[str] = Field(default_factory=list)
     emits: list[EmitRef] = Field(default_factory=list)
+
+    @field_validator("input", "output", mode="before")
+    @classmethod
+    def _prefer_fielddef(cls, v: Any) -> Any:
+        """Try to parse dict values as FieldDef before falling through to raw dict."""
+        if not isinstance(v, dict):
+            return v
+        result: dict[str, Any] = {}
+        for key, val in v.items():
+            if isinstance(val, FieldDef):
+                result[key] = val
+            elif isinstance(val, dict) and "type" in val:
+                type_val = val["type"]
+                if isinstance(type_val, str):
+                    try:
+                        FieldType(type_val)
+                        result[key] = FieldDef(**val)
+                        continue
+                    except (ValueError, ValidationError):
+                        pass
+                result[key] = val
+            else:
+                result[key] = val
+        return result

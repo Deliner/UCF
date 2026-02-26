@@ -1,0 +1,36 @@
+kind: action
+metadata:
+  name: extract-error-definitions
+  version: 0.1.0
+  owner: ucf-core
+
+input:
+  usecase:
+    type: object
+    required: true
+    description: a UseCaseSpec instance
+  registry:
+    type: object
+    required: true
+    description: populated SpecRegistry with resolved actions
+
+output:
+  error_defs:
+    type: array
+    description: list of (step_id, action_name, ErrorDef) tuples for all steps with errors
+  error_count:
+    type: integer
+    description: total number of error definitions found across all steps
+
+reads:
+  - resource: action_specs
+    fields: [errors]
+
+preconditions:
+  - usecase has at least one step
+  - registry contains the actions referenced by the usecase
+
+postconditions:
+  - for each step, if the referenced action spec has errors, they are extracted
+  - each error includes the step_id, action name, status code, error code, and condition
+  - steps with no errors produce no entries

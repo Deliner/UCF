@@ -15,6 +15,9 @@ requires:
 preconditions:
   - target spec exists in registry
 
+assumed_preconditions:
+  - target spec exists in registry
+
 steps:
   - id: build-graph
     use: actions/build-dependency-graph
@@ -35,6 +38,7 @@ steps:
       direct_dependents: direct_dependents
       transitive_dependents: transitive_dependents
       invariants: invariants
+      conflicts: conflicts
       total_impact: total_impact
 
   - id: render-impact
@@ -46,13 +50,19 @@ steps:
         direct: $steps.impact.direct_dependents
         transitive: $steps.impact.transitive_dependents
         invariants: $steps.impact.invariants
+        conflicts: $steps.impact.conflicts
         total: $steps.impact.total_impact
       format: tree
 
 postconditions:
   - all direct and transitive dependents of target are listed
   - constraining invariants are listed
+  - resource conflicts are listed
   - total impact count is reported
+  - graph node_count and edge_count reflect the full registry
+
+terminal: true
 
 invariants:
   - $ref: invariants/graph-acyclic
+  - $ref: invariants/required-inputs-validated

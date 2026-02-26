@@ -28,10 +28,11 @@ class TestHappyPath:
         loader = uc.setup_loader()
 
         generate = uc.action_generate(None, loader.registry, None)
-        render_result = uc.action_render_result(generate.interface_path, generate.orchestrator_path, generate.impl_path, generate.files_written, format='tree')
+        render_result = uc.action_render_result(data={'interface_path': generate.interface_path, 'orchestrator_path': generate.orchestrator_path, 'impl_path': generate.impl_path, 'files_written': generate.files_written}, format='tree')
 
-        uc.verify_for_each_usecase_interface_py_test_orchestrator()
-        uc.verify_impl_py_stubs_are_created_only_if_they_do_not_alre()
-        uc.verify_generated_code_is_deterministic_given_the_same_spe()
+        uc.verify_for_each_usecase_interface_py_test_orchestrator_py_are()
+        uc.verify_impl_py_stubs_are_created_only_if_they_do_not_already_exist()
+        uc.verify_generated_code_is_deterministic_given_the_same_spec_input()
+        uc.verify_required_inputs_validated()
 
 

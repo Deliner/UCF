@@ -1,17 +1,18 @@
-"""Dependency graph: spec→spec, spec→code, conflict edges, impact analysis."""
+"""Dependency graph: spec→spec, spec→code, conflict edges, impact analysis.
+
+@implements("actions/build-dependency-graph")
+@implements("actions/compute-impact")
+@implements("actions/detect-write-conflicts")
+"""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
 
 import networkx as nx
 
 from ucf.models.action import ActionSpec
-from ucf.models.component import ComponentSpec
-from ucf.models.event import EventSpec
-from ucf.models.invariant import InvariantSpec
 from ucf.models.protocol import ProtocolSpec
 from ucf.models.usecase import UseCaseSpec
 from ucf.parser.registry import SpecRegistry
@@ -24,14 +25,6 @@ class EdgeType(str, Enum):
     CONSTRAINS = "constrains"
     EMITS = "emits"
     TRIGGERS = "triggers"
-
-
-@dataclass(frozen=True)
-class GraphEdge:
-    source: str
-    target: str
-    edge_type: EdgeType
-    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -260,7 +253,10 @@ class DependencyGraph:
         elif isinstance(spec, ProtocolSpec):
             resources = [w.resource for w in spec.writes]
         elif isinstance(spec, UseCaseSpec):
-            for step in spec.steps:
+            all_steps = list(spec.steps)
+            for alt in spec.alternative_flows:
+                all_steps.extend(alt.steps)
+            for step in all_steps:
                 action = self.registry.resolve_ref(step.use)
                 if isinstance(action, ActionSpec):
                     resources.extend(w.resource for w in action.writes)

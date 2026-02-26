@@ -1,0 +1,17 @@
+kind: invariant
+metadata:
+  name: implementation-has-spec
+  version: 0.1.0
+  owner: ucf-core
+  severity: medium
+
+type: relationship
+
+rule: >
+  Every source file carrying an @implements marker must reference a spec
+  that exists in the registry. Orphan markers indicate stale or incorrect
+  annotations.
+
+applies_to:
+  - action: actions/detect-drift
+  - action: actions/scan-source-directory

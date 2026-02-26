@@ -1,0 +1,36 @@
+kind: usecase
+metadata:
+  name: explore-dependency-graph-web
+  version: 0.1.0
+  owner: ucf-core
+  actor: developer
+  tags: [web, ui, graph]
+
+extends: $ref:use-cases/explore-dependency-graph
+
+steps:
+  - id: click-node
+    use: actions/ui-interact-with-graph
+    input:
+      node_id: $inputs.target_node_id
+    output:
+      selected_node: selected_node
+      tooltip_visible: tooltip_visible
+
+  - id: toggle-view
+    use: actions/ui-toggle-graph-view
+    depends_on: [click-node]
+    input:
+      target_view: $inputs.target_view
+    output:
+      active_view: active_view
+
+postconditions:
+  - clicking a node highlights its connections
+  - tooltip shows node kind and name
+  - toggling view switches between D3 interactive and Mermaid static
+
+terminal: true
+
+invariants:
+  - $ref: invariants/required-inputs-validated

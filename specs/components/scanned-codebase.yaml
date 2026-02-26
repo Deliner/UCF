@@ -1,0 +1,37 @@
+kind: component
+metadata:
+  name: scanned-codebase
+  version: 0.1.0
+  owner: ucf-core
+
+parameters:
+  source_dir:
+    type: string
+    required: true
+    description: root directory of the source code
+  patterns:
+    type: array
+    required: false
+    description: glob patterns to match source files
+
+provides:
+  implementations:
+    type: array
+    description: list of ImplementationEntry found in source code
+  scanned_count:
+    type: integer
+    description: total files scanned
+  marker_count:
+    type: integer
+    description: total @implements markers found
+
+steps:
+  - id: scan
+    use: actions/scan-source-directory
+    input:
+      source_dir: $parameters.source_dir
+      patterns: $parameters.patterns
+    output:
+      implementations: implementations
+      scanned_count: scanned_count
+      marker_count: marker_count

@@ -28,11 +28,12 @@ class TestHappyPath:
         loader = uc.setup_loader()
 
         trace = uc.action_trace(None, loader.registry)
-        render_trace = uc.action_render_trace(trace.findings, trace.final_context, format='tree')
+        render_trace = uc.action_render_trace(data={'findings': trace.findings, 'context': trace.final_context}, format='tree')
 
         uc.verify_every_step_in_the_use_case_has_been_traced()
         uc.verify_data_gaps_and_dead_data_are_reported()
-        uc.verify_branch_divergences_between_happy_path_and_alt_flow()
+        uc.verify_branch_divergences_between_happy_path_and_alt_flows_are()
         uc.verify_refs_resolvable()
+        uc.verify_required_inputs_validated()
 
 

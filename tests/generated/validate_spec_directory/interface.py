@@ -50,7 +50,7 @@ class ValidateSpecDirectoryInterface(ABC):
         ...
 
     @abstractmethod
-    def verify_all_issues_are_reported_with_severity_category_a(self) -> None:
+    def verify_all_issues_are_reported_with_severity_category_and(self) -> None:
         ...
 
     @abstractmethod
@@ -67,4 +67,12 @@ class ValidateSpecDirectoryInterface(ABC):
 
     @abstractmethod
     def verify_kind_determines_schema(self) -> None:
+        ...
+
+    @abstractmethod
+    def verify_no_circular_refs(self) -> None:
+        ...
+
+    @abstractmethod
+    def verify_required_inputs_validated(self) -> None:
         ...

@@ -1,0 +1,80 @@
+kind: usecase
+metadata:
+  name: compose-use-cases
+  version: 0.1.0
+  owner: ucf-core
+  actor: framework
+  tags: [core, composition]
+
+requires:
+  - $ref: components/loaded-registry
+    as: loader
+    params:
+      specs_dir: $inputs.specs_dir
+
+preconditions:
+  - registry contains at least one use case with an extends field
+
+assumed_preconditions:
+  - registry contains at least one use case with an extends field
+
+steps:
+  - id: resolve
+    use: actions/resolve-uc-extends
+    input:
+      usecase: $inputs.usecase
+      registry: $loader.registry
+    output:
+      flattened: flattened
+      extends_chain: extends_chain
+      parent_step_ids: parent_step_ids
+
+alternative_flows:
+  - name: parent-not-found
+    trigger: extends reference does not resolve to a known use case
+    handles_error: PARENT_NOT_FOUND
+    steps:
+      - id: render-parent-error
+        use: actions/render-cli-output
+        input:
+          data:
+            message: parent use case not found
+            usecase: $inputs.usecase
+          format: tree
+
+  - name: circular-extends
+    trigger: extends chain contains a cycle
+    handles_error: CIRCULAR_EXTENDS
+    steps:
+      - id: render-cycle-error
+        use: actions/render-cli-output
+        input:
+          data:
+            message: circular extends chain detected
+            usecase: $inputs.usecase
+          format: tree
+
+  - name: step-id-clash
+    trigger: child step ID duplicates a parent step ID
+    handles_error: STEP_ID_CLASH
+    steps:
+      - id: render-clash-error
+        use: actions/render-cli-output
+        input:
+          data:
+            message: step ID conflict between parent and child
+            usecase: $inputs.usecase
+          format: tree
+
+postconditions:
+  - flattened UC has parent steps followed by child steps
+  - parent postconditions are preserved in the result
+  - extends chain is acyclic
+  - no step ID appears in both parent and child
+
+terminal: true
+
+invariants:
+  - $ref: invariants/no-circular-extends
+  - $ref: invariants/extends-no-step-id-clash
+  - $ref: invariants/required-inputs-validated

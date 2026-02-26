@@ -1,4 +1,18 @@
-"""UCF CLI — validate, trace, graph, and generate from specs."""
+"""UCF CLI — validate, trace, graph, generate, drift, and completeness from specs.
+
+@implements("actions/render-cli-output")
+@implements("use-cases/validate-spec-directory")
+@implements("use-cases/trace-data-flow")
+@implements("use-cases/detect-conflicts")
+@implements("use-cases/analyze-dependency-impact")
+@implements("use-cases/generate-test-code")
+@implements("use-cases/detect-spec-code-drift")
+@implements("use-cases/scaffold-specs-from-code")
+@implements("use-cases/browse-spec-catalog")
+@implements("use-cases/inspect-spec-detail")
+@implements("use-cases/explore-dependency-graph")
+@implements("use-cases/check-spec-completeness")
+"""
 
 from __future__ import annotations
 
@@ -409,6 +423,149 @@ def graph_mermaid(
     console.print(graph.to_mermaid())
 
 
+# ── ucf drift ─────────────────────────────────────────────────
+
+
+@app.command()
+def drift(
+    specs_dir: Path = typer.Argument(
+        ..., help="Path to specs directory", exists=True, file_okay=False,
+    ),
+    source_dir: Path = typer.Option(
+        "src", "--source", "-s", help="Root directory of source code to scan",
+    ),
+    pattern: list[str] = typer.Option(
+        ["**/*.py"], "--pattern", "-p", help="Glob patterns for source files",
+    ),
+) -> None:
+    """Detect spec↔code drift: unimplemented specs, orphan code, stale mappings."""
+    from ucf.drift.detector import DriftDetector
+    from ucf.drift.mapper import SpecCodeMapper
+    from ucf.drift.scanner import SourceScanner
+
+    console.print(f"\n[bold]UCF Drift Detect[/bold]: specs={specs_dir}  source={source_dir}\n")
+
+    registry, loaded, _ = _load_registry(specs_dir)
+
+    scanner = SourceScanner(source_dir, patterns=pattern)
+    scan_result = scanner.scan()
+    console.print(
+        f"  Scanned [green]{scan_result.scanned_count}[/green] files, "
+        f"found [green]{scan_result.marker_count}[/green] @implements markers\n"
+    )
+
+    mapper = SpecCodeMapper(registry, scan_result.implementations, convention="default")
+    spec_map = mapper.build()
+
+    detector = DriftDetector(registry, spec_map)
+    drift_result = detector.detect()
+
+    if drift_result.unimplemented_specs:
+        table = Table(title="Unimplemented Specs", show_lines=True)
+        table.add_column("Spec Ref")
+        table.add_column("Kind")
+        table.add_column("Detail")
+
+        for entry in drift_result.unimplemented_specs:
+            table.add_row(entry.ref, entry.kind, entry.detail)
+
+        console.print(table)
+        console.print()
+
+    if drift_result.orphan_code:
+        table = Table(title="Orphan Code (markers pointing to missing specs)", show_lines=True)
+        table.add_column("File")
+        table.add_column("Detail")
+
+        for entry in drift_result.orphan_code:
+            table.add_row(entry.ref, entry.detail)
+
+        console.print(table)
+        console.print()
+
+    if drift_result.stale_mappings:
+        table = Table(title="Stale Mappings", show_lines=True)
+        table.add_column("Ref")
+        table.add_column("Detail")
+
+        for entry in drift_result.stale_mappings:
+            table.add_row(entry.ref, entry.detail)
+
+        console.print(table)
+        console.print()
+
+    if drift_result.drift_count == 0:
+        console.print("  [green]No drift detected — all specs are mapped to implementations.[/green]\n")
+
+    console.print(
+        f"[bold]Summary:[/bold] "
+        f"{spec_map.mapped_count}/{len(spec_map.spec_to_code)} specs mapped · "
+        f"[red]{len(drift_result.unimplemented_specs)} unimplemented[/red] · "
+        f"[yellow]{len(drift_result.orphan_code)} orphan[/yellow] · "
+        f"[blue]{len(drift_result.stale_mappings)} stale[/blue]\n"
+    )
+
+    if drift_result.drift_count > 0:
+        raise typer.Exit(code=1)
+
+
+# ── ucf scaffold ──────────────────────────────────────────────
+
+
+@app.command()
+def scaffold(
+    source_dir: Path = typer.Argument(
+        ..., help="Path to Python source directory", exists=True, file_okay=False,
+    ),
+    output: Path = typer.Option(
+        "specs", "--output", "-o", help="Output directory for generated spec stubs",
+    ),
+    patterns: list[str] = typer.Option(
+        ["**/*.py"], "--pattern", "-p", help="Glob patterns for source files",
+    ),
+) -> None:
+    """Generate skeleton UCF specs from existing Python code (brownfield adoption)."""
+    from ucf.scaffold.scanner import ASTScanner
+    from ucf.scaffold.generator import SkeletonSpecGenerator
+
+    console.print(f"\n[bold]UCF Scaffold[/bold]: {source_dir} → {output}\n")
+
+    scanner = ASTScanner(source_dir, patterns)
+    scan_result = scanner.scan()
+
+    console.print(
+        f"  Scanned [green]{scan_result.scanned_count}[/green] files, "
+        f"found [cyan]{len(scan_result.functions)}[/cyan] functions "
+        f"and [cyan]{len(scan_result.classes)}[/cyan] classes\n"
+    )
+
+    if not scan_result.functions and not scan_result.classes:
+        console.print("  [yellow]No public functions or classes found.[/yellow]\n")
+        return
+
+    gen = SkeletonSpecGenerator(output)
+    gen_result = gen.generate(scan_result.functions, scan_result.classes)
+
+    if gen_result.action_specs:
+        tree = Tree("[bold]Generated action specs[/bold]")
+        for p in gen_result.action_specs:
+            tree.add(f"[green]{p}[/green]")
+        console.print(tree)
+
+    if gen_result.component_specs:
+        tree = Tree("[bold]Generated component specs[/bold]")
+        for p in gen_result.component_specs:
+            tree.add(f"[cyan]{p}[/cyan]")
+        console.print(tree)
+
+    console.print(
+        f"\n[bold]Summary:[/bold] "
+        f"{gen_result.specs_written} specs written "
+        f"({len(gen_result.action_specs)} actions, "
+        f"{len(gen_result.component_specs)} components)\n"
+    )
+
+
 # ── ucf info ──────────────────────────────────────────────────
 
 
@@ -448,6 +605,153 @@ def info(
 
     console.print(table)
     console.print()
+
+
+@app.command()
+def completeness(
+    specs_dir: Path = typer.Argument(
+        ..., help="Path to specs directory", exists=True, file_okay=False,
+    ),
+) -> None:
+    """Analyze spec completeness — find behavioral gaps in use case coverage."""
+    from ucf.completeness.engine import CompletenessEngine
+    from ucf.tracer.context import FindingSeverity
+
+    console.print(f"\n[bold]UCF Completeness[/bold]: {specs_dir}\n")
+
+    registry, loaded, _ = _load_registry(specs_dir)
+    engine = CompletenessEngine(registry)
+    report = engine.analyze()
+
+    # Error Reachability
+    if report.error_coverages:
+        console.print("[bold]A. Error Reachability[/bold]")
+        for ec in report.error_coverages:
+            status = "[green]✓[/green]" if ec.is_covered else "[red]✗[/red]"
+            console.print(
+                f"  {status} actions/{ec.action_name} error {ec.error_code}"
+            )
+            if ec.is_covered:
+                for src in ec.covered_by:
+                    console.print(f"      → covered by {src}")
+        console.print()
+
+    # Input Partition Coverage
+    uncovered_parts = [p for p in report.partition_coverages if not p.is_covered]
+    if report.partition_coverages:
+        console.print("[bold]B. Input Partition Coverage[/bold]")
+        console.print(
+            f"  {report.partitions_covered}/{report.partitions_total} partitions covered"
+        )
+        for pc in uncovered_parts[:10]:
+            console.print(
+                f"  [red]✗[/red] {pc.action_name}.{pc.field_name} "
+                f"partition '{pc.partition.name}'"
+            )
+        if len(uncovered_parts) > 10:
+            console.print(f"  ... and {len(uncovered_parts) - 10} more")
+        console.print()
+
+    # State Coverage
+    if report.state_graph:
+        console.print("[bold]C. State Coverage[/bold]")
+        console.print(
+            f"  {len(report.state_graph.states)} states, "
+            f"{len(report.state_graph.transitions)} transitions"
+        )
+        state_findings = [
+            f for f in report.findings
+            if f.category.value in ("unreachable_state", "dead_end_state")
+        ]
+        for sf in state_findings:
+            sev_style = "yellow" if sf.severity == FindingSeverity.WARNING else "blue"
+            console.print(f"  [{sev_style}]{sf.severity.value}[/{sev_style}] {sf.message}")
+        if not state_findings:
+            console.print("  [green]All states are reachable[/green]")
+        console.print()
+
+    # Platform Binding Completeness
+    if report.platform_scenarios:
+        console.print("[bold]D. Platform Binding Completeness[/bold]")
+        console.print(
+            f"  {report.scenarios_covered}/{report.scenarios_total} scenarios covered"
+        )
+        uncovered_scenarios = [s for s in report.platform_scenarios if not s.is_covered]
+        for ps in uncovered_scenarios[:10]:
+            console.print(
+                f"  [red]✗[/red] {ps.action_name} scenario '{ps.scenario}'"
+            )
+        if len(uncovered_scenarios) > 10:
+            console.print(f"  ... and {len(uncovered_scenarios) - 10} more")
+        console.print()
+
+    # Invariant Necessity
+    if report.invariant_coverages:
+        console.print("[bold]E. Invariant Necessity[/bold]")
+        console.print(
+            f"  {report.invariants_testable}/{report.invariants_total} invariants testable"
+        )
+        untestable = [i for i in report.invariant_coverages if not i.is_testable]
+        for ic in untestable:
+            console.print(
+                f"  [yellow]?[/yellow] {ic.invariant_name} — not exercised by any UC"
+            )
+        console.print()
+
+    # Resource Conflict Coverage
+    if report.resource_conflicts:
+        console.print("[bold]F. Resource Conflict Coverage[/bold]")
+        for rc in report.resource_conflicts:
+            status = "[green]guarded[/green]" if rc.is_guarded else "[red]unguarded[/red]"
+            console.print(
+                f"  {status} resource '{rc.resource}' "
+                f"writers: {', '.join(rc.writers)}"
+            )
+        console.print()
+
+    # Summary
+    warnings = sum(1 for f in report.findings if f.severity == FindingSeverity.WARNING)
+    infos = sum(1 for f in report.findings if f.severity == FindingSeverity.INFO)
+
+    console.print(
+        f"[bold]Summary:[/bold] "
+        f"[yellow]{warnings} warnings[/yellow] · "
+        f"[blue]{infos} info[/blue] · "
+        f"{report.gap_count} total gaps\n"
+    )
+
+
+@app.command()
+def web(
+    specs_dir: Path = typer.Argument(
+        "specs", help="Path to specs directory", exists=True, file_okay=False,
+    ),
+    host: str = typer.Option("127.0.0.1", help="Host to bind to"),
+    port: int = typer.Option(8000, help="Port to serve on"),
+    static_dir: Path | None = typer.Option(
+        None, "--static", help="Path to frontend build (web/dist)",
+    ),
+) -> None:
+    """Launch the UCF web dashboard."""
+    try:
+        import uvicorn
+    except ImportError:
+        console.print("[red]Install web extras: pip install ucf[web][/red]")
+        raise typer.Exit(1)
+
+    from ucf.web.app import create_app
+
+    if static_dir is None:
+        candidate = Path("web/dist")
+        if candidate.exists():
+            static_dir = candidate
+
+    _app = create_app(specs_dir, static_dir)
+    console.print(f"[green]UCF Dashboard[/green] → http://{host}:{port}")
+    console.print(f"  API docs → http://{host}:{port}/docs")
+    if static_dir:
+        console.print(f"  Frontend  → {static_dir}")
+    uvicorn.run(_app, host=host, port=port)
 
 
 if __name__ == "__main__":

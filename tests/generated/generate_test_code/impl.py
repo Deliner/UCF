@@ -59,15 +59,15 @@ class GenerateTestCodeImpl(GenerateTestCodeInterface):
         )
         return self._result
 
-    def action_render_result(self, *args: Any, **kwargs: Any) -> None:
+    def action_render_result(self, data: Any, format: Any) -> None:
         pass
 
-    def verify_for_each_usecase_interface_py_test_orchestrator(self) -> None:
+    def verify_for_each_usecase_interface_py_test_orchestrator_py_are(self) -> None:
         assert self._result is not None
         assert Path(self._result.interface_path).exists()
         assert Path(self._result.orchestrator_path).exists()
 
-    def verify_impl_py_stubs_are_created_only_if_they_do_not_alre(self) -> None:
+    def verify_impl_py_stubs_are_created_only_if_they_do_not_already_exist(self) -> None:
         assert self._result is not None
         impl_path = Path(self._result.impl_path)
         assert impl_path.exists()
@@ -81,7 +81,7 @@ class GenerateTestCodeImpl(GenerateTestCodeInterface):
         gen_result = engine.generate_usecase(uc)
         assert len(gen_result.files_skipped) >= 1
 
-    def verify_generated_code_is_deterministic_given_the_same_spe(self) -> None:
+    def verify_generated_code_is_deterministic_given_the_same_spec_input(self) -> None:
         assert self._result is not None
         content1 = Path(self._result.interface_path).read_text()
 
@@ -96,6 +96,13 @@ class GenerateTestCodeImpl(GenerateTestCodeInterface):
         safe_name = uc.metadata.name.replace("-", "_")
         content2 = (out2 / safe_name / "interface.py").read_text()
         assert content1 == content2
+
+    def verify_required_inputs_validated(self) -> None:
+        from pydantic import ValidationError
+        from ucf.models.action import ActionSpec
+        # Framework enforces required inputs via Pydantic: ActionSpec without metadata must fail
+        with pytest.raises(ValidationError):
+            ActionSpec.model_validate({})
 
 
 @pytest.fixture

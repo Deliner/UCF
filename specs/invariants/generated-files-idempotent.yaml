@@ -1,0 +1,20 @@
+kind: invariant
+metadata:
+  name: generated-files-idempotent
+  version: "1.0"
+  owner: ucf-framework
+  tags: [generator, filesystem]
+  severity: medium
+
+type: data
+
+rule: >
+  Generated file writes to the filesystem are idempotent — running the
+  generator twice with the same input produces identical output. impl.py
+  stubs are never overwritten if they already exist.
+
+applies_to:
+  - resource: filesystem
+  - action: actions/generate-tests
+  - action: actions/generate-negative-tests
+  - action: actions/generate-skeleton-specs

@@ -1,0 +1,30 @@
+kind: action
+metadata:
+  name: ui-interact-with-graph
+  version: 0.1.0
+  owner: ucf-core
+  tags: [web, ui, graph]
+
+platform:
+  ui:
+    steps:
+      - click: graph-node
+      - assert: tooltip visible with spec info
+
+input:
+  node_id:
+    type: string
+    required: true
+    description: id of the node to interact with
+
+output:
+  selected_node:
+    type: object
+    description: node data including kind, name, and connections
+  tooltip_visible:
+    type: boolean
+
+postconditions:
+  - clicked node is highlighted
+  - connected edges are emphasized
+  - tooltip shows node kind and name

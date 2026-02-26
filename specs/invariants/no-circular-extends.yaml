@@ -1,0 +1,11 @@
+kind: invariant
+metadata:
+  name: no-circular-extends
+  severity: high
+
+type: relationship
+
+rule: the extends chain of any use case must be acyclic — no UC may transitively extend itself
+
+applies_to:
+  - action: actions/resolve-uc-extends

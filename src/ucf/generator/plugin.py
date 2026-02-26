@@ -1,13 +1,24 @@
-"""Generator plugin protocol and engine."""
+"""Generator plugin protocol and engine.
+
+@implements("actions/generate-tests")
+@implements("invariants/generated-files-idempotent")
+"""
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 from ucf.models.usecase import UseCaseSpec
 from ucf.parser.registry import SpecRegistry
+
+_SAFE_NAME_RE = re.compile(r"[^a-z0-9_]")
+
+
+def _safe_module_name(name: str) -> str:
+    return _SAFE_NAME_RE.sub("_", name.lower().replace("-", "_"))
 
 
 @dataclass(frozen=True)
@@ -64,13 +75,13 @@ class GeneratorEngine:
 
     def generate_usecase(self, uc: UseCaseSpec) -> GenerationResult:
         result = GenerationResult(usecase_name=uc.metadata.name)
-        safe_name = uc.metadata.name.replace("-", "_")
+        safe_name = _safe_module_name(uc.metadata.name)
         uc_dir = self.output_dir / safe_name
         uc_dir.mkdir(parents=True, exist_ok=True)
 
         init_file = uc_dir / "__init__.py"
         if not init_file.exists():
-            init_file.write_text("")
+            init_file.write_text("", encoding="utf-8")
 
         generated_files = [
             self.plugin.generate_interface(uc, self.registry),
@@ -78,12 +89,24 @@ class GeneratorEngine:
             self.plugin.generate_impl_stub(uc, self.registry),
         ]
 
-        for gf in generated_files:
-            target = uc_dir / gf.path
-            if target.exists() and not gf.overwrite:
-                result.files_skipped.append(str(target))
-                continue
-            target.write_text(gf.content)
-            result.files_written.append(str(target))
+        written_paths: list[Path] = []
+        try:
+            for gf in generated_files:
+                target = (uc_dir / gf.path).resolve()
+                uc_dir_resolved = uc_dir.resolve()
+                if not str(target).startswith(str(uc_dir_resolved) + "/"):
+                    raise ValueError(
+                        f"Generated path escapes output directory: {gf.path}"
+                    )
+                if target.exists() and not gf.overwrite:
+                    result.files_skipped.append(str(target))
+                    continue
+                target.write_text(gf.content, encoding="utf-8")
+                written_paths.append(target)
+                result.files_written.append(str(target))
+        except Exception:
+            for p in written_paths:
+                p.unlink(missing_ok=True)
+            raise
 
         return result

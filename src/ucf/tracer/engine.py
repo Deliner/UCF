@@ -1,10 +1,12 @@
-"""Context Tracer — virtual machine that executes use cases on abstract entities."""
+"""Context Tracer — virtual machine that executes use cases on abstract entities.
+
+@implements("actions/trace-usecase")
+"""
 
 from __future__ import annotations
 
 from ucf.models.action import ActionSpec
 from ucf.models.component import ComponentSpec
-from ucf.models.invariant import InvariantSpec
 from ucf.models.usecase import UseCaseSpec
 from ucf.parser.registry import SpecRegistry
 from ucf.tracer.context import (
@@ -14,6 +16,7 @@ from ucf.tracer.context import (
     Finding,
     FindingCategory,
     FindingSeverity,
+    ReadEffect,
     SlotState,
     WriteEffect,
 )
@@ -28,6 +31,9 @@ class ContextTracer:
 
     def trace_usecase(self, uc: UseCaseSpec) -> list[Finding]:
         self.findings = []
+
+        uc = self._resolve_composition(uc)
+
         ctx = ContextSnapshot(step_id="init")
 
         self._apply_requires(ctx, uc)
@@ -38,15 +44,25 @@ class ContextTracer:
 
         self._verify_postconditions(ctx, uc)
 
+        alt_reads: set[str] = set()
         for alt_flow in uc.alternative_flows:
-            self._trace_alternative_flow(ctx, uc, alt_flow)
+            self._trace_alternative_flow(ctx, uc, alt_flow, alt_reads)
 
-        self._detect_dead_data(ctx, uc)
+        self._detect_dead_data(ctx, uc, alt_reads)
 
         return self.findings
 
+    def _resolve_composition(self, uc: UseCaseSpec) -> UseCaseSpec:
+        """If UC has extends, flatten it before tracing."""
+        if uc.extends is None:
+            return uc
+        from ucf.composition import resolve_extends
+        flattened, _chain, _parent_ids = resolve_extends(uc, self.registry)
+        return flattened
+
     def get_final_context(self, uc: UseCaseSpec) -> ContextSnapshot:
         """Build the final context snapshot after executing all steps."""
+        uc = self._resolve_composition(uc)
         ctx = ContextSnapshot(step_id="init")
         self._apply_requires(ctx, uc)
         for step in uc.steps:
@@ -95,17 +111,20 @@ class ContextTracer:
 
         action_ref = step.use
         action_spec = self.registry.resolve_ref(action_ref)
-        if isinstance(action_spec, ActionSpec):
-            for out_field in action_spec.output:
-                if out_field not in {w.field for w in writes}:
-                    pass
 
-        from ucf.tracer.context import ReadEffect
+        read_effects: list[ReadEffect] = []
+        for r in reads:
+            expected = ""
+            if isinstance(action_spec, ActionSpec):
+                field_def = action_spec.input.get(r)
+                if field_def is not None:
+                    if isinstance(field_def, dict):
+                        expected = field_def.get("type", "")
+                    elif hasattr(field_def, "type") and field_def.type:
+                        expected = field_def.type.value
+            read_effects.append(ReadEffect(field=r, expected_type=expected))
 
-        return ActionEffect(
-            reads=[ReadEffect(field=r) for r in reads],
-            writes=writes,
-        )
+        return ActionEffect(reads=read_effects, writes=writes)
 
     @staticmethod
     def _collect_reads(value, reads: list[str]) -> None:
@@ -193,6 +212,7 @@ class ContextTracer:
 
     def _trace_alternative_flow(
         self, main_ctx: ContextSnapshot, uc: UseCaseSpec, alt_flow,
+        alt_reads: set[str] | None = None,
     ) -> None:
         branch_ctx = ContextSnapshot(step_id="init")
         self._apply_requires(branch_ctx, uc)
@@ -205,6 +225,9 @@ class ContextTracer:
 
         for step in alt_flow.steps:
             effect = self._build_effect(step)
+            if alt_reads is not None:
+                for r in effect.reads:
+                    alt_reads.add(r.field)
             branch_ctx = self._execute_step(branch_ctx, step.id, effect)
 
         self._check_branch_compatibility(main_ctx, branch_ctx, alt_flow.name)
@@ -246,9 +269,14 @@ class ContextTracer:
                     suggestion="Verify both constraint values are valid for downstream steps",
                 ))
 
-    def _detect_dead_data(self, ctx: ContextSnapshot, uc: UseCaseSpec) -> None:
+    def _detect_dead_data(
+        self, ctx: ContextSnapshot, uc: UseCaseSpec,
+        alt_reads: set[str] | None = None,
+    ) -> None:
         for name, slot in ctx.slots.items():
             if slot.source_step.startswith("component:"):
+                continue
+            if alt_reads and name in alt_reads:
                 continue
             if not slot.read_by:
                 self.findings.append(Finding(
@@ -298,33 +326,3 @@ class CrossUseCaseAnalyzer:
         return findings
 
 
-class StateMachineVerifier:
-    """Verifies state machine transitions against declared transition tables."""
-
-    def __init__(self, registry: SpecRegistry) -> None:
-        self.registry = registry
-        self._tables: dict[tuple[str, str], dict[str, list[str]]] = {}
-        self._load_tables()
-
-    def _load_tables(self) -> None:
-        for inv in self.registry.invariants():
-            if inv.type.value == "state-machine" and inv.entity and inv.field and inv.transitions:
-                self._tables[(inv.entity, inv.field)] = inv.transitions
-
-    def verify_usecase(self, uc: UseCaseSpec) -> list[Finding]:
-        findings: list[Finding] = []
-
-        for (entity, field_name), allowed in self._tables.items():
-            for step in uc.steps:
-                action = self.registry.resolve_ref(step.use)
-                if not isinstance(action, ActionSpec):
-                    continue
-
-                for w in action.writes:
-                    if w.resource == entity and w.by == field_name:
-                        # This step mutates a state machine field —
-                        # we could trace the value from step.input
-                        # but for now we note it as tracked.
-                        pass
-
-        return findings

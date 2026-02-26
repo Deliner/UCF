@@ -1,0 +1,103 @@
+kind: usecase
+metadata:
+  name: browse-spec-catalog
+  version: 0.1.0
+  owner: ucf-core
+  actor: developer
+  tags: [web, catalog]
+
+requires:
+  - $ref: components/loaded-registry
+    as: loader
+    params:
+      specs_dir: $inputs.specs_dir
+
+preconditions:
+  - registry contains at least one spec
+
+assumed_preconditions:
+  - registry contains at least one spec
+
+steps:
+  - id: list-specs
+    use: actions/list-spec-catalog
+    input:
+      registry: $loader.registry
+      kind_filter: $inputs.kind_filter
+      search_query: $inputs.search_query
+    output:
+      specs: specs
+      total_count: total_count
+      kind_counts: kind_counts
+
+  - id: render-results
+    use: actions/render-cli-output
+    depends_on: [list-specs]
+    input:
+      data:
+        specs: $steps.list-specs.specs
+        total_count: $steps.list-specs.total_count
+        kind_counts: $steps.list-specs.kind_counts
+      format: table
+
+alternative_flows:
+  - name: no-filter
+    trigger: kind_filter and search_query are both absent
+    steps:
+      - id: list-all
+        use: actions/list-spec-catalog
+        input:
+          registry: $loader.registry
+        output:
+          specs: specs
+          total_count: total_count
+          kind_counts: kind_counts
+      - id: render-all
+        use: actions/render-cli-output
+        depends_on: [list-all]
+        input:
+          data:
+            specs: $steps.list-all.specs
+            total_count: $steps.list-all.total_count
+
+  - name: no-results
+    trigger: search returns zero matches
+    steps:
+      - id: render-empty
+        use: actions/render-cli-output
+        input:
+          data:
+            message: no specs match the current filter
+          format: table
+
+  - name: registry-not-loaded
+    trigger: registry has not been initialized when catalog endpoint is called
+    handles_error: REGISTRY_NOT_LOADED
+    steps:
+      - id: render-registry-error
+        use: actions/render-cli-output
+        input:
+          data:
+            error: registry not loaded
+          format: table
+
+  - name: invalid-kind-filter
+    trigger: kind_filter value is not a recognized spec kind
+    handles_error: INVALID_KIND_FILTER
+    steps:
+      - id: render-kind-error
+        use: actions/render-cli-output
+        input:
+          data:
+            error: unrecognized kind filter
+          format: table
+
+postconditions:
+  - developer receives a list of specs matching the filter
+  - spec counts per kind are reported
+  - empty result shows a clear message
+
+terminal: true
+
+invariants:
+  - $ref: invariants/required-inputs-validated

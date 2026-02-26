@@ -1,0 +1,49 @@
+kind: action
+metadata:
+  name: build-graph-json
+  version: 0.1.0
+  owner: ucf-core
+  tags: [web, api, graph]
+
+platform:
+  http:
+    method: GET
+    path: /api/graph
+  cli:
+    command: ucf graph
+
+input:
+  registry:
+    type: object
+    required: true
+  graph:
+    type: object
+    required: true
+    description: built DependencyGraph
+
+output:
+  nodes:
+    type: array
+    description: list of graph nodes with id, kind, name, and group
+  links:
+    type: array
+    description: list of edges with source, target, and type
+  node_count:
+    type: integer
+  edge_count:
+    type: integer
+
+errors:
+  - code: REGISTRY_NOT_LOADED
+    status: 503
+    condition: registry has not been initialized
+    description: registry has not been initialized yet
+
+preconditions:
+  - graph is built from registry
+
+postconditions:
+  - every spec in registry appears as a node
+  - every dependency edge appears as a link
+  - nodes have kind and name fields
+  - links have source and target referencing valid node ids

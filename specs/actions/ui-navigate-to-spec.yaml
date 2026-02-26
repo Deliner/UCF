@@ -1,0 +1,29 @@
+kind: action
+metadata:
+  name: ui-navigate-to-spec
+  version: 0.1.0
+  owner: ucf-core
+  tags: [web, ui, navigation]
+
+platform:
+  ui:
+    steps:
+      - click: spec-row
+      - assert: url contains spec kind and name
+
+input:
+  spec_kind:
+    type: string
+    required: true
+  spec_name:
+    type: string
+    required: true
+
+output:
+  navigated:
+    type: boolean
+    description: true when the browser navigated to spec detail
+
+postconditions:
+  - browser URL reflects selected spec
+  - spec detail page is displayed

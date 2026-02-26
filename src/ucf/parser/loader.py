@@ -1,4 +1,8 @@
-"""YAML spec loader with $ref resolution."""
+"""YAML spec loader with $ref resolution.
+
+@implements("actions/load-yaml-file")
+@implements("actions/resolve-refs")
+"""
 
 from __future__ import annotations
 
@@ -39,7 +43,7 @@ class SpecLoader:
             try:
                 spec = self.load_file(yaml_path)
                 results.append((yaml_path, spec))
-            except (SpecParseError, RefResolutionError) as exc:
+            except (SpecParseError, RefResolutionError, yaml.YAMLError) as exc:
                 errors.append(
                     SpecParseError(str(exc), path=str(yaml_path))
                 )
@@ -76,7 +80,7 @@ class SpecLoader:
         if not resolved.exists():
             raise SpecParseError(f"File not found: {path}", path=str(path))
 
-        with open(resolved) as f:
+        with open(resolved, encoding="utf-8") as f:
             data = yaml.safe_load(f)
 
         if not isinstance(data, dict):
@@ -89,7 +93,7 @@ class SpecLoader:
         return data
 
     def _resolve_refs(self, data: Any, source: Path, depth: int) -> Any:
-        if depth > self.MAX_REF_DEPTH:
+        if depth >= self.MAX_REF_DEPTH:
             raise RefResolutionError(
                 "<nested>", str(source),
                 f"Maximum $ref depth ({self.MAX_REF_DEPTH}) exceeded",
@@ -122,4 +126,11 @@ class SpecLoader:
             if not candidate.exists():
                 candidate = source.parent / f"{ref}.yaml"
 
-        return candidate.resolve()
+        resolved = candidate.resolve()
+        base_resolved = self.base_dir.resolve()
+        if not str(resolved).startswith(str(base_resolved) + "/") and resolved != base_resolved:
+            raise RefResolutionError(
+                ref, str(source),
+                f"$ref resolves outside base directory: {resolved}",
+            )
+        return resolved

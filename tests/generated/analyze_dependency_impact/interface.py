@@ -57,7 +57,7 @@ class AnalyzeDependencyImpactInterface(ABC):
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_all_direct_and_transitive_dependents_of_target_are(self) -> None:
+    def verify_all_direct_and_transitive_dependents_of_target_are_listed(self) -> None:
         ...
 
     @abstractmethod
@@ -70,4 +70,8 @@ class AnalyzeDependencyImpactInterface(ABC):
 
     @abstractmethod
     def verify_graph_acyclic(self) -> None:
+        ...
+
+    @abstractmethod
+    def verify_required_inputs_validated(self) -> None:
         ...
