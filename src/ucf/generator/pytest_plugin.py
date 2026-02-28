@@ -101,21 +101,15 @@ def _extract_type_from_field(field_def: Any) -> str:
 
 
 def _translate_expression(expr: str) -> str:
-    """Translates YAML bindings in expressions to Python variables."""
-    def replacer(match):
-        binding = match.group(0)
-        parts = binding.split(".")
-        if parts[0] == "$inputs" and len(parts) >= 2:
-            field = parts[1]
-            return f"inputs.get('{field}')"
-        elif parts[0] == "$steps" and len(parts) >= 3:
-            step_var = _to_snake(parts[1])
-            fields = ".".join(_to_snake(p) for p in parts[2:])
-            return f"{step_var}.{fields}"
-        return binding
-
-    # Regex to find bindings starting with $
+    """Translates YAML bindings in expressions to Python variables.
+    
+    Uses _resolve_binding for $steps, $requires, and $inputs.
+    """
     pattern = r'\$[a-zA-Z0-9_\-\.]+'
+
+    def replacer(match: re.Match[str]) -> str:
+        return _resolve_binding(match.group(0))
+
     return re.sub(pattern, replacer, expr)
 
 
@@ -130,7 +124,12 @@ def _resolve_binding(val: str) -> str:
         return repr(val)
     parts = val[1:].split(".")
     if parts[0] == "inputs" and len(parts) >= 2:
-        return "None"
+        # Use inputs.get() for kwargs compatibility in orchestrator
+        if len(parts) == 2:
+            return f"inputs.get('{parts[1]}')"
+        # Nested: inputs.get('a', {}).get('b', {}).get('c')
+        chain = ".get('" + "', {}).get('".join(parts[1:]) + "')"
+        return f"inputs{chain}"
     if parts[0] == "steps" and len(parts) >= 3:
         # parts[1] = step_id, parts[2:] = nested field access
         step_var = _to_snake(parts[1])
