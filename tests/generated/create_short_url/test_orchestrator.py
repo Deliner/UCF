@@ -45,8 +45,7 @@ class TestAltInvalidUrl:
         self, uc: CreateShortUrlInterface,
     ) -> None:
 
-        # Framework action called directly (no need for action_return_error stub)
-        uc.render_cli_output(data={'error': 'invalid URL format'}, format='json')
+        return_error = uc.action_return_error(data={'error': 'invalid URL format'}, format='json')
 
 
 class TestAltSlugCollision:

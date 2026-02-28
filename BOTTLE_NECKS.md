@@ -65,24 +65,59 @@ redirect(lookup_url.url_record.original_url)  # Correct! Nested field
 ## 🔴 OPEN
 
 ### #1: No retry/loop mechanism
-**Severity**: 🔴 High  
-**Impact**: Can't handle transient failures or collisions
+**Status**: 🟡 PARTIAL (model added, generator not yet updated)
 
-**Scenario**: URL Shortener slug collision
+**Problem**: Can't handle transient failures or collisions without duplicating steps in alt flows
+
+**Solution Design**: Added `retry` config to `StepDef`:
 ```yaml
 steps:
   - id: generate-slug
     use: actions/generate-slug
-  
-  - id: check-exists
-    use: actions/check-slug-exists
-    # ❌ If exists, need to retry generate-slug
-    # But no way to loop back!
+    retry:
+      max_attempts: 5
+      on_error: SLUG_ALREADY_EXISTS
+      backoff: exponential
+      initial_delay_ms: 100
 ```
 
-**Workaround**: Create separate `retry-generate` action in alt flow (duplicates logic)
+**Model Added**:
+```python
+class RetryConfig(BaseModel):
+    max_attempts: int = Field(ge=1, le=100)
+    on_error: str | list[str]  # Error code(s) that trigger retry
+    backoff: Literal["constant", "linear", "exponential"] = "constant"
+    initial_delay_ms: int = Field(default=1000, ge=0)
+```
 
-**Required**: `retry:` or `loop:` directive in steps
+**Before** (workaround):
+```yaml
+alternative_flows:
+  - name: slug-collision
+    steps:
+      - id: retry-generate
+        use: actions/generate-slug  # ❌ Duplicates main flow logic
+```
+
+**After** (desired):
+```python
+# Generated orchestrator should wrap step in retry loop
+for attempt in range(1, 6):  # max_attempts=5
+    try:
+        generate_slug = uc.action_generate_slug(length=8)
+        break
+    except SlugAlreadyExistsError:
+        if attempt == 5:
+            raise MaxRetriesExceededError()
+        time.sleep(0.1 * (2 ** (attempt - 1)))  # exponential backoff
+```
+
+**Remaining Work**:
+1. ✅ Model updated with `RetryConfig`
+2. ✅ Validator accepts `retry` in YAML
+3. ⏳ Tracer should show retry metadata
+4. ⏳ Generator should wrap step in retry loop
+5. ⏳ Completeness analyzer should verify error codes match
 
 
 ### #3: Generator doesn't generate real test inputs
@@ -237,15 +272,15 @@ elif isinstance(binding, str) and binding.startswith("$"):
 
 | ID | Issue | Severity | Status |
 |----|-------|----------|--------|
-| #1 | No retry/loop | 🔴 High | Open |
-| #2 | Alt flows can't use framework actions | 🔴 High | ✅ Partial (base class done) |
+| #1 | No retry/loop | 🔴 High | 🟡 Partial (model added) |
+| #2 | Alt flows can't use framework actions | 🔴 High | 🟡 Partial (base class done) |
 | #3 | No real test inputs | 🟡 Medium | Open |
 | #4 | Alt triggers not verified | 🟡 Medium | Open |
 | #5 | Nested field access | 🟢 Low | ✅ Fixed |
 | #6 | `concurrency` ignored | 🟡 Medium | Open |
 | #7 | No type checking | 🟡 Medium | Open |
 | #8 | No for_each | 🟡 Medium | Open |
-| #9 | No locking | 🔴 Critical | ✅ Partial (POC done) |
+| #9 | No locking | 🔴 Critical | 🟡 Partial (POC done) |
 | #10 | Bad arg generation | 🟡 Medium | ✅ Fixed |
 
-**Total**: 3 fixed, 2 partial, 5 open (1 critical/high, 5 medium)
+**Total**: 2 fixed, 3 partial, 5 open (0 critical/high, 5 medium)

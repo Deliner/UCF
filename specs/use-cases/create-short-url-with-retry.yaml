@@ -1,0 +1,93 @@
+kind: usecase
+metadata:
+  name: create-short-url-with-retry
+  version: 0.2.0
+  owner: url-shortener
+  actor: user
+  tags: [shortener, core, retry]
+  description: Create short URL with automatic retry on slug collision (demonstrates retry primitive)
+
+input_from_event:
+  original_url: original_url
+  created_by: created_by
+
+preconditions:
+  - original URL is provided
+  - URL is valid HTTP(S) URL
+
+assumed_preconditions:
+  - original URL is provided
+
+steps:
+  - id: validate-url
+    use: actions/validate-url
+    input:
+      url: $inputs.original_url
+    output:
+      is_valid: is_valid
+      error_message: error_message
+
+  - id: generate-slug
+    use: actions/generate-slug
+    depends_on: [validate-url]
+    input:
+      length: 8
+    output:
+      slug: slug
+    retry:
+      max_attempts: 5
+      on_error: SLUG_ALREADY_EXISTS
+      backoff: exponential
+      initial_delay_ms: 100
+
+  - id: check-exists
+    use: actions/check-slug-exists
+    depends_on: [generate-slug]
+    input:
+      slug: $steps.generate-slug.slug
+    output:
+      exists: exists
+
+  - id: store-url
+    use: actions/store-short-url
+    depends_on: [check-exists]
+    input:
+      slug: $steps.generate-slug.slug
+      original_url: $inputs.original_url
+      created_by: $inputs.created_by
+    output:
+      id: url_id
+      short_url: short_url
+
+postconditions:
+  - short URL is created and stored
+  - short URL uses generated slug
+  - slug is unique in database
+
+alternative_flows:
+  - name: invalid-url
+    trigger: URL validation fails
+    handles_error: INVALID_URL_FORMAT
+    steps:
+      - id: return-error
+        use: actions/render-cli-output
+        input:
+          data:
+            error: invalid URL format
+          format: json
+
+  - name: max-retries-exceeded
+    trigger: failed to generate unique slug after max attempts
+    steps:
+      - id: return-error
+        use: actions/render-error-response
+        input:
+          error_code: MAX_RETRIES_EXCEEDED
+          message: could not generate unique slug
+          context:
+            max_attempts: 5
+
+terminal: true
+
+invariants:
+  - $ref: invariants/required-inputs-validated
