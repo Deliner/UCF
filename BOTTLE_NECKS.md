@@ -457,93 +457,27 @@ transaction:
 ---
 
 ### #13: No conditional steps / state machine guards
-**Status**: 🔴 OPEN  
+**Status**: ✅ FIXED (Eval-Expression implementation)  
 **Severity**: 🔴 CRITICAL  
 **Found by**: Approval Workflow (multi-actor, state machine)
 
-**Problem**: UCF has no syntax for:
-1. Conditional step execution (if/else logic)
-2. State machine guards (preconditions on transitions)
-3. Boolean expressions in bindings
+**Problem**: UCF executed all steps sequentially without the ability to branch logic or evaluate state machine guards.
 
-**Attempted syntax** (not supported):
-```yaml
-# 1. Guards for state machine
-guards:
-  - field: report.status
-    equals: pending_manager_approval    # ❌ Unknown field!
-  - field: approver.role
-    equals: manager                     # ❌ Unknown field!
+**Solution**:
+Added `when:` and `skip_if:` fields to `StepDef`. These accept python-like expressions evaluated at test execution time.
+- `$inputs` are translated to `inputs.get()`
+- `$steps` are translated to step output variables
+- Supported by parser, code generator, and tracer.
 
-# 2. Conditional step execution
-steps:
-  - id: route-to-admin
-    when: $steps.check.requires_admin == true   # ❌ Unknown field!
-    
-  - id: auto-approve
-    when: $steps.check.requires_admin == false  # ❌ Unknown field!
-```
-
-**Current behavior**:
-- `validate` passes (0 errors)
-- `trace` **executes ALL steps** (ignores `when`)
-- Both `route-to-admin` AND `auto-approve` run (should be exclusive!)
-
-**Real-world impact**:
-```
-Approval Workflow:
-1. Manager approves report
-2. Check threshold: amount > $5000 → requires_admin=true
-3. ??? Route to admin OR auto-approve?
-
-Current: BOTH steps execute! (data race, duplicate actions)
-Desired: IF requires_admin THEN route-to-admin ELSE auto-approve
-```
-
-**Required primitives**:
-
-**Option A**: When clause on steps:
+**Example**:
 ```yaml
 steps:
-  - id: route-to-admin
-    when: $steps.check.requires_admin == true
-    use: actions/send-approval-request
-    
-  - id: auto-approve
-    when: $steps.check.requires_admin == false
-    use: actions/finalize-approval
+  - id: check-risk
+    use: actions/fraud-check
+  - id: manual-review
+    use: actions/request-manual-review
+    when: $steps.check-risk.score > 90
 ```
-
-**Option B**: If/else blocks:
-```yaml
-steps:
-  - id: check-threshold
-    use: actions/check-approval-threshold
-  
-  - if: $steps.check-threshold.requires_admin
-    then:
-      - id: route-to-admin
-        use: actions/send-approval-request
-    else:
-      - id: auto-approve
-        use: actions/finalize-approval
-```
-
-**Option C**: State machine with guards:
-```yaml
-guards:
-  - $context.report.status == "pending"
-  - $context.approver.role == "manager"
-  
-steps: [...]
-```
-
-**Impact**: Can't express:
-- Conditional logic (if/else)
-- State machine transitions
-- Multi-actor coordination
-- Approval workflows
-- Feature flags
 
 ---
 
@@ -1243,4 +1177,4 @@ concurrency:
 
 ---
 
-**Total**: 2 fixed, 3 partial, 19 open (9 critical/high, 10 medium)
+**Total**: 3 fixed, 3 partial, 18 open (8 critical/high, 10 medium)
