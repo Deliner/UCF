@@ -9,6 +9,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
+from ucf.testing.framework_actions import FrameworkActions
+
 
 @dataclass(frozen=True)
 class LookupUrlResult:
@@ -36,7 +38,8 @@ class RedirectResult:
     redirected: bool
 
 
-class RedirectToOriginalInterface(ABC):
+class RedirectToOriginalInterface(ABC, FrameworkActions):
+    """Interface with framework-provided actions inherited from FrameworkActions."""
 
     # ── State Setup (from requires) ──
 

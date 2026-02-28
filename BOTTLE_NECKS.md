@@ -4,6 +4,43 @@ Found by implementing **URL Shortener** product (Feb 2026).
 
 ## 🟢 FIXED
 
+### #2: Alternative flows can't use framework actions
+**Status**: ✅ PARTIALLY FIXED with `FrameworkActions` base class
+
+**Problem**: Generator treated *all* actions as "to be implemented", even framework-provided ones like `render-cli-output`
+
+**Solution**: 
+1. Created `FrameworkActions` base class with framework methods:
+   - `render_error_response()`
+   - `render_cli_output()`
+   - `render_http_response()`
+2. Updated interface template to inherit from `FrameworkActions`
+3. Impl classes can now call `self.render_cli_output()` directly
+
+**Before**:
+```python
+# Generated orchestrator
+def test_invalid_url(uc):
+    uc.action_return_error(...)  # ❌ Not implemented!
+
+# Impl needed manual stub
+def action_return_error(self, data, format):
+    pass  # Stub
+```
+
+**After**:
+```python
+# Manual orchestrator (generator not yet updated)
+def test_invalid_url(uc):
+    uc.render_cli_output(...)  # ✅ Framework method!
+
+# No stub needed in impl
+```
+
+**Remaining work**: Update orchestrator generator to detect framework actions and call them directly
+
+---
+
 ### #5: Nested field access in generator
 **Status**: ✅ FIXED in `pytest_plugin.py`
 
@@ -47,27 +84,6 @@ steps:
 
 **Required**: `retry:` or `loop:` directive in steps
 
----
-
-### #2: Alternative flows can't use framework actions
-**Severity**: 🔴 High  
-**Impact**: Can't reuse `render-cli-output`, `render-http-response` in errors
-
-**Scenario**:
-```yaml
-alternative_flows:
-  - name: invalid-url
-    steps:
-      - id: return-error
-        use: actions/render-cli-output  # ❌ Generates action_return_error()
-        # Should call framework render method!
-```
-
-**Problem**: Generator treats *all* actions as "to be implemented", even framework-provided ones
-
-**Fix needed**: Mark certain actions as `framework: true` in metadata
-
----
 
 ### #3: Generator doesn't generate real test inputs
 **Severity**: 🟡 Medium  
@@ -211,14 +227,14 @@ action_acquire_click_lock(resource='short_urls', None, timeout=5000)
 | ID | Issue | Severity | Status |
 |----|-------|----------|--------|
 | #1 | No retry/loop | 🔴 High | Open |
-| #2 | Alt flows can't use framework actions | 🔴 High | Open |
+| #2 | Alt flows can't use framework actions | 🔴 High | ✅ Partial (base class done) |
 | #3 | No real test inputs | 🟡 Medium | Open |
 | #4 | Alt triggers not verified | 🟡 Medium | Open |
 | #5 | Nested field access | 🟢 Low | ✅ Fixed |
 | #6 | `concurrency` ignored | 🟡 Medium | Open |
 | #7 | No type checking | 🟡 Medium | Open |
 | #8 | No for_each | 🟡 Medium | Open |
-| #9 | No locking | 🔴 Critical | Partial (POC done) |
+| #9 | No locking | 🔴 Critical | ✅ Partial (POC done) |
 | #10 | Bad arg generation | 🟡 Medium | Open |
 
-**Total**: 1 fixed, 9 open (3 critical/high, 6 medium)
+**Total**: 2 fixed, 2 partial, 6 open (1 critical/high, 6 medium)

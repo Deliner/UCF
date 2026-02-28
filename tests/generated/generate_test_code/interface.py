@@ -9,6 +9,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
+from ucf.testing.framework_actions import FrameworkActions
+
 
 @dataclass(frozen=True)
 class LoaderContext:
@@ -25,7 +27,8 @@ class GenerateResult:
     files_written: int
 
 
-class GenerateTestCodeInterface(ABC):
+class GenerateTestCodeInterface(ABC, FrameworkActions):
+    """Interface with framework-provided actions inherited from FrameworkActions."""
 
     # ── State Setup (from requires) ──
 

@@ -9,6 +9,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
+from ucf.testing.framework_actions import FrameworkActions
+
 
 @dataclass(frozen=True)
 class FetchStatsResult:
@@ -19,7 +21,8 @@ class FetchStatsResult:
     created_by: str
 
 
-class GetUrlStatsInterface(ABC):
+class GetUrlStatsInterface(ABC, FrameworkActions):
+    """Interface with framework-provided actions inherited from FrameworkActions."""
 
     # ── State Setup (from requires) ──
 

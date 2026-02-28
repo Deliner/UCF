@@ -9,6 +9,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
+from ucf.testing.framework_actions import FrameworkActions
+
 
 {% for dc in dataclasses %}
 @dataclass(frozen=True)
@@ -22,7 +24,8 @@ class {{ dc.class_name }}:
 
 
 {% endfor %}
-class {{ interface_class }}(ABC):
+class {{ interface_class }}(ABC, FrameworkActions):
+    """Interface with framework-provided actions inherited from FrameworkActions."""
 {% if not (setup_methods or action_methods or verify_methods) %}
     pass
 {% endif %}

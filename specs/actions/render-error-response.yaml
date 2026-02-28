@@ -1,0 +1,42 @@
+kind: action
+metadata:
+  name: render-error-response
+  version: 0.1.0
+  owner: ucf-core
+  tags: [framework, error-handling]
+  framework: true
+  description: Framework-provided action for rendering error responses
+
+platform:
+  http:
+    method: RESPONSE
+    status: 4xx|5xx
+  cli:
+    exit_code: 1
+
+input:
+  error_code:
+    type: string
+    required: true
+    description: error code (e.g., INVALID_URL_FORMAT)
+  message:
+    type: string
+    required: true
+    description: human-readable error message
+  context:
+    type: object
+    required: false
+    description: additional error context
+
+output:
+  rendered:
+    type: boolean
+    description: whether error was rendered
+
+preconditions:
+  - error_code is not empty
+  - message is not empty
+
+postconditions:
+  - error is rendered to appropriate output (HTTP response or CLI)
+  - execution terminates after rendering

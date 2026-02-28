@@ -9,6 +9,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
+from ucf.testing.framework_actions import FrameworkActions
+
 
 @dataclass(frozen=True)
 class LoaderContext:
@@ -43,7 +45,8 @@ class ToggleViewResult:
     active_view: str
 
 
-class ExploreDependencyGraphWebInterface(ABC):
+class ExploreDependencyGraphWebInterface(ABC, FrameworkActions):
+    """Interface with framework-provided actions inherited from FrameworkActions."""
 
     # ── State Setup (from requires) ──
 

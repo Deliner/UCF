@@ -105,11 +105,8 @@ def create_short_url_impl() -> CreateShortUrlImpl:
     
     impl.action_store_url = store_with_default
     
-    # Add missing action_return_error for alt flow
-    def action_return_error(data, format):
-        impl._alt_error = data
-    
-    impl.action_return_error = action_return_error
+    # No need for action_return_error stub!
+    # Alt flow can now call self.render_cli_output() directly (inherited from FrameworkActions)
     
     # Add missing action_retry_generate for alt flow
     def action_retry_generate(length):

@@ -9,6 +9,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
+from ucf.testing.framework_actions import FrameworkActions
+
 
 @dataclass(frozen=True)
 class LoaderContext:
@@ -24,7 +26,8 @@ class ListSpecsResult:
     kind_counts: Any
 
 
-class BrowseSpecCatalogInterface(ABC):
+class BrowseSpecCatalogInterface(ABC, FrameworkActions):
+    """Interface with framework-provided actions inherited from FrameworkActions."""
 
     # ── State Setup (from requires) ──
 

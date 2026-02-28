@@ -9,6 +9,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
+from ucf.testing.framework_actions import FrameworkActions
+
 
 @dataclass(frozen=True)
 class ValidateUrlResult:
@@ -32,7 +34,8 @@ class StoreUrlResult:
     short_url: str
 
 
-class CreateShortUrlInterface(ABC):
+class CreateShortUrlInterface(ABC, FrameworkActions):
+    """Interface with framework-provided actions inherited from FrameworkActions."""
 
     # ── State Setup (from requires) ──
 
