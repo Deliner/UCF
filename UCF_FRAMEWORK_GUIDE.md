@@ -167,37 +167,50 @@ triggers:
 
 ---
 
-### 4. **Component** — Reusable Step Sequence
+### 4. **Component** — Stateful Business Entity
 
-**What**: Encapsulated sequence of steps (like a function).
+⚠️ **DESIGN WARNING**: Component is the most controversial primitive. Use sparingly.
+
+**What**: Stateful business entity shared across use cases.
+
+**Critical Rule**: Component must represent **business concept**, NOT infrastructure.
 
 **Examples**:
-- ✅ `email-sender` (SMTP connection, template rendering, sending)
-- ✅ `database-connection` (connect, health check, pool mgmt)
-- ❌ `user-registration-flow` (that's a use case!)
+- ✅ `shopping-cart` (business entity with total, items)
+- ✅ `payment-processor` (business transaction state)
+- ✅ `document-editor` (business state: content, version)
+- ❌ `email-sender` (infrastructure — hide in action implementation!)
+- ❌ `database-connection` (infrastructure — implicit in actions!)
+- ❌ `cache-manager` (infrastructure — implementation detail!)
 
 **Key Fields**:
 ```yaml
 kind: component
 metadata:
-  name: email-sender
+  name: shopping-cart  # ← Business concept!
 parameters:
-  smtp_host: string
-  port: integer
+  user_id: string
 provides:
-  is_connected: boolean
-  send_count: integer
+  total: number         # ← Business state
+  item_count: integer   # ← Business state
 steps:
-  - id: connect
-    use: actions/smtp-connect
-  - id: verify
-    use: actions/smtp-verify
+  - id: calculate-total
+    use: actions/sum-item-prices
 ```
 
 **Rules**:
-- Use for **infrastructure concerns** (DB, cache, messaging)
-- Use in `requires:` section of use cases
-- Components have **state** (unlike actions)
+- **ONLY** for **business entities** (user understands what it is)
+- Must have **business state** (total, count), NOT technical state (is_connected)
+- Used when **multiple use cases** need same stateful entity
+- **AVOID** for infrastructure (SMTP, DB, cache) — those belong in implementation
+
+**Alternative (Preferred)**: Hide infrastructure in action implementations:
+```yaml
+# Instead of requiring 'email-sender' component:
+steps:
+  - id: send-email
+    use: actions/send-welcome-email  # ← SMTP hidden inside
+```
 
 ---
 
@@ -794,6 +807,64 @@ terminal: true
 2. Steps are **domain operations** (validate, create, send)
 3. Implementation hidden (bcrypt, SMTP inside actions)
 4. Verifiable postconditions
+
+---
+
+## Known Design Flaws
+
+### Flaw #1: Component Abstraction Leak
+
+**Problem**: Current Component primitive mixes infrastructure (SMTP, DB) with business concepts (shopping cart).
+
+**Impact**: Specs become coupled to implementation details.
+
+**Example of leak**:
+```yaml
+requires:
+  - $ref: components/email-sender
+    params:
+      smtp_host: smtp.gmail.com  # ← Business knows about SMTP!
+```
+
+**Proposed Fix**: 
+- Component should ONLY be for business entities
+- Infrastructure should be implicit in action implementations
+- Add `requires_capabilities:` to actions instead
+
+**Workaround**: Avoid Component for infrastructure. Hide it in actions.
+
+---
+
+### Flaw #2: No Clear Boundary Between Action and UseCase
+
+**Problem**: When should multi-step logic be an action vs a use case?
+
+**Current guideline**: If it has an actor → UseCase. If not → Action or Component.
+
+**Gray area**:
+```yaml
+# Is this an action or a use case?
+name: process-refund
+# It has business logic (validate, calculate, update)
+# But no human actor (system-initiated)
+```
+
+**Proposed Fix**: Clarify that system can be an actor:
+```yaml
+kind: usecase
+name: process-refund
+actor: system  # ← OK for automated processes
+```
+
+---
+
+### Flaw #3: $ref Resolution is String-Based
+
+**Problem**: `$ref: "actions/validate-email"` is a string, not a type-safe reference.
+
+**Impact**: Typos caught at runtime, not parse time.
+
+**Proposed Fix**: Schema validation + IDE autocomplete support.
 
 ---
 

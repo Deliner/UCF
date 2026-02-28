@@ -90,9 +90,12 @@ name: validate-user-credentials
 ---
 
 #### For Components:
-- [ ] Is it **infrastructure concern** (DB, cache, messaging)?
-- [ ] Does it have **state** (unlike actions)?
+- [ ] Is it **business entity** (NOT infrastructure!)?
+- [ ] Does it have **business state** (total, count), not technical state (is_connected)?
 - [ ] Is it **reusable** across multiple use cases?
+- [ ] Can I hide this in action implementation instead? (prefer this!)
+
+⚠️ **WARNING**: Component is controversial primitive. Avoid for infrastructure (SMTP, DB, cache).
 
 ---
 
