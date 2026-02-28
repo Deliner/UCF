@@ -1,0 +1,40 @@
+kind: usecase
+metadata:
+  name: test-conditional-flow
+  version: 1.0.0
+  owner: framework
+  actor: system
+  tags: [dogfooding, conditional]
+
+trigger: developer runs dogfooding test
+
+input_from_event:
+  threshold: threshold
+
+preconditions:
+  - testing is active
+
+steps:
+  - id: step-a
+    use: actions/step-a
+    input:
+      threshold: $inputs.threshold
+    output:
+      value: value
+
+  - id: step-b
+    when: $steps.step-a.value > 10
+    use: actions/step-b
+    input:
+      value: $steps.step-a.value
+
+  - id: step-c
+    skip_if: $steps.step-a.value > 10
+    use: actions/step-c
+    input:
+      value: $steps.step-a.value
+
+postconditions:
+  - conditional execution works
+
+terminal: true

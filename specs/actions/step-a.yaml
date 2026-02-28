@@ -1,0 +1,25 @@
+kind: action
+metadata:
+  name: step-a
+  version: 1.0.0
+  owner: framework
+  tags: [dogfooding, conditional]
+
+input:
+  threshold:
+    type: integer
+    required: true
+    description: threshold value for conditional branching
+
+output:
+  value:
+    type: integer
+    description: computed value used by subsequent steps
+
+errors: []
+
+preconditions:
+  - threshold is provided
+
+postconditions:
+  - value is computed from threshold

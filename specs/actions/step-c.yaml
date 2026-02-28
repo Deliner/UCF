@@ -1,0 +1,22 @@
+kind: action
+metadata:
+  name: step-c
+  version: 1.0.0
+  owner: framework
+  tags: [dogfooding, conditional]
+
+input:
+  value:
+    type: integer
+    required: true
+    description: value from step-a (when <= 10)
+
+output: {}
+
+errors: []
+
+preconditions:
+  - value is provided
+
+postconditions:
+  - step-c logic executed when value <= 10
