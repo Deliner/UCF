@@ -1,0 +1,64 @@
+kind: usecase
+metadata:
+  name: generate-alt-flow-verification
+  version: 1.0.0
+  owner: ucf-core
+  actor: framework-developer
+  tags: [generator, testing, verification]
+  description: Generate assertions that verify alternative flow triggers were actually executed
+
+trigger: framework developer wants to ensure alt flow logic is tested
+
+input_from_event:
+  usecase_spec: usecase_spec
+  alt_flow: alt_flow
+
+preconditions:
+  - usecase_spec contains alternative flows
+  - alt_flow has handles_error defined
+
+steps:
+  - id: extract-error-code
+    use: actions/extract-error-code-from-alt-flow
+    input:
+      alt_flow: $inputs.alt_flow
+    output:
+      error_code: error_code
+
+  - id: find-trigger-action
+    use: actions/find-action-that-raises-error
+    depends_on: [extract-error-code]
+    input:
+      usecase_spec: $inputs.usecase_spec
+      error_code: $steps.extract-error-code.error_code
+    output:
+      action_ref: action_ref
+      step_id: step_id
+
+  - id: generate-assertion
+    use: actions/generate-trigger-verification-assertion
+    depends_on: [find-trigger-action]
+    input:
+      action_ref: $steps.find-trigger-action.action_ref
+      error_code: $steps.extract-error-code.error_code
+    output:
+      code: code
+
+postconditions:
+  - assertion code verifies error was raised by correct action
+  - assertion is inserted into generated test
+  - test fails if trigger action not called
+
+alternative_flows:
+  - name: no-error-handler
+    trigger: alt flow doesn't handle any error
+    steps:
+      - id: skip-verification
+        use: actions/log-warning
+        input:
+          message: alternative flow has no error handler
+
+terminal: true
+
+invariants:
+  - $ref: invariants/required-inputs-validated

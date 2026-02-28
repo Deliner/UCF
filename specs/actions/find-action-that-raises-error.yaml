@@ -1,0 +1,42 @@
+kind: action
+metadata:
+  name: find-action-that-raises-error
+  version: 1.0.0
+  owner: ucf-core
+  tags: [generator, analysis]
+
+input:
+  usecase_spec:
+    type: object
+    required: true
+    description: use case specification
+  error_code:
+    type: string
+    required: true
+    description: error code to find (e.g., VALIDATION_ERROR)
+
+output:
+  trigger_action:
+    type: string
+    description: action reference that can raise this error (e.g., actions/validate-email)
+  trigger_step_id:
+    type: string
+    description: step ID in main flow that calls this action
+
+errors:
+  - code: ERROR_NOT_FOUND
+    status: 404
+    condition: no action in use case declares this error
+    description: error code not found in any action's error section
+
+reads:
+  - resource: spec_registry
+    fields: [actions]
+
+preconditions:
+  - usecase_spec has main flow steps
+  - error_code is not empty
+
+postconditions:
+  - trigger_action is valid action reference
+  - trigger_action declares error_code in its errors section

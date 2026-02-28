@@ -1,0 +1,34 @@
+kind: action
+metadata:
+  name: generate-trigger-verification-assertion
+  version: 1.0.0
+  owner: ucf-core
+  tags: [generator, code-generation]
+
+input:
+  action_ref:
+    type: string
+    required: true
+    description: action that should raise error (e.g., actions/validate-email)
+  error_code:
+    type: string
+    required: true
+    description: error code that should be raised
+
+output:
+  assertion_code:
+    type: string
+    description: Python assertion code to verify trigger was called
+
+preconditions:
+  - action_ref is valid
+  - error_code is not empty
+
+postconditions:
+  - assertion_code is valid Python
+  - assertion_code checks that action raised error_code
+  - assertion_code uses pytest.raises or similar
+
+writes:
+  - resource: generated_test_file
+    mutation: set

@@ -1,0 +1,29 @@
+kind: action
+metadata:
+  name: extract-error-code-from-alt-flow
+  version: 1.0.0
+  owner: ucf-core
+  tags: [generator, parsing]
+
+input:
+  alt_flow:
+    type: object
+    required: true
+    description: alternative flow specification
+
+output:
+  error_code:
+    type: string
+    description: error code that this alt flow handles (e.g., VALIDATION_ERROR)
+
+errors:
+  - code: NO_ERROR_HANDLER
+    status: 400
+    condition: alt_flow.handles_error is None or empty
+    description: alternative flow doesn't specify which error it handles
+
+preconditions:
+  - alt_flow is valid AlternativeFlow object
+
+postconditions:
+  - error_code matches alt_flow.handles_error value
