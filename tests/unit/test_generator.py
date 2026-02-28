@@ -414,11 +414,34 @@ USECASE_WITH_WHEN = {
     "postconditions": ["flow completes"],
 }
 
+USECASE_WITH_SKIP_IF = {
+    "kind": "usecase",
+    "metadata": {"name": "skip-if-flow"},
+    "steps": [
+        {"id": "check", "use": "actions/do-foo", "input": {"x": "a"}, "output": {"y": "y"}},
+        {
+            "id": "maybe",
+            "use": "actions/do-foo",
+            "skip_if": "$steps.check.done",
+            "input": {"x": "b"},
+            "output": {"y": "y"},
+        },
+    ],
+    "postconditions": ["done"],
+}
+
 
 def _when_registry() -> SpecRegistry:
     r = SpecRegistry()
     r.register(parse_spec(ACTION_FOO))
     r.register(parse_spec(USECASE_WITH_WHEN))
+    return r
+
+
+def _skip_if_registry() -> SpecRegistry:
+    r = SpecRegistry()
+    r.register(parse_spec(ACTION_FOO))
+    r.register(parse_spec(USECASE_WITH_SKIP_IF))
     return r
 
 
@@ -450,27 +473,10 @@ class TestConditionalStepGeneration:
 
     def test_orchestrator_generates_if_else_for_skip_if(self):
         """Generated test_orchestrator.py contains if not (...) for step with skip_if."""
-        usecase_skip_if = {
-            "kind": "usecase",
-            "metadata": {"name": "skip-if-flow"},
-            "steps": [
-                {"id": "check", "use": "actions/do-foo", "input": {"x": "a"}, "output": {"y": "y"}},
-                {
-                    "id": "maybe",
-                    "use": "actions/do-foo",
-                    "skip_if": "$steps.check.done",
-                    "input": {"x": "b"},
-                    "output": {"y": "y"},
-                },
-            ],
-            "postconditions": ["done"],
-        }
-        r = SpecRegistry()
-        r.register(parse_spec(ACTION_FOO))
-        r.register(parse_spec(usecase_skip_if))
         plugin = PytestPlugin()
-        uc = r.usecases()[0]
-        result = plugin.generate_orchestrator(uc, r)
+        reg = _skip_if_registry()
+        uc = reg.usecases()[0]
+        result = plugin.generate_orchestrator(uc, reg)
         content = result.content
         assert "if not (check.done):" in content
         assert "maybe = uc.action_maybe(" in content

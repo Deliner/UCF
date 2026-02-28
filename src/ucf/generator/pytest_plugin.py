@@ -20,7 +20,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from ucf.generator.plugin import GeneratedFile
 from ucf.models.action import ActionSpec
-from ucf.models.component import ComponentSpec
+from ucf.models.component import ComponentSpec, StepDef
 from ucf.models.protocol import ProtocolSpec
 from ucf.models.usecase import UseCaseSpec
 from ucf.parser.registry import SpecRegistry
@@ -191,6 +191,13 @@ def _truncate_name(raw: str, max_len: int = 60) -> str:
     if last_sep > max_len // 2:
         truncated = truncated[:last_sep]
     return truncated
+
+
+def _step_when_skip(step: StepDef) -> tuple[str | None, str | None]:
+    """Extract when/skip_if expressions for a step, translated to Python."""
+    when_expr = _translate_expression(step.when) if step.when else None
+    skip_if_expr = _translate_expression(step.skip_if) if step.skip_if else None
+    return (when_expr, skip_if_expr)
 
 
 def _collect_step_refs(input_dict: dict[str, Any]) -> set[str]:
@@ -373,6 +380,7 @@ class PytestPlugin:
         orch["fixture_name"] = _to_snake(spec.metadata.name) + "_impl"
         orch["test_name"] = _to_snake(spec.metadata.name)
 
+        # setup_steps and verify_steps are never conditional (no when/skip_if).
         setup_steps: list[StepCall] = []
         for method in ctx["setup_methods"]:
             var_name = method.name.replace("setup_", "")
@@ -384,9 +392,7 @@ class PytestPlugin:
             var = _to_snake(step.id)
 
             args = _build_step_args(step.input)
-
-            when_expr = _translate_expression(step.when) if step.when else None
-            skip_if_expr = _translate_expression(step.skip_if) if step.skip_if else None
+            when_expr, skip_if_expr = _step_when_skip(step)
 
             action_steps.append(StepCall(
                 var=var,
@@ -451,8 +457,7 @@ class PytestPlugin:
                     action_ref_to_method.get(main_step.use, f"action_{_to_snake(main_step.id)}"),
                 )
                 prereq_args = _build_step_args(main_step.input)
-                prereq_when = _translate_expression(main_step.when) if main_step.when else None
-                prereq_skip_if = _translate_expression(main_step.skip_if) if main_step.skip_if else None
+                prereq_when, prereq_skip_if = _step_when_skip(main_step)
                 prereq_steps.append(StepCall(
                     var=prereq_var,
                     method=prereq_method,
@@ -468,8 +473,7 @@ class PytestPlugin:
                     step.use, f"action_{_to_snake(step.id)}"
                 )
                 step_args = _build_step_args(step.input)
-                alt_when = _translate_expression(step.when) if step.when else None
-                alt_skip_if = _translate_expression(step.skip_if) if step.skip_if else None
+                alt_when, alt_skip_if = _step_when_skip(step)
 
                 alt_action_steps.append(StepCall(
                     var=step_var,
