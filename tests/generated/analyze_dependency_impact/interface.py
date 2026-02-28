@@ -29,6 +29,7 @@ class ImpactResult:
     direct_dependents: list[Any]
     transitive_dependents: list[Any]
     invariants: list[Any]
+    conflicts: list[Any]
     total_impact: int
 
 
@@ -65,7 +66,15 @@ class AnalyzeDependencyImpactInterface(ABC):
         ...
 
     @abstractmethod
+    def verify_resource_conflicts_are_listed(self) -> None:
+        ...
+
+    @abstractmethod
     def verify_total_impact_count_is_reported(self) -> None:
+        ...
+
+    @abstractmethod
+    def verify_graph_node_count_and_edge_count_reflect_the_full_registry(self) -> None:
         ...
 
     @abstractmethod

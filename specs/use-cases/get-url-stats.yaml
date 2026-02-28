@@ -1,0 +1,64 @@
+kind: usecase
+metadata:
+  name: get-url-stats
+  version: 0.1.0
+  owner: url-shortener
+  actor: creator
+  tags: [shortener, analytics]
+
+input_from_event:
+  slug: slug
+
+preconditions:
+  - user has permission to view stats for this URL
+  - database connection is established
+
+assumed_preconditions:
+  - user has permission to view stats for this URL
+  - database connection is established
+
+steps:
+  - id: fetch-stats
+    use: actions/get-url-stats
+    input:
+      slug: $inputs.slug
+    output:
+      slug: slug
+      original_url: original_url
+      total_clicks: total_clicks
+      created_at: created_at
+      created_by: created_by
+
+  - id: render-stats
+    use: actions/render-cli-output
+    depends_on: [fetch-stats]
+    input:
+      data:
+        slug: $steps.fetch-stats.slug
+        url: $steps.fetch-stats.original_url
+        clicks: $steps.fetch-stats.total_clicks
+        created: $steps.fetch-stats.created_at
+        owner: $steps.fetch-stats.created_by
+      format: table
+
+postconditions:
+  - creator sees total click count
+  - creator sees original URL
+  - creator sees creation timestamp
+
+alternative_flows:
+  - name: slug-not-found
+    trigger: requested slug does not exist
+    handles_error: SLUG_NOT_FOUND
+    steps:
+      - id: return-not-found
+        use: actions/render-cli-output
+        input:
+          data:
+            error: slug not found
+          format: json
+
+terminal: true
+
+invariants:
+  - $ref: invariants/required-inputs-validated

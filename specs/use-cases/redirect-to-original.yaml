@@ -1,0 +1,90 @@
+kind: usecase
+metadata:
+  name: redirect-to-original
+  version: 0.1.0
+  owner: url-shortener
+  actor: visitor
+  tags: [shortener, redirect]
+
+input_from_event:
+  slug: slug
+
+preconditions:
+  - slug is provided
+  - database connection is established
+
+assumed_preconditions:
+  - slug is provided
+  - database connection is established
+
+steps:
+  - id: lookup-url
+    use: actions/get-url-by-slug
+    input:
+      slug: $inputs.slug
+    output:
+      url_record: url_record
+
+  - id: acquire-click-lock
+    use: actions/acquire-lock
+    depends_on: [lookup-url]
+    input:
+      resource: short_urls
+      key: $inputs.slug
+      timeout: 5000
+    output:
+      lock_id: lock_id
+      acquired: acquired
+
+  - id: increment-clicks
+    use: actions/increment-click-count
+    depends_on: [acquire-click-lock]
+    input:
+      slug: $inputs.slug
+    output:
+      new_count: new_count
+
+  - id: release-click-lock
+    use: actions/release-lock
+    depends_on: [increment-clicks]
+    input:
+      lock_id: $steps.acquire-click-lock.lock_id
+    output:
+      released: released
+
+  - id: redirect
+    use: actions/perform-redirect
+    depends_on: [increment-clicks]
+    input:
+      target_url: $steps.lookup-url.url_record.original_url
+      status_code: 302
+    output:
+      redirected: redirected
+
+postconditions:
+  - visitor is redirected to original URL
+  - click count is incremented by 1
+  - redirect uses 302 Found status
+
+alternative_flows:
+  - name: slug-not-found
+    trigger: slug does not exist in database
+    handles_error: SLUG_NOT_FOUND
+    steps:
+      - id: return-404
+        use: actions/render-cli-output
+        input:
+          data:
+            error: slug not found
+            slug: $inputs.slug
+          format: json
+
+terminal: true
+
+invariants:
+  - $ref: invariants/required-inputs-validated
+
+concurrency:
+  - conflict: multiple visitors access same slug simultaneously
+    strategy: atomic-increment
+    description: click_count increments must be atomic to avoid race conditions

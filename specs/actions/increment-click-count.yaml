@@ -1,0 +1,39 @@
+kind: action
+metadata:
+  name: increment-click-count
+  version: 0.1.0
+  owner: url-shortener
+  tags: [shortener, database, mutation]
+
+input:
+  slug:
+    type: string
+    required: true
+    description: slug to increment clicks for
+
+output:
+  new_count:
+    type: integer
+    description: updated click count after increment
+
+reads:
+  - resource: short_urls
+    fields: [slug, click_count]
+
+writes:
+  - resource: short_urls
+    fields: [click_count]
+    mutation: increment
+
+errors:
+  - code: SLUG_NOT_FOUND
+    status: 404
+    condition: slug does not exist
+    description: cannot increment clicks for non-existent slug
+
+preconditions:
+  - slug exists in database
+
+postconditions:
+  - click_count is incremented by exactly 1
+  - new_count equals previous count + 1

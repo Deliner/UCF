@@ -1,0 +1,34 @@
+kind: action
+metadata:
+  name: delete-url
+  version: 0.1.0
+  owner: url-shortener
+  tags: [shortener, database, deletion]
+
+input:
+  slug:
+    type: string
+    required: true
+    description: slug to delete
+
+output:
+  deleted:
+    type: boolean
+    description: whether deletion was successful
+
+writes:
+  - resource: short_urls
+    mutation: delete
+
+errors:
+  - code: SLUG_NOT_FOUND
+    status: 404
+    condition: slug does not exist
+    description: cannot delete non-existent slug
+
+preconditions:
+  - slug exists in database
+
+postconditions:
+  - URL record is removed from database
+  - slug is no longer queryable

@@ -1,0 +1,29 @@
+kind: action
+metadata:
+  name: list-expired-urls
+  version: 0.1.0
+  owner: url-shortener
+  tags: [shortener, batch, cleanup]
+
+input:
+  days_threshold:
+    type: integer
+    required: true
+    description: URLs older than this many days are considered expired
+
+output:
+  expired_slugs:
+    type: array
+    description: list of slugs that are expired
+
+reads:
+  - resource: short_urls
+    fields: [slug, created_at]
+
+preconditions:
+  - days_threshold is positive
+  - database connection is established
+
+postconditions:
+  - expired_slugs contains only URLs older than threshold
+  - expired_slugs is sorted by created_at (oldest first)

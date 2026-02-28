@@ -101,16 +101,27 @@ def _extract_type_from_field(field_def: Any) -> str:
 
 
 def _resolve_binding(val: str) -> str:
-    """Convert a $ expression to a Python variable reference."""
+    """Convert a $ expression to a Python variable reference.
+    
+    Supports nested field access:
+    - $steps.lookup-url.url_record.original_url → lookup_url.url_record.original_url
+    - $requires.loader.registry.specs → loader.registry.specs
+    """
     if not val.startswith("$"):
         return repr(val)
     parts = val[1:].split(".")
     if parts[0] == "inputs" and len(parts) >= 2:
         return "None"
     if parts[0] == "steps" and len(parts) >= 3:
-        return f"{_to_snake(parts[1])}.{_to_snake(parts[2])}"
+        # parts[1] = step_id, parts[2:] = nested field access
+        step_var = _to_snake(parts[1])
+        fields = ".".join(_to_snake(p) for p in parts[2:])
+        return f"{step_var}.{fields}"
     if parts[0] == "requires" and len(parts) >= 3:
-        return f"{_to_snake(parts[1])}.{_to_snake(parts[2])}"
+        # parts[1] = component alias, parts[2:] = nested field access
+        alias = _to_snake(parts[1])
+        fields = ".".join(_to_snake(p) for p in parts[2:])
+        return f"{alias}.{fields}"
     if parts[0] == "requires" and len(parts) == 2:
         return _to_snake(parts[1])
     if len(parts) >= 2:

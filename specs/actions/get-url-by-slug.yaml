@@ -1,0 +1,35 @@
+kind: action
+metadata:
+  name: get-url-by-slug
+  version: 0.1.0
+  owner: url-shortener
+  tags: [shortener, database]
+
+input:
+  slug:
+    type: string
+    required: true
+    description: short URL slug to look up
+
+output:
+  url_record:
+    type: object
+    description: full URL record including original_url, click_count, etc.
+
+reads:
+  - resource: short_urls
+    fields: [slug, original_url, click_count, created_at]
+
+errors:
+  - code: SLUG_NOT_FOUND
+    status: 404
+    condition: slug does not exist in database
+    description: no URL found for this slug
+
+preconditions:
+  - database connection is established
+  - slug is not empty
+
+postconditions:
+  - url_record contains original_url field
+  - url_record contains click_count field

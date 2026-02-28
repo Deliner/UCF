@@ -1,0 +1,56 @@
+kind: usecase
+metadata:
+  name: expire-old-urls
+  version: 0.1.0
+  owner: url-shortener
+  actor: system
+  tags: [shortener, batch, cron]
+
+input_from_event:
+  days_threshold: days_threshold
+
+preconditions:
+  - database connection is established
+  - cleanup job has permissions to delete URLs
+
+assumed_preconditions:
+  - database connection is established
+  - cleanup job has permissions to delete URLs
+
+steps:
+  - id: find-expired
+    use: actions/list-expired-urls
+    input:
+      days_threshold: $inputs.days_threshold
+    output:
+      expired_slugs: expired_slugs
+
+  - id: delete-batch
+    use: actions/delete-urls-batch
+    depends_on: [find-expired]
+    input:
+      slugs: $steps.find-expired.expired_slugs
+    output:
+      deleted_count: deleted_count
+      failed_slugs: failed_slugs
+
+postconditions:
+  - all expired URLs are deleted from database
+  - deletion count matches number of found expired URLs
+  - failed_slugs is empty if all deletions successful
+
+alternative_flows:
+  - name: no-expired-urls
+    trigger: no URLs are older than threshold
+    steps:
+      - id: log-empty
+        use: actions/render-cli-output
+        input:
+          data:
+            message: no expired URLs found
+          format: json
+
+terminal: true
+
+invariants:
+  - $ref: invariants/required-inputs-validated

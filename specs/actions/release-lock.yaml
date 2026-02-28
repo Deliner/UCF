@@ -1,0 +1,24 @@
+kind: action
+metadata:
+  name: release-lock
+  version: 0.1.0
+  owner: ucf-core
+  tags: [concurrency, locking]
+  description: Framework action to release previously acquired lock
+
+input:
+  lock_id:
+    type: string
+    required: true
+    description: lock identifier from acquire-lock
+
+output:
+  released:
+    type: boolean
+    description: whether lock was successfully released
+
+preconditions:
+  - lock_id was acquired by current execution
+
+postconditions:
+  - lock is released and available for other processes

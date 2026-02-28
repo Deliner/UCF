@@ -57,3 +57,23 @@ class TestAltNoResults:
         render_empty = uc.action_render_results(data={'message': 'no specs match the current filter'}, format='table')
 
 
+class TestAltRegistryNotLoaded:
+
+    def test_registry_not_loaded(
+        self, uc: BrowseSpecCatalogInterface,
+    ) -> None:
+        loader = uc.setup_loader()
+
+        render_registry_error = uc.action_render_results(data={'error': 'registry not loaded'}, format='table')
+
+
+class TestAltInvalidKindFilter:
+
+    def test_invalid_kind_filter(
+        self, uc: BrowseSpecCatalogInterface,
+    ) -> None:
+        loader = uc.setup_loader()
+
+        render_kind_error = uc.action_render_results(data={'error': 'unrecognized kind filter'}, format='table')
+
+

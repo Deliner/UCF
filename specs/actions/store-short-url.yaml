@@ -1,0 +1,44 @@
+kind: action
+metadata:
+  name: store-short-url
+  version: 0.1.0
+  owner: url-shortener
+  tags: [shortener, database]
+
+input:
+  slug:
+    type: string
+    required: true
+  original_url:
+    type: string
+    required: true
+  created_by:
+    type: string
+    required: false
+
+output:
+  id:
+    type: string
+    description: generated database ID
+  short_url:
+    type: string
+    description: full short URL (e.g., http://short.ly/abc123)
+
+writes:
+  - resource: short_urls
+    mutation: create
+
+errors:
+  - code: SLUG_ALREADY_EXISTS
+    status: 409
+    condition: slug already exists in database
+    description: this slug is already taken
+
+preconditions:
+  - slug does not exist in database
+  - original_url is valid
+
+postconditions:
+  - new record inserted into short_urls table
+  - click_count initialized to 0
+  - created_at set to current timestamp

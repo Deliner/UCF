@@ -1,0 +1,24 @@
+kind: action
+metadata:
+  name: generate-slug
+  version: 0.1.0
+  owner: url-shortener
+  tags: [shortener, core]
+
+input:
+  length:
+    type: integer
+    required: false
+    description: desired slug length (default 6)
+
+output:
+  slug:
+    type: string
+    description: generated random slug (alphanumeric)
+
+preconditions:
+  - length is between 4 and 20
+
+postconditions:
+  - slug contains only alphanumeric characters
+  - slug length matches requested length

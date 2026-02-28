@@ -1,0 +1,33 @@
+kind: action
+metadata:
+  name: perform-redirect
+  version: 0.1.0
+  owner: url-shortener
+  tags: [shortener, http]
+
+platform:
+  http:
+    method: GET
+    path: /{slug}
+
+input:
+  target_url:
+    type: string
+    required: true
+    description: URL to redirect to
+  status_code:
+    type: integer
+    required: false
+    description: HTTP redirect status code (default 302)
+
+output:
+  redirected:
+    type: boolean
+    description: whether redirect was successful
+
+preconditions:
+  - target_url is a valid URL
+
+postconditions:
+  - HTTP response is redirect (3xx status)
+  - Location header is set to target_url

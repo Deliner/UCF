@@ -1,0 +1,32 @@
+kind: action
+metadata:
+  name: delete-urls-batch
+  version: 0.1.0
+  owner: url-shortener
+  tags: [shortener, batch, deletion]
+  description: Delete multiple URLs in a single operation (workaround for missing for_each)
+
+input:
+  slugs:
+    type: array
+    required: true
+    description: list of slugs to delete
+
+output:
+  deleted_count:
+    type: integer
+    description: number of successfully deleted URLs
+  failed_slugs:
+    type: array
+    description: slugs that failed to delete
+
+writes:
+  - resource: short_urls
+    mutation: delete
+
+preconditions:
+  - slugs is not empty
+
+postconditions:
+  - deleted_count equals number of successfully deleted URLs
+  - failed_slugs contains slugs that could not be deleted

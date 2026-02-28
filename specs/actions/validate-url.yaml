@@ -1,0 +1,33 @@
+kind: action
+metadata:
+  name: validate-url
+  version: 0.1.0
+  owner: url-shortener
+  tags: [shortener, validation]
+
+input:
+  url:
+    type: string
+    required: true
+    description: URL to validate
+
+output:
+  is_valid:
+    type: boolean
+    description: whether URL is valid
+  error_message:
+    type: string
+    description: validation error if any
+
+errors:
+  - code: INVALID_URL_FORMAT
+    status: 422
+    condition: URL does not match http(s):// pattern
+    description: URL must start with http or https
+
+preconditions:
+  - url is provided
+
+postconditions:
+  - is_valid is true if URL matches pattern
+  - error_message is set if is_valid is false

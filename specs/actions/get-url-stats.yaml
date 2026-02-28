@@ -1,0 +1,47 @@
+kind: action
+metadata:
+  name: get-url-stats
+  version: 0.1.0
+  owner: url-shortener
+  tags: [shortener, analytics]
+
+platform:
+  http:
+    method: GET
+    path: /api/stats/{slug}
+
+input:
+  slug:
+    type: string
+    required: true
+    description: slug to get stats for
+
+output:
+  slug:
+    type: string
+  original_url:
+    type: string
+  total_clicks:
+    type: integer
+  created_at:
+    type: string
+  created_by:
+    type: string
+
+reads:
+  - resource: short_urls
+    fields: [slug, original_url, click_count, created_at, created_by]
+
+errors:
+  - code: SLUG_NOT_FOUND
+    status: 404
+    condition: slug does not exist
+    description: no stats available for non-existent slug
+
+preconditions:
+  - slug exists in database
+
+postconditions:
+  - total_clicks matches current click_count
+  - original_url is returned
+  - created_at is in ISO format

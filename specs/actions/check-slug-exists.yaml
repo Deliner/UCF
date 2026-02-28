@@ -1,0 +1,27 @@
+kind: action
+metadata:
+  name: check-slug-exists
+  version: 0.1.0
+  owner: url-shortener
+  tags: [shortener, database]
+
+input:
+  slug:
+    type: string
+    required: true
+    description: slug to check
+
+output:
+  exists:
+    type: boolean
+    description: whether slug already exists in database
+
+reads:
+  - resource: short_urls
+    fields: [slug]
+
+preconditions:
+  - database connection is established
+
+postconditions:
+  - exists is true if slug found in database

@@ -30,11 +30,13 @@ class TestHappyPath:
 
         build_graph = uc.action_build_graph(loader.registry)
         impact = uc.action_impact(build_graph.graph, None)
-        render_impact = uc.action_render_impact(data={'target': None, 'direct': impact.direct_dependents, 'transitive': impact.transitive_dependents, 'invariants': impact.invariants, 'total': impact.total_impact}, format='tree')
+        render_impact = uc.action_render_impact(data={'target': None, 'direct': impact.direct_dependents, 'transitive': impact.transitive_dependents, 'invariants': impact.invariants, 'conflicts': impact.conflicts, 'total': impact.total_impact}, format='tree')
 
         uc.verify_all_direct_and_transitive_dependents_of_target_are_listed()
         uc.verify_constraining_invariants_are_listed()
+        uc.verify_resource_conflicts_are_listed()
         uc.verify_total_impact_count_is_reported()
+        uc.verify_graph_node_count_and_edge_count_reflect_the_full_registry()
         uc.verify_graph_acyclic()
         uc.verify_required_inputs_validated()
 

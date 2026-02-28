@@ -1,0 +1,89 @@
+kind: usecase
+metadata:
+  name: create-short-url
+  version: 0.1.0
+  owner: url-shortener
+  actor: user
+  tags: [shortener, create]
+
+input_from_event:
+  original_url: original_url
+  custom_slug: custom_slug
+  created_by: user_id
+
+preconditions:
+  - user is authenticated
+  - database connection is established
+
+assumed_preconditions:
+  - user is authenticated
+  - database connection is established
+
+steps:
+  - id: validate-url
+    use: actions/validate-url
+    input:
+      url: $inputs.original_url
+    output:
+      is_valid: is_valid
+      error_message: error_message
+
+  - id: generate-slug
+    use: actions/generate-slug
+    depends_on: [validate-url]
+    input:
+      length: 6
+    output:
+      slug: slug
+
+  - id: check-exists
+    use: actions/check-slug-exists
+    depends_on: [generate-slug]
+    input:
+      slug: $steps.generate-slug.slug
+    output:
+      exists: exists
+
+  - id: store-url
+    use: actions/store-short-url
+    depends_on: [check-exists]
+    input:
+      slug: $steps.generate-slug.slug
+      original_url: $inputs.original_url
+      created_by: $inputs.created_by
+    output:
+      id: url_id
+      short_url: short_url
+
+postconditions:
+  - short URL is created and stored
+  - slug is unique in database
+  - click_count is initialized to 0
+
+alternative_flows:
+  - name: invalid-url
+    trigger: URL validation fails
+    handles_error: INVALID_URL_FORMAT
+    steps:
+      - id: return-error
+        use: actions/render-cli-output
+        input:
+          data:
+            error: invalid URL format
+          format: json
+
+  - name: slug-collision
+    trigger: generated slug already exists
+    handles_error: SLUG_ALREADY_EXISTS
+    steps:
+      - id: retry-generate
+        use: actions/generate-slug
+        input:
+          length: 8
+        output:
+          slug: retry_slug
+
+terminal: true
+
+invariants:
+  - $ref: invariants/required-inputs-validated
