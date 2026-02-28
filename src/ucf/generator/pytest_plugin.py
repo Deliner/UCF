@@ -67,6 +67,8 @@ class StepCall:
     var: str
     method: str
     args: list[str] = field(default_factory=list)
+    when_expr: str | None = None
+    skip_if_expr: str | None = None
 
     @property
     def args_str(self) -> str:
@@ -383,8 +385,15 @@ class PytestPlugin:
 
             args = _build_step_args(step.input)
 
+            when_expr = _translate_expression(step.when) if step.when else None
+            skip_if_expr = _translate_expression(step.skip_if) if step.skip_if else None
+
             action_steps.append(StepCall(
-                var=var, method=method.name, args=args,
+                var=var,
+                method=method.name,
+                args=args,
+                when_expr=when_expr,
+                skip_if_expr=skip_if_expr,
             ))
 
         verify_steps: list[StepCall] = []
@@ -442,8 +451,14 @@ class PytestPlugin:
                     action_ref_to_method.get(main_step.use, f"action_{_to_snake(main_step.id)}"),
                 )
                 prereq_args = _build_step_args(main_step.input)
+                prereq_when = _translate_expression(main_step.when) if main_step.when else None
+                prereq_skip_if = _translate_expression(main_step.skip_if) if main_step.skip_if else None
                 prereq_steps.append(StepCall(
-                    var=prereq_var, method=prereq_method, args=prereq_args,
+                    var=prereq_var,
+                    method=prereq_method,
+                    args=prereq_args,
+                    when_expr=prereq_when,
+                    skip_if_expr=prereq_skip_if,
                 ))
 
             alt_action_steps: list[StepCall] = []
@@ -453,9 +468,15 @@ class PytestPlugin:
                     step.use, f"action_{_to_snake(step.id)}"
                 )
                 step_args = _build_step_args(step.input)
+                alt_when = _translate_expression(step.when) if step.when else None
+                alt_skip_if = _translate_expression(step.skip_if) if step.skip_if else None
 
                 alt_action_steps.append(StepCall(
-                    var=step_var, method=method_name, args=step_args,
+                    var=step_var,
+                    method=method_name,
+                    args=step_args,
+                    when_expr=alt_when,
+                    skip_if_expr=alt_skip_if,
                 ))
 
             alt_flow_tests.append(AltFlowTest(

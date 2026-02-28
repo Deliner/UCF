@@ -31,7 +31,19 @@ class TestHappyPath:
 {% endfor %}
 
 {% for step in action_steps %}
+{% if step.when_expr %}
+        if {{ step.when_expr }}:
+            {{ step.var }} = uc.{{ step.method }}({{ step.args_str }})
+        else:
+            {{ step.var }} = None
+{% elif step.skip_if_expr %}
+        if not ({{ step.skip_if_expr }}):
+            {{ step.var }} = uc.{{ step.method }}({{ step.args_str }})
+        else:
+            {{ step.var }} = None
+{% else %}
         {{ step.var }} = uc.{{ step.method }}({{ step.args_str }})
+{% endif %}
 {% endfor %}
 
 {% for step in verify_steps %}
@@ -50,7 +62,19 @@ class TestAlt{{ alt.class_name }}:
 {% endfor %}
 
 {% for step in alt.action_steps %}
+{% if step.when_expr %}
+        if {{ step.when_expr }}:
+            {{ step.var }} = uc.{{ step.method }}({{ step.args_str }})
+        else:
+            {{ step.var }} = None
+{% elif step.skip_if_expr %}
+        if not ({{ step.skip_if_expr }}):
+            {{ step.var }} = uc.{{ step.method }}({{ step.args_str }})
+        else:
+            {{ step.var }} = None
+{% else %}
         {{ step.var }} = uc.{{ step.method }}({{ step.args_str }})
+{% endif %}
 {% endfor %}
 
 

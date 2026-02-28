@@ -393,6 +393,90 @@ class TestExtractErrorDefinitions:
         assert all(d.step_id == "pay" for d in defs)
 
 
+USECASE_WITH_WHEN = {
+    "kind": "usecase",
+    "metadata": {"name": "conditional-flow"},
+    "steps": [
+        {
+            "id": "step-a",
+            "use": "actions/do-foo",
+            "input": {"x": "$inputs.x"},
+            "output": {"y": "value"},
+        },
+        {
+            "id": "step-b",
+            "use": "actions/do-foo",
+            "when": "$steps.step-a.value > 10",
+            "input": {"x": "conditional"},
+            "output": {"y": "y"},
+        },
+    ],
+    "postconditions": ["flow completes"],
+}
+
+
+def _when_registry() -> SpecRegistry:
+    r = SpecRegistry()
+    r.register(parse_spec(ACTION_FOO))
+    r.register(parse_spec(USECASE_WITH_WHEN))
+    return r
+
+
+class TestConditionalStepGeneration:
+    """Tests for when/skip_if code generation in orchestrator."""
+
+    def test_orchestrator_generates_if_else_for_when(self):
+        """Generated test_orchestrator.py contains if/else block for step with when."""
+        plugin = PytestPlugin()
+        reg = _when_registry()
+        uc = reg.usecases()[0]
+        result = plugin.generate_orchestrator(uc, reg)
+        content = result.content
+        # step-b has when: $steps.step-a.value > 10 -> step_a.value > 10
+        assert "if step_a.value > 10:" in content
+        assert "step_b = uc.action_step_b(" in content
+        assert "else:" in content
+        assert "step_b = None" in content
+
+    def test_orchestrator_with_when_produces_valid_python(self):
+        """Generated code with when/skip_if parses as valid Python."""
+        import ast
+
+        plugin = PytestPlugin()
+        reg = _when_registry()
+        uc = reg.usecases()[0]
+        result = plugin.generate_orchestrator(uc, reg)
+        ast.parse(result.content)
+
+    def test_orchestrator_generates_if_else_for_skip_if(self):
+        """Generated test_orchestrator.py contains if not (...) for step with skip_if."""
+        usecase_skip_if = {
+            "kind": "usecase",
+            "metadata": {"name": "skip-if-flow"},
+            "steps": [
+                {"id": "check", "use": "actions/do-foo", "input": {"x": "a"}, "output": {"y": "y"}},
+                {
+                    "id": "maybe",
+                    "use": "actions/do-foo",
+                    "skip_if": "$steps.check.done",
+                    "input": {"x": "b"},
+                    "output": {"y": "y"},
+                },
+            ],
+            "postconditions": ["done"],
+        }
+        r = SpecRegistry()
+        r.register(parse_spec(ACTION_FOO))
+        r.register(parse_spec(usecase_skip_if))
+        plugin = PytestPlugin()
+        uc = r.usecases()[0]
+        result = plugin.generate_orchestrator(uc, r)
+        content = result.content
+        assert "if not (check.done):" in content
+        assert "maybe = uc.action_maybe(" in content
+        assert "maybe = None" in content
+
+
 class TestGenerateNegativeTestCode:
     def test_produces_valid_python(self):
         import ast
