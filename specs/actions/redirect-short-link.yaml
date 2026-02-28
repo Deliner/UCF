@@ -1,0 +1,54 @@
+kind: action
+metadata:
+  name: redirect-short-link
+  version: 1.0.0
+  owner: url-shortener
+  tags: [shortener, redirect]
+  description: Redirect visitor to original URL and record visit
+
+input:
+  short_code:
+    type: string
+    required: true
+    description: shortened URL code (e.g., "abc123")
+
+output:
+  url:
+    type: string
+    description: destination URL visitor is redirected to
+  success:
+    type: boolean
+    description: whether redirect was successful
+
+errors:
+  - code: LINK_NOT_FOUND
+    status: 404
+    condition: short code doesn't exist in database
+    description: no URL found for this short code
+
+reads:
+  - resource: short_urls
+    fields: [short_code, original_url, click_count]
+
+writes:
+  - resource: short_urls
+    mutation: increment
+    fields: [click_count]
+
+preconditions:
+  - short_code is not empty
+  - short_code matches format (alphanumeric, 6-10 chars)
+
+postconditions:
+  - original URL is retrieved
+  - click counter is incremented by 1
+  - HTTP 302 redirect is issued
+
+platform:
+  http:
+    method: GET
+    path: /{short_code}
+    response:
+      status: 302
+      headers:
+        Location: $output.url

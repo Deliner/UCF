@@ -1,0 +1,72 @@
+kind: action
+metadata:
+  name: create-short-link
+  version: 1.0.0
+  owner: url-shortener
+  tags: [shortener, creation]
+  description: Create shortened URL from original URL
+
+input:
+  original_url:
+    type: string
+    required: true
+    description: original long URL to shorten
+  custom_code:
+    type: string
+    required: false
+    description: optional custom short code (instead of random)
+
+output:
+  code:
+    type: string
+    description: generated or custom short code
+  url:
+    type: string
+    description: full shortened URL (e.g., https://short.link/abc123)
+  expiry:
+    type: string
+    description: expiration timestamp (ISO format)
+
+errors:
+  - code: INVALID_URL
+    status: 400
+    condition: original_url doesn't match HTTP(S) format
+    description: URL must be valid HTTP or HTTPS
+    
+  - code: CODE_ALREADY_EXISTS
+    status: 409
+    condition: custom_code is already taken
+    description: requested custom code is not available
+
+reads:
+  - resource: short_urls
+    fields: [short_code]
+
+writes:
+  - resource: short_urls
+    mutation: create
+    fields: [short_code, original_url, created_at, created_by]
+
+preconditions:
+  - original_url is not empty
+  - if custom_code provided, it matches format constraints
+
+postconditions:
+  - short code is unique in database
+  - original URL is stored
+  - expiration date is set (30 days default)
+  - creation timestamp is recorded
+
+platform:
+  http:
+    method: POST
+    path: /api/shorten
+    request:
+      body:
+        url: $input.original_url
+        custom: $input.custom_code
+    response:
+      status: 201
+      body:
+        short_url: $output.url
+        code: $output.code

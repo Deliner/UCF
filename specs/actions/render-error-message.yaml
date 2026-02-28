@@ -1,0 +1,28 @@
+kind: action
+metadata:
+  name: render-error-message
+  version: 1.0.0
+  owner: url-shortener
+  tags: [error-handling, ui]
+  framework: true
+
+input:
+  error:
+    type: string
+    required: true
+    description: error message to display
+
+output:
+  rendered:
+    type: boolean
+
+platform:
+  http:
+    method: RESPONSE
+    status: 400
+
+preconditions:
+  - error is not empty
+
+postconditions:
+  - error message is displayed to user

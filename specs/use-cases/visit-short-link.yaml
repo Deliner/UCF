@@ -1,0 +1,49 @@
+kind: usecase
+metadata:
+  name: visit-short-link
+  version: 1.0.0
+  owner: url-shortener
+  actor: visitor
+  tags: [shortener, redirect]
+  description: Visitor accesses original page via shortened URL
+
+trigger: visitor clicks on shortened URL
+
+input_from_event:
+  short_code: short_code
+
+preconditions:
+  - short code is provided
+  - short link service is available
+
+assumed_preconditions:
+  - short code is provided
+
+steps:
+  - id: redirect-to-destination
+    use: actions/redirect-short-link
+    input:
+      short_code: $inputs.short_code
+    output:
+      destination_url: url
+      redirected: success
+
+postconditions:
+  - visitor is redirected to original page
+  - visit is recorded for analytics
+  - redirect happens in < 200ms
+
+alternative_flows:
+  - name: link-not-found
+    trigger: short code doesn't exist
+    handles_error: LINK_NOT_FOUND
+    steps:
+      - id: show-404
+        use: actions/render-404-page
+        input:
+          short_code: $inputs.short_code
+
+terminal: true
+
+invariants:
+  - $ref: invariants/required-inputs-validated

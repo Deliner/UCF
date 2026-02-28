@@ -1,0 +1,29 @@
+kind: action
+metadata:
+  name: suggest-alternative-codes
+  version: 1.0.0
+  owner: url-shortener
+  tags: [suggestions, ux]
+
+input:
+  requested_code:
+    type: string
+    required: true
+    description: the custom code that was already taken
+
+output:
+  suggestions:
+    type: array
+    description: list of available alternative codes
+
+reads:
+  - resource: short_urls
+    fields: [short_code]
+
+preconditions:
+  - requested_code is not empty
+
+postconditions:
+  - suggestions list contains available codes
+  - suggestions are similar to requested_code
+  - all suggestions are verified available

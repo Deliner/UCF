@@ -1,0 +1,63 @@
+kind: usecase
+metadata:
+  name: shorten-url
+  version: 1.0.0
+  owner: url-shortener
+  actor: content-creator
+  tags: [shortener, creation]
+  description: Content creator gets shortened URL for sharing
+
+trigger: content creator wants to share a long URL in short format
+
+input_from_event:
+  original_url: original_url
+  custom_code: custom_code
+
+preconditions:
+  - original URL is provided
+  - original URL is valid HTTP(S) format
+  - content creator is authenticated
+
+assumed_preconditions:
+  - original URL is provided
+
+steps:
+  - id: create-short-link
+    use: actions/create-short-link
+    input:
+      original_url: $inputs.original_url
+      custom_code: $inputs.custom_code
+    output:
+      short_code: code
+      short_url: url
+      expires_at: expiry
+
+postconditions:
+  - content creator receives shortened URL
+  - shortened URL is ready to use immediately
+  - shortened URL redirects to original page
+  - creation is recorded with timestamp
+
+alternative_flows:
+  - name: invalid-url
+    trigger: provided URL doesn't match HTTP(S) format
+    handles_error: INVALID_URL
+    steps:
+      - id: show-error
+        use: actions/render-error-message
+        input:
+          error: URL must start with http:// or https://
+          
+  - name: custom-code-taken
+    trigger: requested custom code already exists
+    handles_error: CODE_ALREADY_EXISTS
+    steps:
+      - id: suggest-alternatives
+        use: actions/suggest-alternative-codes
+        input:
+          requested_code: $inputs.custom_code
+
+terminal: true
+
+invariants:
+  - $ref: invariants/required-inputs-validated

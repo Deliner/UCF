@@ -1,0 +1,30 @@
+kind: action
+metadata:
+  name: render-404-page
+  version: 1.0.0
+  owner: url-shortener
+  tags: [error-handling, ui]
+  framework: true
+
+input:
+  short_code:
+    type: string
+    required: true
+    description: the invalid short code that was requested
+
+output:
+  rendered:
+    type: boolean
+    description: whether 404 page was rendered
+
+platform:
+  http:
+    method: RESPONSE
+    status: 404
+
+preconditions:
+  - short_code is provided
+
+postconditions:
+  - 404 page is displayed to visitor
+  - short_code is shown in error message
