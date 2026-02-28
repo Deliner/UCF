@@ -43,6 +43,18 @@
 
 **Critical Rule**: Use cases must describe **actor goals**, not system internals.
 
+### The Golden Filter: Business Intent vs. Technical Execution
+
+When writing specs, apply this filter to every line: **"Does the user/business care about this, or is this just how the backend works?"**
+
+**If it's an infrastructure or backend concept, it DOES NOT belong in the YAML spec. It belongs in `impl.py`.**
+
+*   **Caching (`ttl`, `redis`)**: Hide in action implementation. Spec just says `fetch-product`.
+*   **Database Transactions (`commit`, `rollback`)**: Hide in action implementation. Every action is atomic by default.
+*   **Cron/Scheduling (`cron: "0 2 * * *"`)**: Describe the trigger textually (`trigger: Daily at 2AM`). The actual cron execution is infrastructure.
+*   **Idempotency**: Express as a business outcome in `alternative_flows` (`handles_error: ALREADY_PROCESSED`), not magic framework syntax.
+*   **Sagas/Compensations**: Express as explicit business steps in `alternative_flows` (e.g., `release-inventory`), not magic `$compensate` syntax.
+
 ---
 
 ## The 6 (+1) Primitives
@@ -810,7 +822,9 @@ terminal: true
 
 ---
 
-## Known Design Flaws
+## Known Design Flaws (Missing Business Primitives)
+
+While technical details (cache, DB transactions) belong in `impl.py`, the framework is currently missing several primitives required to fully express **business logic variability**:
 
 ### Flaw #1: Component Abstraction Leak
 
@@ -818,53 +832,57 @@ terminal: true
 
 **Impact**: Specs become coupled to implementation details.
 
-**Example of leak**:
-```yaml
-requires:
-  - $ref: components/email-sender
-    params:
-      smtp_host: smtp.gmail.com  # ← Business knows about SMTP!
-```
-
-**Proposed Fix**: 
-- Component should ONLY be for business entities
-- Infrastructure should be implicit in action implementations
-- Add `requires_capabilities:` to actions instead
-
-**Workaround**: Avoid Component for infrastructure. Hide it in actions.
+**Proposed Fix**: Component should ONLY be for business entities. Infrastructure should be implicit in action implementations.
 
 ---
 
-### Flaw #2: No Clear Boundary Between Action and UseCase
+### Flaw #2: Missing Conditional Execution (If/Else)
 
-**Problem**: When should multi-step logic be an action vs a use case?
+**Problem**: The framework executes all steps sequentially. There is no way to say "If order is > $1000, request admin approval, else auto-approve".
 
-**Current guideline**: If it has an actor → UseCase. If not → Action or Component.
+**Impact**: Mutually exclusive business flows execute simultaneously unless split into entirely different Use Cases.
 
-**Gray area**:
-```yaml
-# Is this an action or a use case?
-name: process-refund
-# It has business logic (validate, calculate, update)
-# But no human actor (system-initiated)
-```
-
-**Proposed Fix**: Clarify that system can be an actor:
-```yaml
-kind: usecase
-name: process-refund
-actor: system  # ← OK for automated processes
-```
+**Proposed Fix**: Add `when:` or `skip_if:` conditions to steps based on context variables.
 
 ---
 
-### Flaw #3: $ref Resolution is String-Based
+### Flaw #3: Missing Iteration (Loops)
 
-**Problem**: `$ref: "actions/validate-email"` is a string, not a type-safe reference.
+**Problem**: Business processes often require iterating over collections ("process each item in the cart").
 
-**Impact**: Typos caught at runtime, not parse time.
+**Impact**: Developers are forced to create duplicate "batch" actions (e.g., `process-cart-items-batch`), hiding the iteration logic inside Python instead of keeping the business flow visible in YAML.
 
-**Proposed Fix**: Schema validation + IDE autocomplete support.
+**Proposed Fix**: Add a `for_each` primitive to steps.
+
+---
+
+### Flaw #4: Missing Sub-Use Case Composition
+
+**Problem**: Complex flows (like "process payment") are used in multiple places (buying a product, renewing a subscription). We can reuse Actions, but we cannot reuse a whole Use Case inside another Use Case.
+
+**Impact**: Severe code/spec duplication (copy-pasting steps and alternative flows).
+
+**Proposed Fix**: Allow a step to reference another Use Case (`use: use-cases/process-payment`).
+
+---
+
+### Flaw #5: Missing Domain Event Emission
+
+**Problem**: Use Cases can be triggered by Events, but they cannot declaratively emit Events when they finish.
+
+**Impact**: Asynchronous business choreography (Pub/Sub) is hidden inside `impl.py` instead of being explicitly documented in the spec.
+
+**Proposed Fix**: Add an `emits_events:` section to Use Cases and Actions.
+
+---
+
+### Flaw #6: Missing Asynchronous Wait (Human-in-the-loop)
+
+**Problem**: Some business processes pause for human input (e.g., waiting for a manager to approve a loan).
+
+**Impact**: A single conceptual business process must be split into two disjoint Use Cases, losing the overall narrative.
+
+**Proposed Fix**: Add a `wait_for_event:` primitive to steps.
 
 ---
 

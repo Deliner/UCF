@@ -25,7 +25,8 @@ class TestHappyPath:
         self, uc: ShortenUrlInterface,
     ) -> None:
 
-        create_short_link = uc.action_create_short_link(original_url=None, custom_code=None)
+        create_short_link = uc.action_create_short_link(original_url=inputs.get('original_url'), custom_code=inputs.get('custom_code'))
+
 
         uc.verify_content_creator_receives_shortened_url()
         uc.verify_shortened_url_is_ready_to_use_immediately()
@@ -43,12 +44,14 @@ class TestAltInvalidUrl:
         show_error = uc.action_show_error(error='URL must start with http:// or https://')
 
 
+
 class TestAltCustomCodeTaken:
 
     def test_custom_code_taken(
         self, uc: ShortenUrlInterface,
     ) -> None:
 
-        suggest_alternatives = uc.action_suggest_alternatives(requested_code=None)
+        suggest_alternatives = uc.action_suggest_alternatives(requested_code=inputs.get('custom_code'))
+
 
 

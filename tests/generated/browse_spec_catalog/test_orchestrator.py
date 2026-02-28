@@ -27,8 +27,10 @@ class TestHappyPath:
     ) -> None:
         loader = uc.setup_loader()
 
-        list_specs = uc.action_list_specs(registry=loader.registry, kind_filter=None, search_query=None)
+        list_specs = uc.action_list_specs(registry=loader.registry, kind_filter=inputs.get('kind_filter'), search_query=inputs.get('search_query'))
+
         render_results = uc.action_render_results(data={'specs': list_specs.specs, 'total_count': list_specs.total_count, 'kind_counts': list_specs.kind_counts}, format='table')
+
 
         uc.verify_developer_receives_a_list_of_specs_matching_the_filter()
         uc.verify_spec_counts_per_kind_are_reported()
@@ -44,7 +46,9 @@ class TestAltNoFilter:
         loader = uc.setup_loader()
 
         list_all = uc.action_list_specs(registry=loader.registry)
+
         render_all = uc.action_render_results(data={'specs': list_all.specs, 'total_count': list_all.total_count})
+
 
 
 class TestAltNoResults:
@@ -57,6 +61,7 @@ class TestAltNoResults:
         render_empty = uc.action_render_results(data={'message': 'no specs match the current filter'}, format='table')
 
 
+
 class TestAltRegistryNotLoaded:
 
     def test_registry_not_loaded(
@@ -67,6 +72,7 @@ class TestAltRegistryNotLoaded:
         render_registry_error = uc.action_render_results(data={'error': 'registry not loaded'}, format='table')
 
 
+
 class TestAltInvalidKindFilter:
 
     def test_invalid_kind_filter(
@@ -75,5 +81,6 @@ class TestAltInvalidKindFilter:
         loader = uc.setup_loader()
 
         render_kind_error = uc.action_render_results(data={'error': 'unrecognized kind filter'}, format='table')
+
 
 

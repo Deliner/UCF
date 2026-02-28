@@ -188,19 +188,43 @@ concurrency:
 ---
 
 ### #8: No for_each / batch operations
-**Severity**: 🟡 Medium  
+**Status**: 🔴 OPEN  
+**Severity**: 🟡 MEDIUM  
 **Impact**: Can't iterate over arrays without creating duplicate batch actions
+**Confirmed by**: Pagination (enrich-items loop)
 
-**Desired**:
+**Problem**: UCF has no loop/iteration primitive:
+1. No `for_each` on steps
+2. No `$item` loop variable
+3. Arrays must be processed via batch actions
+
+**Attempted syntax** (not supported):
 ```yaml
-- id: delete-each
-  use: actions/delete-url
-  for_each: $steps.find-expired.expired_slugs
+- id: enrich-items
+  for_each: $steps.fetch-page.items  # ❌ Unknown field!
+  use: actions/enrich-order-data
   input:
-    slug: $item
+    order: $item  # ❌ $item doesn't exist!
+  output:
+    enriched: enriched
 ```
 
-**Workaround**: Create `delete-urls-batch` action (duplicates `delete-url` logic)
+**Current behavior**:
+- `trace` **treats step as single execution** (not loop)
+- `$item` binding fails (doesn't exist in context)
+- No iteration metadata
+
+**Real-world impact**:
+```
+Pagination:
+1. Fetch 20 orders
+2. Need to enrich each order with user data
+3. ??? Can't loop! Must create batch action
+
+Workaround: Create `enrich-orders-batch` that duplicates `enrich-order` logic
+```
+
+**Workaround**: Create duplicate batch actions (`delete-urls-batch` duplicates `delete-url` logic)
 
 ---
 
@@ -350,4 +374,873 @@ steps:
 
 ---
 
-**Total**: 2 fixed, 3 partial, 6 open (2 critical/high, 4 medium)
+### #12: No Saga Pattern / Compensation syntax
+**Status**: 🔴 OPEN  
+**Severity**: 🔴 CRITICAL  
+**Found by**: Attempting to implement distributed order processing (Saga pattern)
+
+**Problem**: UCF has no syntax for:
+1. Declaring compensating actions for steps
+2. Executing rollback sequence on failure
+3. Saga orchestration pattern
+
+**Attempted syntax** (not supported):
+```yaml
+steps:
+  - id: reserve-inventory
+    use: actions/reserve-inventory
+    compensation: actions/cancel-reservation  # ❌ Unknown field!
+    
+  - id: charge-payment
+    use: actions/charge-payment
+    depends_on: [reserve-inventory]
+    compensation: actions/refund-payment      # ❌ Unknown field!
+
+alternative_flows:
+  - name: payment-failed
+    handles_error: PAYMENT_DECLINED
+    compensates: [reserve-inventory]          # ❌ Unknown field!
+    steps:
+      - id: rollback
+        use: $compensate.reserve-inventory    # ❌ Unknown syntax!
+```
+
+**Current behavior**: UCF **silently ignores** unknown fields:
+- `validate` passes (0 errors)
+- `trace` ignores `compensation`, `compensates`, `$compensate`
+- No schema validation
+
+**Real-world impact**:
+```
+Order Processing Saga:
+1. Reserve inventory → SUCCESS
+2. Charge payment → FAILURE (PAYMENT_DECLINED)
+3. ??? Rollback inventory? ← NO MECHANISM!
+
+Result: Inventory stuck in "reserved" state, customers can't order
+```
+
+**Required primitives**:
+
+**Option A**: Saga-style compensation:
+```yaml
+steps:
+  - id: reserve-inventory
+    compensation: actions/unreserve-inventory
+    
+alternative_flows:
+  - compensates: [reserve-inventory, charge-payment]
+    steps:
+      - for_each: $saga.compensation_stack
+        use: $item.action
+        input: $item.context
+```
+
+**Option B**: Transaction blocks:
+```yaml
+transaction:
+  steps:
+    - reserve-inventory
+    - charge-payment
+  on_error:
+    rollback: automatic  # Framework reverses writes
+```
+
+**Related**: Bottle Neck #11 (single-action transactions) vs #12 (multi-step sagas)
+
+**Difference**:
+- **#11**: Single action with multiple writes (`finalize-order` writes orders + inventory + payments)
+- **#12**: Multiple steps with compensations (`reserve → charge → ship` with rollback sequence)
+
+**Impact**: Can't express distributed transactions, event-driven compensation, or Saga pattern.
+
+---
+
+### #13: No conditional steps / state machine guards
+**Status**: 🔴 OPEN  
+**Severity**: 🔴 CRITICAL  
+**Found by**: Approval Workflow (multi-actor, state machine)
+
+**Problem**: UCF has no syntax for:
+1. Conditional step execution (if/else logic)
+2. State machine guards (preconditions on transitions)
+3. Boolean expressions in bindings
+
+**Attempted syntax** (not supported):
+```yaml
+# 1. Guards for state machine
+guards:
+  - field: report.status
+    equals: pending_manager_approval    # ❌ Unknown field!
+  - field: approver.role
+    equals: manager                     # ❌ Unknown field!
+
+# 2. Conditional step execution
+steps:
+  - id: route-to-admin
+    when: $steps.check.requires_admin == true   # ❌ Unknown field!
+    
+  - id: auto-approve
+    when: $steps.check.requires_admin == false  # ❌ Unknown field!
+```
+
+**Current behavior**:
+- `validate` passes (0 errors)
+- `trace` **executes ALL steps** (ignores `when`)
+- Both `route-to-admin` AND `auto-approve` run (should be exclusive!)
+
+**Real-world impact**:
+```
+Approval Workflow:
+1. Manager approves report
+2. Check threshold: amount > $5000 → requires_admin=true
+3. ??? Route to admin OR auto-approve?
+
+Current: BOTH steps execute! (data race, duplicate actions)
+Desired: IF requires_admin THEN route-to-admin ELSE auto-approve
+```
+
+**Required primitives**:
+
+**Option A**: When clause on steps:
+```yaml
+steps:
+  - id: route-to-admin
+    when: $steps.check.requires_admin == true
+    use: actions/send-approval-request
+    
+  - id: auto-approve
+    when: $steps.check.requires_admin == false
+    use: actions/finalize-approval
+```
+
+**Option B**: If/else blocks:
+```yaml
+steps:
+  - id: check-threshold
+    use: actions/check-approval-threshold
+  
+  - if: $steps.check-threshold.requires_admin
+    then:
+      - id: route-to-admin
+        use: actions/send-approval-request
+    else:
+      - id: auto-approve
+        use: actions/finalize-approval
+```
+
+**Option C**: State machine with guards:
+```yaml
+guards:
+  - $context.report.status == "pending"
+  - $context.approver.role == "manager"
+  
+steps: [...]
+```
+
+**Impact**: Can't express:
+- Conditional logic (if/else)
+- State machine transitions
+- Multi-actor coordination
+- Approval workflows
+- Feature flags
+
+---
+
+### #14: No idempotency primitive
+**Status**: 🔴 OPEN  
+**Severity**: 🔴 CRITICAL  
+**Found by**: Webhook processing (payment gateway callbacks)
+
+**Problem**: UCF has no built-in idempotency support:
+1. No `idempotency_key` declaration
+2. No automatic deduplication
+3. No `skip_if` for conditional execution
+
+**Attempted syntax** (not supported):
+```yaml
+idempotency_key: $inputs.webhook_id  # ❌ Unknown field!
+
+steps:
+  - id: check-if-processed
+    use: actions/check-idempotency
+    
+  - id: process-event
+    skip_if: $steps.check-if-processed.already_processed == true  # ❌ Unknown field!
+```
+
+**Current behavior**:
+- `validate` passes (no schema validation)
+- `trace` **executes ALL steps** (ignores `skip_if`)
+- Duplicate webhooks processed multiple times
+
+**Real-world impact**:
+```
+Payment Gateway Webhook:
+1. Stripe sends webhook_id=evt_123
+2. UCF processes payment
+3. Stripe retries (network blip) webhook_id=evt_123
+4. UCF processes AGAIN → Double charge!
+
+Desired: Check idempotency_key, skip if already processed
+```
+
+**Required primitives**:
+
+**Option A**: Framework-level idempotency:
+```yaml
+idempotency_key: $inputs.webhook_id
+idempotency_ttl: 86400  # 24 hours
+
+steps: [...]  # Framework auto-checks before executing
+```
+
+**Option B**: Explicit skip conditions:
+```yaml
+steps:
+  - id: check-idempotency
+    use: actions/check-idempotency
+    
+  - id: process
+    skip_if: $steps.check-idempotency.already_processed
+```
+
+**Impact**: Can't safely handle:
+- Webhook callbacks
+- Payment processing
+- Distributed job execution
+- At-least-once delivery
+
+---
+
+### #15: No async / timeout support
+**Status**: 🔴 OPEN  
+**Severity**: 🟡 MEDIUM  
+**Found by**: Webhook delivery with retry
+
+**Problem**: UCF has no primitives for:
+1. Async execution (fire-and-forget)
+2. Timeouts on steps
+3. Non-blocking calls
+
+**Attempted syntax** (not supported):
+```yaml
+async: true        # ❌ Unknown field (use case level)!
+
+steps:
+  - id: send-webhook
+    async: true      # ❌ Unknown field (step level)!
+    timeout_ms: 30000  # ❌ Unknown field!
+```
+
+**Current behavior**:
+- `validate` passes
+- `trace` ignores `async` and `timeout_ms`
+- No indication step should be non-blocking
+
+**Real-world impact**:
+```
+Order Processing:
+1. Create order → SUCCESS
+2. Send webhook to customer → Hangs 60s (customer endpoint slow)
+3. User waits 60s for "Order Created" response
+
+Desired: Send webhook async, respond immediately
+```
+
+**Required primitives**:
+
+**Option A**: Async step flag:
+```yaml
+steps:
+  - id: send-notification
+    async: true        # Don't wait for completion
+    timeout_ms: 5000   # Kill if exceeds 5s
+    use: actions/send-webhook
+```
+
+**Option B**: Fire-and-forget action type:
+```yaml
+kind: action
+metadata:
+  name: send-webhook
+  execution: async  # Never blocks caller
+  timeout_ms: 30000
+```
+
+**Impact**: Can't express:
+- Fire-and-forget operations
+- Background jobs
+- Non-blocking I/O
+- Timeout constraints
+
+---
+
+### #16: No retry metadata / introspection
+**Status**: 🔴 OPEN  
+**Severity**: 🟡 MEDIUM  
+**Found by**: Webhook delivery logging
+
+**Problem**: Can't access retry metadata from bindings:
+1. No `$steps.{step}.attempt_count`
+2. No `$steps.{step}.last_error`
+3. No `$steps.{step}.elapsed_ms`
+
+**Attempted binding** (not supported):
+```yaml
+- id: record-delivery
+  use: actions/log-webhook-delivery
+  input:
+    attempts: $steps.send-webhook.attempt_count  # ❌ Error: doesn't exist!
+```
+
+**Trace error**:
+```
+error  record-delivery: Step reads 'attempt_count' but it does not exist in context
+```
+
+**Current behavior**:
+- Retry config exists (`max_attempts`, `backoff`)
+- But metadata is **not exposed** to subsequent steps
+
+**Real-world impact**:
+```
+Webhook Delivery:
+1. Send webhook → Retry 3 times → SUCCESS
+2. Log delivery → "How many retries?" → UNKNOWN
+3. Metrics incomplete (can't track retry rate)
+```
+
+**Required primitives**:
+
+**Option A**: Reserved metadata fields:
+```yaml
+output:
+  response_code: code      # User-defined
+  _metadata:               # Framework-injected
+    attempt_count: int
+    elapsed_ms: int
+    last_error: string
+```
+
+**Option B**: Special binding syntax:
+```yaml
+input:
+  attempts: $steps.send-webhook.$metadata.attempt_count
+  duration: $steps.send-webhook.$metadata.elapsed_ms
+```
+
+**Impact**: Can't:
+- Log retry attempts
+- Build retry metrics
+- Debug flaky external APIs
+- Track step performance
+
+---
+
+### #17: No rate limiting / quota primitives
+**Status**: 🔴 OPEN  
+**Severity**: 🔴 CRITICAL  
+**Found by**: API rate limiting (per-user quotas)
+
+**Problem**: UCF has no primitives for:
+1. Declarative rate limits
+2. Quota management
+3. Time-windowed counters
+4. Throttling policies
+
+**Attempted syntax** (not supported):
+```yaml
+rate_limit:
+  scope: per_user       # ❌ Unknown field!
+  window: sliding       # ❌ Unknown field!
+  limits:
+    - limit: 100
+      window_ms: 3600000
+      key: $inputs.user_id
+
+steps:
+  - id: create-link
+    require: $steps.check-rate-limit.allowed == true  # ❌ Unknown field!
+```
+
+**Current behavior**:
+- `validate` passes
+- `trace` ignores `rate_limit` block entirely
+- No quota enforcement
+
+**Real-world impact**:
+```
+API Abuse:
+1. User calls /api/shorten 10,000 times/min
+2. No rate limiting → Server overwhelmed
+3. Service degraded for all users
+
+Desired: 
+- Enforce 100 req/hour per user
+- Return 429 with Retry-After header
+- Sliding window (not fixed buckets)
+```
+
+**Required primitives**:
+
+**Option A**: Declarative rate limits:
+```yaml
+rate_limit:
+  - scope: per_user
+    limit: 100
+    window_ms: 3600000
+    key: $inputs.user_id
+  - scope: per_endpoint
+    limit: 10000
+    window_ms: 60000
+    key: $inputs.endpoint
+
+on_rate_limit_exceeded:
+  error: RATE_LIMIT_EXCEEDED
+  response:
+    status: 429
+    headers:
+      Retry-After: $rate_limit.reset_at
+```
+
+**Option B**: Explicit quota actions:
+```yaml
+steps:
+  - id: check-quota
+    use: actions/check-quota
+    quota:
+      resource: api_calls
+      limit: 100
+      window_ms: 3600000
+```
+
+**Related issues**:
+- No `require:` field on steps (see #13)
+- No `$context` access for framework state
+- Bindings in dicts not resolved (see trace output)
+
+**Impact**: Can't enforce:
+- API quotas
+- Resource limits
+- Throttling policies
+- Fair usage policies
+
+---
+
+### #18: No default values / optional inputs
+**Status**: 🔴 OPEN  
+**Severity**: 🟡 MEDIUM  
+**Found by**: Pagination (default limit, sort direction)
+
+**Problem**: UCF has no mechanism for:
+1. Default input values
+2. Optional inputs
+3. Input validation (min/max)
+
+**Attempted syntax** (not supported):
+```yaml
+defaults:
+  limit: 20           # ❌ Unknown field!
+  sort_direction: desc
+
+preconditions:
+  - limit is between 1 and 100  # ❌ Not enforced!
+```
+
+**Current behavior**:
+- `defaults` block silently ignored
+- All inputs treated as required
+- No min/max validation
+
+**Real-world impact**:
+```
+API Pagination:
+1. User calls /api/orders (no limit param)
+2. Expected: Default to limit=20
+3. Actual: limit=$inputs.limit → None → Error!
+
+Must manually check for None in action implementation
+```
+
+**Required primitives**:
+
+**Option A**: Defaults block:
+```yaml
+defaults:
+  limit: 20
+  cursor: null
+  sort_direction: desc
+```
+
+**Option B**: Input schema with defaults:
+```yaml
+input_from_event:
+  limit:
+    from: limit
+    type: integer
+    default: 20
+    min: 1
+    max: 100
+```
+
+**Impact**: Can't express:
+- Optional parameters
+- Default values
+- Input constraints (min/max, regex)
+
+---
+
+### #19: No nested input objects
+**Status**: 🔴 OPEN  
+**Severity**: 🟡 MEDIUM  
+**Found by**: Pagination (filter/sort objects)
+
+**Problem**: UCF only supports flat key-value mapping in `input_from_event`.
+
+**Attempted syntax** (not supported):
+```yaml
+input_from_event:
+  filters:           # ❌ Nested object not supported!
+    status: status
+    created_after: date
+  sort:
+    field: field
+    direction: direction
+```
+
+**Current behavior**:
+- Nested objects cause trace to skip use case
+- Must flatten to `filter_status`, `sort_field`, etc.
+
+**Real-world impact**:
+```
+Search API:
+- Accept filters={status:"active", price_min:100}
+- Can't express as nested object
+- Must flatten: filter_status, filter_price_min (ugly, non-standard)
+```
+
+**Workaround**: Flatten all nested objects to `parent_child` naming.
+
+**Impact**: Can't express:
+- Structured query parameters
+- Complex filter objects
+- Idiomatic REST APIs
+
+---
+
+### #20: No feature flags / runtime configuration
+**Status**: 🔴 OPEN  
+**Severity**: 🔴 CRITICAL  
+**Found by**: Checkout with A/B testing (new payment processor)
+
+**Problem**: UCF has no primitives for:
+1. Feature flags / toggles
+2. Runtime configuration
+3. Environment variables
+4. A/B testing / gradual rollout
+5. User segmentation
+
+**Attempted syntax** (not supported):
+```yaml
+feature_flags:
+  - name: new_payment_processor     # ❌ Unknown field!
+    enabled_if:
+      - $env.ENABLE_NEW_PAYMENT == "true"    # ❌ $env not supported!
+      - $inputs.user_id in $config.beta_users  # ❌ $config, 'in' operator not supported!
+      - random() < 0.1                # ❌ random() function not supported!
+
+steps:
+  - id: process-payment-new
+    when: $feature_flags.new_payment_processor == true  # ❌ when: not supported!
+    
+  - id: process-payment-old
+    when: $feature_flags.new_payment_processor == false
+```
+
+**Current behavior**:
+- `feature_flags` block silently ignored
+- ALL conditional steps execute (process-payment-new AND process-payment-old)
+- No $env or $config access
+
+**Real-world impact**:
+```
+A/B Testing New Payment Processor:
+1. Want to test Stripe v2 on 10% of users
+2. UCF executes BOTH v1 AND v2 → Double charge!
+3. No way to gate features
+
+Use case: Gradual rollout, beta testing, environment-specific behavior
+```
+
+**Required primitives**:
+
+**Option A**: Feature flag block with conditions:
+```yaml
+feature_flags:
+  - name: new_checkout
+    enabled_if:
+      - $env.ENVIRONMENT == "production"
+      - $inputs.user_id in $config.beta_users
+      - random() < 0.1  # 10% rollout
+```
+
+**Option B**: Runtime config resolution:
+```yaml
+steps:
+  - id: choose-processor
+    use: actions/select-payment-processor
+    input:
+      feature_flags:
+        new_payment: $env.ENABLE_NEW_PAYMENT
+        user_is_beta: $inputs.user_id in $config.beta_users
+```
+
+**Required language features**:
+- `$env.*` - environment variable access
+- `$config.*` - config file access
+- `in` operator - membership test
+- `random()` - random number generator
+- Boolean operators: `==`, `!=`, `<`, `>`, `and`, `or`, `not`
+
+**Impact**: Can't express:
+- Feature flags
+- A/B testing
+- Gradual rollouts
+- Environment-specific behavior (staging vs production)
+- User segmentation
+
+---
+
+### #21: No cache primitives
+**Status**: 🔴 OPEN  
+**Severity**: 🔴 CRITICAL  
+**Found by**: Product catalog with read-through cache
+
+**Problem**: UCF has no primitives for:
+1. Cache declaration
+2. TTL management
+3. Cache invalidation
+4. Read-through / write-through strategies
+
+**Attempted syntax** (not supported):
+```yaml
+cache:
+  key: product:${inputs.product_id}  # ❌ Unknown field!
+  ttl_seconds: 3600
+  strategy: read_through
+  invalidate_on:
+    - actions/update-product
+
+steps:
+  - id: check-cache
+    cache_read: true  # ❌ Unknown field!
+    
+  - id: store-cache
+    cache_write: true  # ❌ Unknown field!
+```
+
+**Current behavior**:
+- `cache` block silently ignored
+- `cache_read`, `cache_write` annotations ignored
+- No framework support for caching
+
+**Real-world impact**:
+```
+High-Traffic Product Catalog:
+1. 1000 req/sec for same product
+2. No cache → 1000 DB queries/sec
+3. DB overload, high latency
+
+Desired: Read-through cache with TTL, automatic invalidation
+```
+
+**Required primitives**:
+
+**Option A**: Declarative cache:
+```yaml
+cache:
+  key_template: product:${inputs.product_id}
+  ttl_seconds: 3600
+  strategy: read_through
+  invalidate_on:
+    - actions/update-product
+    - actions/delete-product
+```
+
+**Option B**: Cache annotations on steps:
+```yaml
+steps:
+  - id: fetch-product
+    use: actions/fetch-product
+    cache:
+      key: product:${inputs.product_id}
+      ttl_seconds: 3600
+```
+
+**Impact**: Can't express:
+- Read-through caching
+- Write-through caching
+- Cache invalidation
+- TTL management
+- Performance optimization
+
+---
+
+### #22: No string interpolation / templates
+**Status**: 🔴 OPEN  
+**Severity**: 🟡 MEDIUM  
+**Found by**: Cache key generation
+
+**Problem**: UCF has no string interpolation for dynamic values.
+
+**Attempted syntax** (not supported):
+```yaml
+key: product:${inputs.product_id}  # ❌ Literal string, not interpolated!
+message: "Hello ${inputs.user_name}, welcome!"
+```
+
+**Current behavior**:
+- Trace shows literal `product:${inputs.product_id}`
+- No template resolution
+
+**Real-world impact**:
+```
+Cache Key Generation:
+- Want: cache:product:123
+- Get: cache:product:${inputs.product_id} (literal!)
+- Result: All products share same cache key!
+```
+
+**Workaround**: Create action `build-cache-key` that concatenates strings.
+
+**Required syntax**:
+
+**Option A**: Template strings:
+```yaml
+key: product:${inputs.product_id}
+message: Hello ${inputs.user_name}, welcome to ${env.SITE_NAME}!
+```
+
+**Option B**: Concat operator:
+```yaml
+key: "product:" + $inputs.product_id
+```
+
+**Impact**: Can't express:
+- Dynamic keys
+- Templated messages
+- Formatted output
+
+---
+
+### #23: No scheduled jobs / cron primitives
+**Status**: 🔴 OPEN  
+**Severity**: 🔴 CRITICAL  
+**Found by**: Nightly cleanup job (delete expired links)
+
+**Problem**: UCF has no primitives for:
+1. Scheduled execution (cron)
+2. Periodic tasks
+3. Job timeouts
+4. Retry on failure
+5. Time-based functions
+
+**Attempted syntax** (not supported):
+```yaml
+schedule:
+  cron: "0 2 * * *"          # ❌ Unknown field!
+  timezone: UTC
+  max_runtime_seconds: 3600
+  retry_on_failure: true
+  alert_on: [timeout, error]
+
+steps:
+  - use: actions/find-expired
+    input:
+      cutoff: $now() - 90 days  # ❌ $now(), date arithmetic not supported!
+  
+  - use: actions/log
+    input:
+      duration: $elapsed_ms     # ❌ Job metadata not supported!
+```
+
+**Current behavior**:
+- `schedule` block silently ignored
+- No cron support
+- No time functions ($now, $elapsed_ms)
+- No date arithmetic
+
+**Real-world impact**:
+```
+Nightly Cleanup:
+- Need to delete expired links daily at 2AM
+- Can't express in UCF
+- Must use external cron + manual job script
+
+Use cases: Batch jobs, cleanup, reports, backups
+```
+
+**Required primitives**:
+
+**Option A**: Schedule block:
+```yaml
+schedule:
+  cron: "0 2 * * *"
+  timezone: UTC
+  max_runtime_seconds: 3600
+  retry:
+    max_attempts: 3
+    backoff: exponential
+```
+
+**Option B**: Time-based trigger:
+```yaml
+trigger:
+  type: scheduled
+  cron: "0 2 * * *"
+  enabled: $env.ENABLE_CLEANUP == "true"
+```
+
+**Required functions**:
+- `$now()` - current timestamp
+- `$elapsed_ms` - job duration
+- Date arithmetic: `$now() - 90 days`, `$now() + 1 hour`
+
+**Impact**: Can't express:
+- Cron jobs
+- Scheduled tasks
+- Periodic execution
+- Batch processing
+- Maintenance windows
+
+---
+
+### #24: Concurrency block crashes trace
+**Status**: 🔴 OPEN  
+**Severity**: 🟡 MEDIUM  
+**Found by**: Scheduled job with distributed lock
+
+**Problem**: Nested fields in `concurrency` block cause trace to crash/skip use case.
+
+**Attempted syntax** (causes crash):
+```yaml
+concurrency:
+  max_concurrent: 1
+  acquire_lock: cleanup_job_lock  # ❌ Nested field crashes trace!
+```
+
+**Current behavior**:
+- Trace silently skips use case (no output, no error)
+- Must remove `concurrency` block to trace successfully
+
+**Workaround**: Remove concurrency block or use manual lock actions.
+
+**Related**: Bottle Neck #6 (concurrency section does nothing).
+
+**Impact**: Can't even declare concurrency constraints without breaking tooling.
+
+---
+
+**Total**: 2 fixed, 3 partial, 19 open (9 critical/high, 10 medium)

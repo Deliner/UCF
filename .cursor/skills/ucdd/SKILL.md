@@ -33,9 +33,12 @@ Before starting ANY UCF work, internalize these 8 rules:
 
 ## Critical Pre-Flight Checks
 
-### ✅ Before Creating Use Case:
+### ✅ The Golden Filter (Before Writing Specs):
 
-Ask yourself:
+Ask yourself for every line in the spec: **"Does the user/business care about this, or is this just how the backend works?"**
+
+**If it's an infrastructure or backend concept, it DOES NOT belong in the YAML spec. It belongs in `impl.py`.**
+
 1. **Who is the actor?** (If no human, is it `system`?)
 2. **What does actor want to achieve?** (Not "how system works")
 3. **Are steps business operations?** (Not "lookup DB", "send HTTP")
@@ -43,13 +46,14 @@ Ask yourself:
 
 ### 🚨 Red Flags (STOP if you see these):
 
+- **Infrastructure keywords in YAML**: `cache`, `redis`, `ttl`, `cron`, `schedule`, `transaction`, `rollback`, `idempotency_key`. (These belong in `impl.py` or infrastructure config, not business specs!)
 - Use case without actor
 - Step names like `select-from-database`, `return-http-200`
 - Action with multiple verbs (`validate-save-and-notify`)
 - Postcondition mentions DB/HTTP (`record inserted into users table`)
 - Component for infrastructure (`email-sender`, `database-connection`)
 
-If you see red flag → **Read UCF_FRAMEWORK_GUIDE.md** → Fix → Continue
+If you see a red flag → **Move technical details to `impl.py` or Read UCF_FRAMEWORK_GUIDE.md** → Fix → Continue
 
 ---
 

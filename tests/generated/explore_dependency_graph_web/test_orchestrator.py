@@ -32,9 +32,13 @@ class TestHappyPath:
         graph_builder = uc.setup_graph_builder()
 
         build_json = uc.action_build_json(registry=loader.registry, graph=graph_builder.graph)
+
         render_graph = uc.action_render_graph(data={'nodes': build_json.nodes, 'links': build_json.links, 'node_count': build_json.node_count, 'edge_count': build_json.edge_count, 'graph_node_count': graph_builder.node_count, 'graph_edge_count': graph_builder.edge_count}, format='tree')
-        click_node = uc.action_click_node(node_id=None)
-        toggle_view = uc.action_toggle_view(target_view=None)
+
+        click_node = uc.action_click_node(node_id=inputs.get('target_node_id'))
+
+        toggle_view = uc.action_toggle_view(target_view=inputs.get('target_view'))
+
 
         uc.verify_developer_sees_all_specs_as_graph_nodes()
         uc.verify_developer_sees_all_dependency_edges_as_links()
@@ -56,7 +60,9 @@ class TestAltMermaidOutput:
         graph_builder = uc.setup_graph_builder()
 
         build_json = uc.action_build_json(registry=loader.registry, graph=graph_builder.graph)
+
         render_mermaid = uc.action_render_graph(data={'nodes': build_json.nodes, 'links': build_json.links}, format='mermaid')
+
 
 
 class TestAltJsonOutput:
@@ -68,7 +74,9 @@ class TestAltJsonOutput:
         graph_builder = uc.setup_graph_builder()
 
         build_json = uc.action_build_json(registry=loader.registry, graph=graph_builder.graph)
+
         render_json = uc.action_render_graph(data={'nodes': build_json.nodes, 'links': build_json.links}, format='json')
+
 
 
 class TestAltEmptyGraph:
@@ -82,6 +90,7 @@ class TestAltEmptyGraph:
         render_empty = uc.action_render_graph(data={'message': 'no dependency edges found'}, format='table')
 
 
+
 class TestAltRegistryNotLoaded:
 
     def test_registry_not_loaded(
@@ -91,5 +100,6 @@ class TestAltRegistryNotLoaded:
         graph_builder = uc.setup_graph_builder()
 
         render_error = uc.action_render_graph(data={'error': 'registry not loaded'}, format='table')
+
 
 

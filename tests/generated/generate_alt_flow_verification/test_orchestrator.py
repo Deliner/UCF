@@ -27,9 +27,12 @@ class TestHappyPath:
         self, uc: GenerateAltFlowVerificationInterface,
     ) -> None:
 
-        extract_error_code = uc.action_extract_error_code(alt_flow=None)
-        find_trigger_action = uc.action_find_trigger_action(usecase_spec=None, error_code=extract_error_code.error_code)
+        extract_error_code = uc.action_extract_error_code(alt_flow=inputs.get('alt_flow'))
+
+        find_trigger_action = uc.action_find_trigger_action(usecase_spec=inputs.get('usecase_spec'), error_code=extract_error_code.error_code)
+
         generate_assertion = uc.action_generate_assertion(action_ref=find_trigger_action.action_ref, error_code=extract_error_code.error_code)
+
 
         uc.verify_assertion_code_verifies_error_was_raised_by_correct_action()
         uc.verify_assertion_is_inserted_into_generated_test()
@@ -44,5 +47,6 @@ class TestAltNoErrorHandler:
     ) -> None:
 
         skip_verification = uc.action_skip_verification(message='alternative flow has no error handler')
+
 
 

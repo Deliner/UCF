@@ -28,7 +28,9 @@ class TestHappyPath:
         loader = uc.setup_loader()
 
         validate = uc.action_validate(registry=loader.registry)
+
         render_results = uc.action_render_results(data={'loaded_count': loader.loaded_count, 'load_errors': loader.load_errors, 'issues': validate.issues, 'error_count': validate.error_count, 'warning_count': validate.warning_count, 'info_count': validate.info_count}, format='table')
+
 
         uc.verify_all_loaded_specs_have_been_validated()
         uc.verify_all_issues_are_reported_with_severity_category_and()
@@ -50,6 +52,7 @@ class TestAltFileNotFound:
         render_file_error = uc.action_render_results(data={'message': 'spec file not found'}, format='tree')
 
 
+
 class TestAltYamlSyntaxError:
 
     def test_yaml_syntax_error(
@@ -58,6 +61,7 @@ class TestAltYamlSyntaxError:
         loader = uc.setup_loader()
 
         render_yaml_error = uc.action_render_results(data={'message': 'YAML syntax error in spec file'}, format='tree')
+
 
 
 class TestAltNotAMapping:
@@ -70,6 +74,7 @@ class TestAltNotAMapping:
         render_mapping_error = uc.action_render_results(data={'message': 'spec file root is not a YAML mapping'}, format='tree')
 
 
+
 class TestAltMissingKind:
 
     def test_missing_kind(
@@ -78,6 +83,7 @@ class TestAltMissingKind:
         loader = uc.setup_loader()
 
         render_kind_missing = uc.action_render_results(data={'message': 'spec is missing required kind field'}, format='tree')
+
 
 
 class TestAltUnknownKind:
@@ -90,6 +96,7 @@ class TestAltUnknownKind:
         render_unknown_kind = uc.action_render_results(data={'message': 'spec has unrecognized kind value'}, format='tree')
 
 
+
 class TestAltValidationError:
 
     def test_validation_error(
@@ -98,6 +105,7 @@ class TestAltValidationError:
         loader = uc.setup_loader()
 
         render_validation_error = uc.action_render_results(data={'message': 'spec data fails schema validation'}, format='tree')
+
 
 
 class TestAltRefNotFound:
@@ -110,6 +118,7 @@ class TestAltRefNotFound:
         render_ref_error = uc.action_render_results(data={'message': 'referenced spec file not found'}, format='tree')
 
 
+
 class TestAltMaxDepthExceeded:
 
     def test_max_depth_exceeded(
@@ -118,6 +127,7 @@ class TestAltMaxDepthExceeded:
         loader = uc.setup_loader()
 
         render_depth_error = uc.action_render_results(data={'message': 'ref resolution chain too deep'}, format='tree')
+
 
 
 class TestAltNegativeDepth:
@@ -130,6 +140,7 @@ class TestAltNegativeDepth:
         render_depth_invalid = uc.action_render_results(data={'message': 'ref resolution depth cannot be negative'}, format='tree')
 
 
+
 class TestAltParseFailures:
 
     def test_parse_failures(
@@ -138,7 +149,10 @@ class TestAltParseFailures:
         loader = uc.setup_loader()
 
         render_errors = uc.action_render_results(data={'load_errors': loader.load_errors}, format='table')
+
         validate_partial = uc.action_validate(registry=loader.registry)
+
         render_partial_results = uc.action_render_results(data={'issues': validate_partial.issues}, format='table')
+
 
 

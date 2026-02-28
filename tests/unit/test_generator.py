@@ -56,7 +56,7 @@ class TestPytestPlugin:
         assert isinstance(result, GeneratedFile)
         assert result.path == "interface.py"
         assert result.overwrite is True
-        assert "class SimpleFlowInterface(ABC)" in result.content
+        assert "class SimpleFlowInterface(ABC, FrameworkActions):" in result.content
         assert "action_s1" in result.content
 
     def test_generate_orchestrator(self):
@@ -275,7 +275,7 @@ class TestAltFlowScoping:
                                         defined.add(t.id)
                             if isinstance(stmt, ast.Attribute) and isinstance(stmt.value, ast.Name):
                                 var = stmt.value.id
-                                if var not in ("self", "uc") and var not in defined:
+                                if var not in ("self", "uc", "inputs") and var not in defined:
                                     pytest.fail(
                                         f"Alt flow uses undefined '{var}'"
                                     )

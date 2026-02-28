@@ -27,7 +27,8 @@ class TestHappyPath:
     ) -> None:
         loader = uc.setup_loader()
 
-        resolve = uc.action_resolve(usecase=None, registry=loader.registry)
+        resolve = uc.action_resolve(usecase=inputs.get('usecase'), registry=loader.registry)
+
 
         uc.verify_flattened_uc_has_parent_steps_followed_by_child_steps()
         uc.verify_parent_postconditions_are_preserved_in_the_result()
@@ -45,7 +46,8 @@ class TestAltParentNotFound:
     ) -> None:
         loader = uc.setup_loader()
 
-        render_parent_error = uc.action_render_parent_error(data={'message': 'parent use case not found', 'usecase': None}, format='tree')
+        render_parent_error = uc.action_render_parent_error(data={'message': 'parent use case not found', 'usecase': inputs.get('usecase')}, format='tree')
+
 
 
 class TestAltCircularExtends:
@@ -55,7 +57,8 @@ class TestAltCircularExtends:
     ) -> None:
         loader = uc.setup_loader()
 
-        render_cycle_error = uc.action_render_cycle_error(data={'message': 'circular extends chain detected', 'usecase': None}, format='tree')
+        render_cycle_error = uc.action_render_cycle_error(data={'message': 'circular extends chain detected', 'usecase': inputs.get('usecase')}, format='tree')
+
 
 
 class TestAltStepIdClash:
@@ -65,6 +68,7 @@ class TestAltStepIdClash:
     ) -> None:
         loader = uc.setup_loader()
 
-        render_clash_error = uc.action_render_clash_error(data={'message': 'step ID conflict between parent and child', 'usecase': None}, format='tree')
+        render_clash_error = uc.action_render_clash_error(data={'message': 'step ID conflict between parent and child', 'usecase': inputs.get('usecase')}, format='tree')
+
 
 

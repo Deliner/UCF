@@ -28,9 +28,12 @@ class TestHappyPath:
     ) -> None:
         loader = uc.setup_loader()
 
-        generate = uc.action_generate(usecase=None, registry=loader.registry, output_dir=None)
+        generate = uc.action_generate(usecase=inputs.get('target_usecase'), registry=loader.registry, output_dir=inputs.get('output_dir'))
+
         validate = uc.action_validate(interface_code=generate.interface_path, orchestrator_code=generate.orchestrator_path, impl_code=generate.impl_path)
+
         render_results = uc.action_render_results(data={'is_valid': validate.is_valid, 'issues': validate.issues, 'issue_count': validate.issue_count}, format='table')
+
 
         uc.verify_generated_interface_py_compiles_without_syntaxerror()
         uc.verify_generated_test_orchestrator_py_compiles_without_syntaxerror()
@@ -47,8 +50,11 @@ class TestAltValidationFailures:
     ) -> None:
         loader = uc.setup_loader()
 
-        generate = uc.action_generate(usecase=None, registry=loader.registry, output_dir=None)
+        generate = uc.action_generate(usecase=inputs.get('target_usecase'), registry=loader.registry, output_dir=inputs.get('output_dir'))
+
         validate = uc.action_validate(interface_code=generate.interface_path, orchestrator_code=generate.orchestrator_path, impl_code=generate.impl_path)
+
         render_failures = uc.action_render_results(data={'issues': validate.issues, 'issue_count': validate.issue_count}, format='table')
+
 
 

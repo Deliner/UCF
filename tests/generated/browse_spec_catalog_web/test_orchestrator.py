@@ -29,10 +29,14 @@ class TestHappyPath:
     ) -> None:
         loader = uc.setup_loader()
 
-        list_specs = uc.action_list_specs(registry=loader.registry, kind_filter=None, search_query=None)
+        list_specs = uc.action_list_specs(registry=loader.registry, kind_filter=inputs.get('kind_filter'), search_query=inputs.get('search_query'))
+
         render_results = uc.action_render_results(data={'specs': list_specs.specs, 'total_count': list_specs.total_count, 'kind_counts': list_specs.kind_counts}, format='table')
-        filter_by_kind = uc.action_filter_by_kind(kind=None, search_text=None)
-        navigate_to_spec = uc.action_navigate_to_spec(spec_kind=None, spec_name=None)
+
+        filter_by_kind = uc.action_filter_by_kind(kind=inputs.get('selected_kind'), search_text=inputs.get('search_text'))
+
+        navigate_to_spec = uc.action_navigate_to_spec(spec_kind=inputs.get('selected_kind'), spec_name=inputs.get('selected_spec_name'))
+
 
         uc.verify_developer_receives_a_list_of_specs_matching_the_filter()
         uc.verify_spec_counts_per_kind_are_reported()
@@ -51,7 +55,9 @@ class TestAltNoFilter:
         loader = uc.setup_loader()
 
         list_all = uc.action_list_specs(registry=loader.registry)
+
         render_all = uc.action_render_results(data={'specs': list_all.specs, 'total_count': list_all.total_count})
+
 
 
 class TestAltNoResults:
@@ -64,6 +70,7 @@ class TestAltNoResults:
         render_empty = uc.action_render_results(data={'message': 'no specs match the current filter'}, format='table')
 
 
+
 class TestAltRegistryNotLoaded:
 
     def test_registry_not_loaded(
@@ -72,6 +79,7 @@ class TestAltRegistryNotLoaded:
         loader = uc.setup_loader()
 
         render_registry_error = uc.action_render_results(data={'error': 'registry not loaded'}, format='table')
+
 
 
 class TestAltInvalidKindFilter:
@@ -84,6 +92,7 @@ class TestAltInvalidKindFilter:
         render_kind_error = uc.action_render_results(data={'error': 'unrecognized kind filter'}, format='table')
 
 
+
 class TestAltNoFiltersApplied:
 
     def test_no_filters_applied(
@@ -92,5 +101,6 @@ class TestAltNoFiltersApplied:
         loader = uc.setup_loader()
 
         show_all = uc.action_filter_by_kind()
+
 
 

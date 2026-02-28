@@ -27,8 +27,10 @@ class TestHappyPath:
     ) -> None:
         loader = uc.setup_loader()
 
-        trace = uc.action_trace(usecase=None, registry=loader.registry)
+        trace = uc.action_trace(usecase=inputs.get('target_usecase'), registry=loader.registry)
+
         render_trace = uc.action_render_trace(data={'findings': trace.findings, 'context': trace.final_context}, format='tree')
+
 
         uc.verify_every_step_in_the_use_case_has_been_traced()
         uc.verify_data_gaps_and_dead_data_are_reported()

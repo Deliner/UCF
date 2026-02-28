@@ -25,8 +25,10 @@ class TestHappyPath:
         self, uc: GetUrlStatsInterface,
     ) -> None:
 
-        fetch_stats = uc.action_fetch_stats(slug=None)
+        fetch_stats = uc.action_fetch_stats(slug=inputs.get('slug'))
+
         render_stats = uc.action_render_stats(data={'slug': fetch_stats.slug, 'url': fetch_stats.original_url, 'clicks': fetch_stats.total_clicks, 'created': fetch_stats.created_at, 'owner': fetch_stats.created_by}, format='table')
+
 
         uc.verify_creator_sees_total_click_count()
         uc.verify_creator_sees_original_url()
@@ -41,5 +43,6 @@ class TestAltSlugNotFound:
     ) -> None:
 
         return_not_found = uc.action_render_stats(data={'error': 'slug not found'}, format='json')
+
 
 

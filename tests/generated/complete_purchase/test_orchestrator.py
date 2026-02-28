@@ -26,8 +26,10 @@ class TestHappyPath:
         self, uc: CompletePurchaseInterface,
     ) -> None:
 
-        finalize_order = uc.action_finalize_order(cart_id=None, payment_method_id=None, shipping_address_id=None)
+        finalize_order = uc.action_finalize_order(cart_id=inputs.get('cart_id'), payment_method_id=inputs.get('payment_method_id'), shipping_address_id=inputs.get('shipping_address_id'))
+
         confirm_to_customer = uc.action_confirm_to_customer(order_id=finalize_order.order_id, total_amount=finalize_order.total_amount)
+
 
         uc.verify_order_is_placed_and_confirmed()
         uc.verify_payment_is_processed_successfully()
@@ -43,7 +45,8 @@ class TestAltPaymentDeclined:
         self, uc: CompletePurchaseInterface,
     ) -> None:
 
-        notify_payment_failure = uc.action_notify_payment_failure(cart_id=None, reason='payment declined')
+        notify_payment_failure = uc.action_notify_payment_failure(cart_id=inputs.get('cart_id'), reason='payment declined')
+
 
 
 class TestAltOutOfStock:
@@ -52,7 +55,8 @@ class TestAltOutOfStock:
         self, uc: CompletePurchaseInterface,
     ) -> None:
 
-        notify_stock_issue = uc.action_notify_stock_issue(cart_id=None)
+        notify_stock_issue = uc.action_notify_stock_issue(cart_id=inputs.get('cart_id'))
+
 
 
 class TestAltPaymentTimeout:
@@ -61,7 +65,8 @@ class TestAltPaymentTimeout:
         self, uc: CompletePurchaseInterface,
     ) -> None:
 
-        notify_timeout = uc.action_notify_timeout(cart_id=None)
+        notify_timeout = uc.action_notify_timeout(cart_id=inputs.get('cart_id'))
+
 
 
 class TestAltInvalidCart:
@@ -70,7 +75,8 @@ class TestAltInvalidCart:
         self, uc: CompletePurchaseInterface,
     ) -> None:
 
-        notify_cart_issue = uc.action_notify_cart_issue(cart_id=None, reason='cart invalid or expired')
+        notify_cart_issue = uc.action_notify_cart_issue(cart_id=inputs.get('cart_id'), reason='cart invalid or expired')
+
 
 
 class TestAltInvalidAddress:
@@ -79,6 +85,7 @@ class TestAltInvalidAddress:
         self, uc: CompletePurchaseInterface,
     ) -> None:
 
-        notify_address_issue = uc.action_notify_address_issue(shipping_address_id=None)
+        notify_address_issue = uc.action_notify_address_issue(shipping_address_id=inputs.get('shipping_address_id'))
+
 
 

@@ -28,10 +28,14 @@ class TestHappyPath:
         self, uc: CreateShortUrlInterface,
     ) -> None:
 
-        validate_url = uc.action_validate_url(url=None)
+        validate_url = uc.action_validate_url(url=inputs.get('original_url'))
+
         generate_slug = uc.action_generate_slug(length=6)
+
         check_exists = uc.action_check_exists(slug=generate_slug.slug)
-        store_url = uc.action_store_url(slug=generate_slug.slug, original_url=None, created_by=None)
+
+        store_url = uc.action_store_url(slug=generate_slug.slug, original_url=inputs.get('original_url'), created_by=inputs.get('created_by'))
+
 
         uc.verify_short_url_is_created_and_stored()
         uc.verify_slug_is_unique_in_database()
@@ -48,6 +52,7 @@ class TestAltInvalidUrl:
         return_error = uc.action_return_error(data={'error': 'invalid URL format'}, format='json')
 
 
+
 class TestAltSlugCollision:
 
     def test_slug_collision(
@@ -55,5 +60,6 @@ class TestAltSlugCollision:
     ) -> None:
 
         retry_generate = uc.action_generate_slug(length=8)
+
 
 

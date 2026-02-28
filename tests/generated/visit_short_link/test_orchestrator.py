@@ -25,7 +25,8 @@ class TestHappyPath:
         self, uc: VisitShortLinkInterface,
     ) -> None:
 
-        redirect_to_destination = uc.action_redirect_to_destination(short_code=None)
+        redirect_to_destination = uc.action_redirect_to_destination(short_code=inputs.get('short_code'))
+
 
         uc.verify_visitor_is_redirected_to_original_page()
         uc.verify_visit_is_recorded_for_analytics()
@@ -39,6 +40,7 @@ class TestAltLinkNotFound:
         self, uc: VisitShortLinkInterface,
     ) -> None:
 
-        show_404 = uc.action_show_404(short_code=None)
+        show_404 = uc.action_show_404(short_code=inputs.get('short_code'))
+
 
 
