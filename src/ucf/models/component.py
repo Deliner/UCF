@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from ucf.models.base import FieldDef, Metadata
 
@@ -23,10 +23,17 @@ class StepDef(BaseModel):
     use: str
     input: dict[str, Any] = Field(default_factory=dict)
     output: dict[str, str] = Field(default_factory=dict)
-    when: str | None = None
+    when: str | None = Field(default=None, description="Expression to evaluate. Step runs if true.")
+    skip_if: str | None = Field(default=None, description="Expression to evaluate. Step is skipped if true.")
     depends_on: list[str] = Field(default_factory=list)
     postcondition: str | None = None
     retry: RetryConfig | None = None
+
+    @model_validator(mode="after")
+    def check_mutually_exclusive_conditions(self) -> StepDef:
+        if self.when is not None and self.skip_if is not None:
+            raise ValueError("Cannot specify both 'when' and 'skip_if' on the same step.")
+        return self
 
 
 class ComponentSpec(BaseModel):
