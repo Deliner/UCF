@@ -100,6 +100,25 @@ def _extract_type_from_field(field_def: Any) -> str:
     return type_map.get(raw, "Any")
 
 
+def _translate_expression(expr: str) -> str:
+    """Translates YAML bindings in expressions to Python variables."""
+    def replacer(match):
+        binding = match.group(0)
+        parts = binding.split(".")
+        if parts[0] == "$inputs" and len(parts) >= 2:
+            field = parts[1]
+            return f"inputs.get('{field}')"
+        elif parts[0] == "$steps" and len(parts) >= 3:
+            step_var = _to_snake(parts[1])
+            fields = ".".join(_to_snake(p) for p in parts[2:])
+            return f"{step_var}.{fields}"
+        return binding
+
+    # Regex to find bindings starting with $
+    pattern = r'\$[a-zA-Z0-9_\-\.]+'
+    return re.sub(pattern, replacer, expr)
+
+
 def _resolve_binding(val: str) -> str:
     """Convert a $ expression to a Python variable reference.
     
