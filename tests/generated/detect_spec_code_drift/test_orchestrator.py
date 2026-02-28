@@ -30,8 +30,8 @@ class TestHappyPath:
         loader = uc.setup_loader()
         scanner = uc.setup_scanner()
 
-        build_map = uc.action_build_map(loader.registry, scanner.implementations)
-        detect = uc.action_detect(loader.registry, build_map.spec_to_code, build_map.code_to_spec)
+        build_map = uc.action_build_map(registry=loader.registry, implementations=scanner.implementations)
+        detect = uc.action_detect(registry=loader.registry, spec_to_code=build_map.spec_to_code, code_to_spec=build_map.code_to_spec)
         render_drift = uc.action_render_drift(data={'unimplemented_specs': detect.unimplemented_specs, 'orphan_code': detect.orphan_code, 'stale_mappings': detect.stale_mappings, 'drift_count': detect.drift_count, 'mapped_count': build_map.mapped_count}, format='table')
 
         uc.verify_every_spec_without_an_implementation_is_reported_as()
@@ -51,7 +51,7 @@ class TestAltCustomConvention:
         loader = uc.setup_loader()
         scanner = uc.setup_scanner()
 
-        build_map_custom = uc.action_build_map(loader.registry, scanner.implementations, None)
+        build_map_custom = uc.action_build_map(registry=loader.registry, implementations=scanner.implementations, convention=None)
 
 
 class TestAltNoDriftFound:
@@ -62,7 +62,7 @@ class TestAltNoDriftFound:
         loader = uc.setup_loader()
         scanner = uc.setup_scanner()
 
-        build_map = uc.action_build_map(loader.registry, scanner.implementations)
+        build_map = uc.action_build_map(registry=loader.registry, implementations=scanner.implementations)
         render_clean = uc.action_render_drift(data={'message': 'all specs are mapped to implementations', 'mapped_count': build_map.mapped_count}, format='tree')
 
 

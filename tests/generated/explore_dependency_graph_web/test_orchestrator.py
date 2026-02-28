@@ -31,10 +31,10 @@ class TestHappyPath:
         loader = uc.setup_loader()
         graph_builder = uc.setup_graph_builder()
 
-        build_json = uc.action_build_json(loader.registry, graph_builder.graph)
+        build_json = uc.action_build_json(registry=loader.registry, graph=graph_builder.graph)
         render_graph = uc.action_render_graph(data={'nodes': build_json.nodes, 'links': build_json.links, 'node_count': build_json.node_count, 'edge_count': build_json.edge_count, 'graph_node_count': graph_builder.node_count, 'graph_edge_count': graph_builder.edge_count}, format='tree')
-        click_node = uc.action_click_node(None)
-        toggle_view = uc.action_toggle_view(None)
+        click_node = uc.action_click_node(node_id=None)
+        toggle_view = uc.action_toggle_view(target_view=None)
 
         uc.verify_developer_sees_all_specs_as_graph_nodes()
         uc.verify_developer_sees_all_dependency_edges_as_links()
@@ -55,7 +55,7 @@ class TestAltMermaidOutput:
         loader = uc.setup_loader()
         graph_builder = uc.setup_graph_builder()
 
-        build_json = uc.action_build_json(loader.registry, graph_builder.graph)
+        build_json = uc.action_build_json(registry=loader.registry, graph=graph_builder.graph)
         render_mermaid = uc.action_render_graph(data={'nodes': build_json.nodes, 'links': build_json.links}, format='mermaid')
 
 
@@ -67,7 +67,7 @@ class TestAltJsonOutput:
         loader = uc.setup_loader()
         graph_builder = uc.setup_graph_builder()
 
-        build_json = uc.action_build_json(loader.registry, graph_builder.graph)
+        build_json = uc.action_build_json(registry=loader.registry, graph=graph_builder.graph)
         render_json = uc.action_render_graph(data={'nodes': build_json.nodes, 'links': build_json.links}, format='json')
 
 

@@ -28,10 +28,10 @@ class TestHappyPath:
         self, uc: CreateShortUrlInterface,
     ) -> None:
 
-        validate_url = uc.action_validate_url(None)
+        validate_url = uc.action_validate_url(url=None)
         generate_slug = uc.action_generate_slug(length=6)
-        check_exists = uc.action_check_exists(generate_slug.slug)
-        store_url = uc.action_store_url(generate_slug.slug, None, None)
+        check_exists = uc.action_check_exists(slug=generate_slug.slug)
+        store_url = uc.action_store_url(slug=generate_slug.slug, original_url=None, created_by=None)
 
         uc.verify_short_url_is_created_and_stored()
         uc.verify_slug_is_unique_in_database()

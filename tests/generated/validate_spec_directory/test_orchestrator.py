@@ -27,7 +27,7 @@ class TestHappyPath:
     ) -> None:
         loader = uc.setup_loader()
 
-        validate = uc.action_validate(loader.registry)
+        validate = uc.action_validate(registry=loader.registry)
         render_results = uc.action_render_results(data={'loaded_count': loader.loaded_count, 'load_errors': loader.load_errors, 'issues': validate.issues, 'error_count': validate.error_count, 'warning_count': validate.warning_count, 'info_count': validate.info_count}, format='table')
 
         uc.verify_all_loaded_specs_have_been_validated()
@@ -138,7 +138,7 @@ class TestAltParseFailures:
         loader = uc.setup_loader()
 
         render_errors = uc.action_render_results(data={'load_errors': loader.load_errors}, format='table')
-        validate_partial = uc.action_validate(loader.registry)
+        validate_partial = uc.action_validate(registry=loader.registry)
         render_partial_results = uc.action_render_results(data={'issues': validate_partial.issues}, format='table')
 
 

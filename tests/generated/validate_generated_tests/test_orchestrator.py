@@ -28,8 +28,8 @@ class TestHappyPath:
     ) -> None:
         loader = uc.setup_loader()
 
-        generate = uc.action_generate(None, loader.registry, None)
-        validate = uc.action_validate(generate.interface_path, generate.orchestrator_path, generate.impl_path)
+        generate = uc.action_generate(usecase=None, registry=loader.registry, output_dir=None)
+        validate = uc.action_validate(interface_code=generate.interface_path, orchestrator_code=generate.orchestrator_path, impl_code=generate.impl_path)
         render_results = uc.action_render_results(data={'is_valid': validate.is_valid, 'issues': validate.issues, 'issue_count': validate.issue_count}, format='table')
 
         uc.verify_generated_interface_py_compiles_without_syntaxerror()
@@ -47,8 +47,8 @@ class TestAltValidationFailures:
     ) -> None:
         loader = uc.setup_loader()
 
-        generate = uc.action_generate(None, loader.registry, None)
-        validate = uc.action_validate(generate.interface_path, generate.orchestrator_path, generate.impl_path)
+        generate = uc.action_generate(usecase=None, registry=loader.registry, output_dir=None)
+        validate = uc.action_validate(interface_code=generate.interface_path, orchestrator_code=generate.orchestrator_path, impl_code=generate.impl_path)
         render_failures = uc.action_render_results(data={'issues': validate.issues, 'issue_count': validate.issue_count}, format='table')
 
 

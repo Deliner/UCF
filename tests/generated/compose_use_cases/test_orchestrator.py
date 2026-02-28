@@ -27,7 +27,7 @@ class TestHappyPath:
     ) -> None:
         loader = uc.setup_loader()
 
-        resolve = uc.action_resolve(None, loader.registry)
+        resolve = uc.action_resolve(usecase=None, registry=loader.registry)
 
         uc.verify_flattened_uc_has_parent_steps_followed_by_child_steps()
         uc.verify_parent_postconditions_are_preserved_in_the_result()

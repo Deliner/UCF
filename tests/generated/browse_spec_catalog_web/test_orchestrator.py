@@ -29,10 +29,10 @@ class TestHappyPath:
     ) -> None:
         loader = uc.setup_loader()
 
-        list_specs = uc.action_list_specs(loader.registry, None, None)
+        list_specs = uc.action_list_specs(registry=loader.registry, kind_filter=None, search_query=None)
         render_results = uc.action_render_results(data={'specs': list_specs.specs, 'total_count': list_specs.total_count, 'kind_counts': list_specs.kind_counts}, format='table')
-        filter_by_kind = uc.action_filter_by_kind(None, None)
-        navigate_to_spec = uc.action_navigate_to_spec(None, None)
+        filter_by_kind = uc.action_filter_by_kind(kind=None, search_text=None)
+        navigate_to_spec = uc.action_navigate_to_spec(spec_kind=None, spec_name=None)
 
         uc.verify_developer_receives_a_list_of_specs_matching_the_filter()
         uc.verify_spec_counts_per_kind_are_reported()
@@ -50,7 +50,7 @@ class TestAltNoFilter:
     ) -> None:
         loader = uc.setup_loader()
 
-        list_all = uc.action_list_specs(loader.registry)
+        list_all = uc.action_list_specs(registry=loader.registry)
         render_all = uc.action_render_results(data={'specs': list_all.specs, 'total_count': list_all.total_count})
 
 

@@ -26,8 +26,8 @@ class TestHappyPath:
         self, uc: ExpireOldUrlsInterface,
     ) -> None:
 
-        find_expired = uc.action_find_expired(None)
-        delete_batch = uc.action_delete_batch(find_expired.expired_slugs)
+        find_expired = uc.action_find_expired(days_threshold=None)
+        delete_batch = uc.action_delete_batch(slugs=find_expired.expired_slugs)
 
         uc.verify_all_expired_urls_are_deleted_from_database()
         uc.verify_deletion_count_matches_number_of_found_expired_urls()

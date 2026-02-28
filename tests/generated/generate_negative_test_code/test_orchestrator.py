@@ -28,8 +28,8 @@ class TestHappyPath:
     ) -> None:
         loader = uc.setup_loader()
 
-        extract_errors = uc.action_extract_errors(None, loader.registry)
-        generate = uc.action_generate(extract_errors.error_defs, None, None)
+        extract_errors = uc.action_extract_errors(usecase=None, registry=loader.registry)
+        generate = uc.action_generate(error_defs=extract_errors.error_defs, interface_class=None, usecase_name=None)
         render_results = uc.action_render_results(data={'error_count': extract_errors.error_count, 'test_count': generate.test_count, 'error_methods': generate.error_methods}, format='table')
 
         uc.verify_for_each_action_error_a_testerror_class_is_generated()
@@ -46,7 +46,7 @@ class TestAltNoErrorsDefined:
     ) -> None:
         loader = uc.setup_loader()
 
-        extract_errors = uc.action_extract_errors(None, loader.registry)
+        extract_errors = uc.action_extract_errors(usecase=None, registry=loader.registry)
         render_empty = uc.action_render_results(data={'message': 'no error definitions found in action specs', 'error_count': extract_errors.error_count}, format='tree')
 
 

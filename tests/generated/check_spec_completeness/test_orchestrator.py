@@ -33,13 +33,13 @@ class TestHappyPath:
     ) -> None:
         registry = uc.setup_registry()
 
-        analyze_errors = uc.action_analyze_errors(registry.registry)
-        analyze_partitions = uc.action_analyze_partitions(registry.registry)
-        analyze_states = uc.action_analyze_states(registry.registry)
-        analyze_platform = uc.action_analyze_platform(registry.registry)
-        analyze_invariants = uc.action_analyze_invariants(registry.registry)
-        analyze_resources = uc.action_analyze_resources(registry.registry)
-        aggregate = uc.action_aggregate(registry.registry)
+        analyze_errors = uc.action_analyze_errors(registry=registry.registry)
+        analyze_partitions = uc.action_analyze_partitions(registry=registry.registry)
+        analyze_states = uc.action_analyze_states(registry=registry.registry)
+        analyze_platform = uc.action_analyze_platform(registry=registry.registry)
+        analyze_invariants = uc.action_analyze_invariants(registry=registry.registry)
+        analyze_resources = uc.action_analyze_resources(registry=registry.registry)
+        aggregate = uc.action_aggregate(registry=registry.registry)
         render_report = uc.action_render_report(data={'report': aggregate.report}, format='tree')
 
         uc.verify_developer_sees_a_completeness_report_identifying_behavioral()

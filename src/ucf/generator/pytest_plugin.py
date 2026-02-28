@@ -143,13 +143,18 @@ def _build_dict_literal(d: dict[str, Any]) -> str:
 
 
 def _build_step_args(input_dict: dict[str, Any]) -> list[str]:
-    """Build argument list from a step's input dict."""
+    """Build argument list from a step's input dict.
+    
+    Always generates keyword arguments to avoid syntax errors when mixing
+    literals and bindings.
+    """
     args = []
     for fname, binding in input_dict.items():
         if isinstance(binding, dict):
             args.append(f"{_to_snake(fname)}={_build_dict_literal(binding)}")
         elif isinstance(binding, str) and binding.startswith("$"):
-            args.append(_resolve_binding(binding))
+            # Always use keyword argument, even for bindings (fixes Bottle Neck #10)
+            args.append(f"{_to_snake(fname)}={_resolve_binding(binding)}")
         else:
             args.append(f"{_to_snake(fname)}={repr(binding)}")
     return args

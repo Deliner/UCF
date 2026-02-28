@@ -30,8 +30,8 @@ class TestHappyPath:
         loader = uc.setup_loader()
         graph_builder = uc.setup_graph_builder()
 
-        get_detail = uc.action_get_detail(loader.registry, None, None)
-        get_rels = uc.action_get_rels(loader.registry, graph_builder.graph, None)
+        get_detail = uc.action_get_detail(registry=loader.registry, kind=None, name=None)
+        get_rels = uc.action_get_rels(registry=loader.registry, graph=graph_builder.graph, spec_ref=None)
         render_detail = uc.action_render_detail(data={'spec': get_detail.spec, 'raw_yaml': get_detail.raw_yaml, 'impl_status': get_detail.impl_status, 'upstream': get_rels.upstream, 'downstream': get_rels.downstream}, format='tree')
 
         uc.verify_developer_sees_parsed_spec_metadata_and_schema()

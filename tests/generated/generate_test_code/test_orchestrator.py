@@ -27,7 +27,7 @@ class TestHappyPath:
     ) -> None:
         loader = uc.setup_loader()
 
-        generate = uc.action_generate(None, loader.registry, None)
+        generate = uc.action_generate(usecase=None, registry=loader.registry, output_dir=None)
         render_result = uc.action_render_result(data={'interface_path': generate.interface_path, 'orchestrator_path': generate.orchestrator_path, 'impl_path': generate.impl_path, 'files_written': generate.files_written}, format='tree')
 
         uc.verify_for_each_usecase_interface_py_test_orchestrator_py_are()

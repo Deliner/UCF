@@ -29,11 +29,11 @@ class TestHappyPath:
         self, uc: RedirectToOriginalInterface,
     ) -> None:
 
-        lookup_url = uc.action_lookup_url(None)
-        acquire_click_lock = uc.action_acquire_click_lock(resource='short_urls', None, timeout=5000)
-        increment_clicks = uc.action_increment_clicks(None)
-        release_click_lock = uc.action_release_click_lock(acquire_click_lock.lock_id)
-        redirect = uc.action_redirect(lookup_url.url_record.original_url, status_code=302)
+        lookup_url = uc.action_lookup_url(slug=None)
+        acquire_click_lock = uc.action_acquire_click_lock(resource='short_urls', key=None, timeout=5000)
+        increment_clicks = uc.action_increment_clicks(slug=None)
+        release_click_lock = uc.action_release_click_lock(lock_id=acquire_click_lock.lock_id)
+        redirect = uc.action_redirect(target_url=lookup_url.url_record.original_url, status_code=302)
 
         uc.verify_visitor_is_redirected_to_original_url()
         uc.verify_click_count_is_incremented_by_1()

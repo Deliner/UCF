@@ -28,8 +28,8 @@ class TestHappyPath:
     ) -> None:
         loader = uc.setup_loader()
 
-        build_graph = uc.action_build_graph(loader.registry)
-        impact = uc.action_impact(build_graph.graph, None)
+        build_graph = uc.action_build_graph(registry=loader.registry)
+        impact = uc.action_impact(graph=build_graph.graph, target=None)
         render_impact = uc.action_render_impact(data={'target': None, 'direct': impact.direct_dependents, 'transitive': impact.transitive_dependents, 'invariants': impact.invariants, 'conflicts': impact.conflicts, 'total': impact.total_impact}, format='tree')
 
         uc.verify_all_direct_and_transitive_dependents_of_target_are_listed()

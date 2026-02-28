@@ -209,16 +209,27 @@ steps:
 ---
 
 ### #10: Generator mixes positional & keyword args incorrectly
-**Severity**: 🟡 Medium  
-**Impact**: Generated tests have syntax errors
+**Status**: ✅ FIXED in `pytest_plugin.py`
 
-**Generated**:
+**Problem**: Generator mixed positional and keyword args, causing syntax errors
+
+**Before**:
 ```python
 action_acquire_click_lock(resource='short_urls', None, timeout=5000)
 #                                                ^^^^ SyntaxError
 ```
 
-**Fix needed**: Always generate keyword args when mixing with positional `None`
+**After**:
+```python
+action_acquire_click_lock(resource='short_urls', key=None, timeout=5000)
+#                                                ^^^^^^^^ Correct!
+```
+
+**Fix**: Updated `_build_step_args()` to always generate keyword args:
+```python
+elif isinstance(binding, str) and binding.startswith("$"):
+    args.append(f"{_to_snake(fname)}={_resolve_binding(binding)}")
+```
 
 ---
 
@@ -235,6 +246,6 @@ action_acquire_click_lock(resource='short_urls', None, timeout=5000)
 | #7 | No type checking | 🟡 Medium | Open |
 | #8 | No for_each | 🟡 Medium | Open |
 | #9 | No locking | 🔴 Critical | ✅ Partial (POC done) |
-| #10 | Bad arg generation | 🟡 Medium | Open |
+| #10 | Bad arg generation | 🟡 Medium | ✅ Fixed |
 
-**Total**: 2 fixed, 2 partial, 6 open (1 critical/high, 6 medium)
+**Total**: 3 fixed, 2 partial, 5 open (1 critical/high, 5 medium)

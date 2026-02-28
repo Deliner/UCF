@@ -26,8 +26,8 @@ class TestHappyPath:
         self, uc: ScaffoldSpecsFromCodeInterface,
     ) -> None:
 
-        scan = uc.action_scan(None, None)
-        generate = uc.action_generate(scan.functions, scan.classes, None)
+        scan = uc.action_scan(source_dir=None, patterns=None)
+        generate = uc.action_generate(functions=scan.functions, classes=scan.classes, output_dir=None)
         render_results = uc.action_render_results(data={'scanned_count': scan.scanned_count, 'functions_found': scan.functions, 'classes_found': scan.classes, 'action_specs': generate.action_specs, 'component_specs': generate.component_specs, 'specs_written': generate.specs_written}, format='tree')
 
         uc.verify_every_public_function_in_the_source_directory_has_a()
@@ -44,7 +44,7 @@ class TestAltDefaultPatterns:
         self, uc: ScaffoldSpecsFromCodeInterface,
     ) -> None:
 
-        scan_defaults = uc.action_scan(None)
+        scan_defaults = uc.action_scan(source_dir=None)
 
 
 class TestAltNoCodeFound:
@@ -53,7 +53,7 @@ class TestAltNoCodeFound:
         self, uc: ScaffoldSpecsFromCodeInterface,
     ) -> None:
 
-        scan = uc.action_scan(None, None)
+        scan = uc.action_scan(source_dir=None, patterns=None)
         render_empty = uc.action_render_results(data={'message': 'no Python code found in source directory', 'scanned_count': scan.scanned_count}, format='tree')
 
 
