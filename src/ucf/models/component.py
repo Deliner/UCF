@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from ucf.models.base import FieldDef, Metadata
 
@@ -28,6 +28,18 @@ class StepDef(BaseModel):
     depends_on: list[str] = Field(default_factory=list)
     postcondition: str | None = None
     retry: RetryConfig | None = None
+
+    @field_validator("when", "skip_if", mode="before")
+    @classmethod
+    def _reject_empty_expression(cls, v: str | None) -> str | None:
+        """Reject empty or whitespace-only strings; they are not valid expressions."""
+        if v is None:
+            return None
+        if not isinstance(v, str):
+            return v
+        if not v.strip():
+            raise ValueError("Expression cannot be empty or whitespace-only")
+        return v
 
     @model_validator(mode="after")
     def check_mutually_exclusive_conditions(self) -> StepDef:
