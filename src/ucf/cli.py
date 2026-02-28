@@ -179,6 +179,7 @@ def trace(
 ) -> None:
     """Trace data flow through use cases (Context Tracer)."""
     from ucf.tracer.context import FindingSeverity
+    from ucf.tracer.display import format_step_label
     from ucf.tracer.engine import ContextTracer, CrossUseCaseAnalyzer
 
     console.print(f"\n[bold]UCF Trace[/bold]: {specs_dir}\n")
@@ -211,7 +212,7 @@ def trace(
                 init_node.add(f"{slot_name} ({slot.type})")
 
         for step in uc.steps:
-            step_node = tree.add(f"[cyan]{step.id}[/cyan]")
+            step_node = tree.add(f"[cyan]{format_step_label(step)}[/cyan]")
             action_ref = step.use
             step_node.add(f"[dim]use:[/dim] {action_ref}")
 
@@ -238,7 +239,7 @@ def trace(
             for alt in uc.alternative_flows:
                 alt_node = tree.add(f"[bold]Alt Flow: {alt.name}[/bold]")
                 for step in alt.steps:
-                    alt_node.add(f"[cyan]{step.id}[/cyan] → {step.use}")
+                    alt_node.add(f"[cyan]{format_step_label(step)}[/cyan] → {step.use}")
 
         console.print(tree)
         console.print()
