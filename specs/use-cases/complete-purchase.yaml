@@ -1,0 +1,106 @@
+kind: usecase
+metadata:
+  name: complete-purchase
+  version: 1.0.0
+  owner: ecommerce
+  actor: customer
+  tags: [ecommerce, checkout, payment]
+  description: Customer completes purchase and receives order confirmation
+
+trigger: customer clicks "Place Order" button
+
+input_from_event:
+  cart_id: cart_id
+  payment_method_id: payment_method_id
+  shipping_address_id: shipping_address_id
+
+preconditions:
+  - customer has items in cart
+  - customer has valid payment method
+  - customer has shipping address
+  - cart total is greater than zero
+
+assumed_preconditions:
+  - customer is authenticated
+  - cart is not empty
+
+steps:
+  - id: finalize-order
+    use: actions/finalize-order
+    input:
+      cart_id: $inputs.cart_id
+      payment_method_id: $inputs.payment_method_id
+      shipping_address_id: $inputs.shipping_address_id
+    output:
+      id: order_id
+      total: total_amount
+      status: payment_status
+
+  - id: confirm-to-customer
+    use: actions/send-order-confirmation
+    depends_on: [finalize-order]
+    input:
+      order_id: $steps.finalize-order.order_id
+      total_amount: $steps.finalize-order.total_amount
+    output:
+      email_sent: sent
+
+postconditions:
+  - order is placed and confirmed
+  - payment is processed successfully
+  - customer receives order confirmation email
+  - inventory is reserved for order items
+  - customer can view order in order history
+
+alternative_flows:
+  - name: payment-declined
+    trigger: payment gateway rejects transaction
+    handles_error: PAYMENT_DECLINED
+    steps:
+      - id: notify-payment-failure
+        use: actions/send-payment-failure-notification
+        input:
+          cart_id: $inputs.cart_id
+          reason: payment declined
+
+  - name: out-of-stock
+    trigger: item no longer available during checkout
+    handles_error: ITEM_OUT_OF_STOCK
+    steps:
+      - id: notify-stock-issue
+        use: actions/send-stock-unavailable-notification
+        input:
+          cart_id: $inputs.cart_id
+
+  - name: payment-timeout
+    trigger: payment processing takes too long
+    handles_error: PAYMENT_TIMEOUT
+    steps:
+      - id: notify-timeout
+        use: actions/send-timeout-notification
+        input:
+          cart_id: $inputs.cart_id
+
+  - name: invalid-cart
+    trigger: cart is empty or expired
+    handles_error: INVALID_CART
+    steps:
+      - id: notify-cart-issue
+        use: actions/send-cart-error-notification
+        input:
+          cart_id: $inputs.cart_id
+          reason: cart invalid or expired
+
+  - name: invalid-address
+    trigger: shipping address validation fails
+    handles_error: INVALID_ADDRESS
+    steps:
+      - id: notify-address-issue
+        use: actions/send-address-error-notification
+        input:
+          shipping_address_id: $inputs.shipping_address_id
+
+terminal: true
+
+invariants:
+  - $ref: invariants/required-inputs-validated

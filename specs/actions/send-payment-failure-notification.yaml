@@ -1,0 +1,37 @@
+kind: action
+metadata:
+  name: send-payment-failure-notification
+  version: 1.0.0
+  owner: ecommerce
+  tags: [notification, error-handling]
+  description: Notify customer that payment failed
+
+input:
+  cart_id:
+    type: string
+    required: true
+    description: cart that failed to checkout
+  reason:
+    type: string
+    required: true
+    description: failure reason (e.g., "payment declined")
+
+output:
+  notified:
+    type: boolean
+    description: whether customer was notified
+
+reads:
+  - resource: shopping_carts
+    fields: [cart_id, user_id]
+  - resource: users
+    fields: [user_id, email]
+
+preconditions:
+  - cart exists
+  - user has email
+
+postconditions:
+  - customer receives payment failure notification
+  - notification explains what went wrong
+  - notification suggests next steps

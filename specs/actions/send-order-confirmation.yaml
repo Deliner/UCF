@@ -1,0 +1,48 @@
+kind: action
+metadata:
+  name: send-order-confirmation
+  version: 1.0.0
+  owner: ecommerce
+  tags: [notification, email]
+  description: Send order confirmation email to customer
+
+input:
+  order_id:
+    type: string
+    required: true
+    description: order identifier
+  total_amount:
+    type: number
+    required: true
+    description: order total to display in email
+
+output:
+  sent:
+    type: boolean
+    description: whether email was sent successfully
+
+errors:
+  - code: EMAIL_SERVICE_UNAVAILABLE
+    status: 503
+    condition: email service is down or unreachable
+    description: could not send email due to service issue
+    
+  - code: INVALID_ORDER
+    status: 404
+    condition: order not found
+    description: order ID does not exist
+
+reads:
+  - resource: orders
+    fields: [order_id, user_id, items, total]
+  - resource: users
+    fields: [user_id, email, name]
+
+preconditions:
+  - order exists
+  - user has valid email address
+
+postconditions:
+  - confirmation email is sent
+  - email contains order summary
+  - email contains tracking information if available

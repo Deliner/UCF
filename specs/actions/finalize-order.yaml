@@ -1,0 +1,107 @@
+kind: action
+metadata:
+  name: finalize-order
+  version: 1.0.0
+  owner: ecommerce
+  tags: [checkout, payment, inventory]
+  description: Finalize order - validates cart, calculates totals, reserves inventory, processes payment
+
+input:
+  cart_id:
+    type: string
+    required: true
+    description: shopping cart identifier
+  payment_method_id:
+    type: string
+    required: true
+    description: payment method to charge
+  shipping_address_id:
+    type: string
+    required: true
+    description: where to ship the order
+
+output:
+  id:
+    type: string
+    description: created order ID
+  total:
+    type: number
+    description: final order total including tax and shipping
+  status:
+    type: string
+    description: payment status (charged, pending, failed)
+
+errors:
+  - code: PAYMENT_DECLINED
+    status: 402
+    condition: payment gateway rejects the transaction
+    description: payment method was declined by processor
+    
+  - code: ITEM_OUT_OF_STOCK
+    status: 409
+    condition: one or more cart items no longer available
+    description: inventory insufficient to fulfill order
+    
+  - code: PAYMENT_TIMEOUT
+    status: 408
+    condition: payment processing exceeds timeout threshold
+    description: payment gateway did not respond in time
+    
+  - code: INVALID_CART
+    status: 400
+    condition: cart is empty or expired
+    description: cart has no items or session expired
+    
+  - code: INVALID_ADDRESS
+    status: 400
+    condition: shipping address is incomplete or invalid
+    description: address validation failed
+
+reads:
+  - resource: shopping_carts
+    fields: [cart_id, items, user_id]
+  - resource: inventory
+    fields: [product_id, quantity_available]
+  - resource: payment_methods
+    fields: [payment_method_id, type, last_four]
+  - resource: addresses
+    fields: [address_id, street, city, zip, country]
+
+writes:
+  - resource: orders
+    mutation: create
+    fields: [order_id, user_id, total, status, created_at]
+  - resource: inventory
+    mutation: decrement
+    fields: [quantity_available]
+  - resource: payment_transactions
+    mutation: create
+    fields: [transaction_id, order_id, amount, status]
+
+preconditions:
+  - cart contains at least one item
+  - all cart items are valid and in stock
+  - payment method is valid and not expired
+  - shipping address is complete
+
+postconditions:
+  - order record is created
+  - inventory is reserved (decremented)
+  - payment is charged or marked pending
+  - order total includes tax and shipping
+  - cart is marked as converted to order
+
+platform:
+  http:
+    method: POST
+    path: /api/orders/finalize
+    request:
+      body:
+        cart_id: $input.cart_id
+        payment_method_id: $input.payment_method_id
+        shipping_address_id: $input.shipping_address_id
+    response:
+      status: 201
+      body:
+        order_id: $output.id
+        total: $output.total

@@ -283,4 +283,71 @@ elif isinstance(binding, str) and binding.startswith("$"):
 | #9 | No locking | 🔴 Critical | 🟡 Partial (POC done) |
 | #10 | Bad arg generation | 🟡 Medium | ✅ Fixed |
 
-**Total**: 2 fixed, 3 partial, 5 open (0 critical/high, 5 medium)
+---
+
+### #11: No transaction/rollback/compensation primitive
+**Status**: 🔴 OPEN  
+**Severity**: 🔴 CRITICAL  
+**Found by**: E-commerce Checkout (complete-purchase)
+
+**Problem**: Actions with multiple writes have no atomicity guarantee.
+
+**Scenario** (finalize-order):
+```yaml
+writes:
+  - resource: orders (create)
+  - resource: inventory (decrement)          ← Step 2 succeeds
+  - resource: payment_transactions (create)  ← Step 3 fails
+
+Error: PAYMENT_DECLINED
+Result: Inventory decremented but order not created → Lost inventory!
+```
+
+**Real-world impact**:
+- Customer sees payment error
+- Inventory already reserved (decremented)
+- Other customers can't buy (phantom inventory loss)
+- No automatic rollback
+
+**Example sequence**:
+```
+1. ✅ Create order record → SUCCESS
+2. ✅ Decrement inventory (100 → 99) → SUCCESS
+3. ❌ Charge payment → PAYMENT_DECLINED
+4. ??? Rollback inventory? ← NO MECHANISM!
+```
+
+**Required**: Transaction primitive with rollback/compensation:
+```yaml
+steps:
+  - id: finalize-order
+    use: actions/finalize-order
+    transaction: true           # ← New field!
+    rollback_on_error: true
+    compensation:               # ← Compensation actions
+      - resource: inventory
+        action: actions/restore-inventory
+```
+
+**Alternative design**: Saga pattern with explicit compensation:
+```yaml
+steps:
+  - id: reserve-inventory
+    use: actions/reserve-inventory
+    compensation: actions/unreserve-inventory  # ← Called on failure
+  
+  - id: charge-payment
+    use: actions/charge-payment
+    compensation: actions/refund-payment
+```
+
+**Current workaround**: 
+1. Manual try/catch in action implementation
+2. Implement compensating logic in Python code
+3. No framework support
+
+**Impact**: Multi-resource writes are unsafe without manual rollback code.
+
+---
+
+**Total**: 2 fixed, 3 partial, 6 open (2 critical/high, 4 medium)

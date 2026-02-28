@@ -1,0 +1,30 @@
+kind: action
+metadata:
+  name: send-timeout-notification
+  version: 1.0.0
+  owner: ecommerce
+  tags: [notification, timeout]
+  description: Notify customer that checkout timed out
+
+input:
+  cart_id:
+    type: string
+    required: true
+    description: cart that timed out
+
+output:
+  notified:
+    type: boolean
+
+reads:
+  - resource: shopping_carts
+    fields: [cart_id, user_id]
+  - resource: users
+    fields: [user_id, email]
+
+preconditions:
+  - cart exists
+
+postconditions:
+  - customer receives timeout notification
+  - notification explains timeout occurred

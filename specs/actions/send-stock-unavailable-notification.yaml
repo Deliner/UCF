@@ -1,0 +1,32 @@
+kind: action
+metadata:
+  name: send-stock-unavailable-notification
+  version: 1.0.0
+  owner: ecommerce
+  tags: [notification, inventory]
+  description: Notify customer that item is out of stock
+
+input:
+  cart_id:
+    type: string
+    required: true
+    description: cart with out-of-stock items
+
+output:
+  notified:
+    type: boolean
+    description: whether customer was notified
+
+reads:
+  - resource: shopping_carts
+    fields: [cart_id, items, user_id]
+  - resource: users
+    fields: [user_id, email]
+
+preconditions:
+  - cart exists
+  - at least one item is out of stock
+
+postconditions:
+  - customer receives stock unavailability notification
+  - notification lists unavailable items

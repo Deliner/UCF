@@ -1,0 +1,24 @@
+kind: action
+metadata:
+  name: send-address-error-notification
+  version: 1.0.0
+  owner: ecommerce
+  tags: [notification, validation]
+
+input:
+  shipping_address_id:
+    type: string
+    required: true
+
+output:
+  notified:
+    type: boolean
+
+reads:
+  - resource: addresses
+    fields: [address_id]
+  - resource: users
+    fields: [email]
+
+postconditions:
+  - customer receives address error notification

@@ -1,0 +1,25 @@
+kind: action
+metadata:
+  name: send-cart-error-notification
+  version: 1.0.0
+  owner: ecommerce
+  tags: [notification, validation]
+
+input:
+  cart_id:
+    type: string
+    required: true
+  reason:
+    type: string
+    required: true
+
+output:
+  notified:
+    type: boolean
+
+reads:
+  - resource: users
+    fields: [email]
+
+postconditions:
+  - customer receives cart error notification
