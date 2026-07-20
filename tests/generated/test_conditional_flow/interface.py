@@ -25,19 +25,30 @@ class TestConditionalFlowInterface(ABC, FrameworkActions):
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_step_a(self, threshold: Any) -> StepAResult:
+    def action_step_a(
+        self,
+        threshold: Any,
+    ) -> StepAResult:
         ...
 
     @abstractmethod
-    def action_step_b(self, value: Any) -> None:
+    def action_step_b(
+        self,
+        value: Any,
+    ) -> None:
         ...
 
     @abstractmethod
-    def action_step_c(self, value: Any) -> None:
+    def action_step_c(
+        self,
+        value: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_conditional_execution_works(self) -> None:
+    def verify_conditional_execution_works(
+        self,
+    ) -> None:
         ...

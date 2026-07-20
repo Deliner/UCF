@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import pytest
 
-from ucf.models.spec import AnySpec, SpecParseError, parse_spec
 from ucf.models.action import ActionSpec
 from ucf.models.component import ComponentSpec
 from ucf.models.event import EventSpec
 from ucf.models.invariant import InvariantSpec, InvariantType
 from ucf.models.protocol import ProtocolSpec
+from ucf.models.spec import SpecParseError, parse_spec
 from ucf.models.usecase import UseCaseSpec
 
 
@@ -94,3 +94,142 @@ class TestParseSpec:
             data = _minimal("invariant", type=it.value)
             spec = parse_spec(data)
             assert spec.type == it
+
+
+class TestStrictSpecFields:
+    @pytest.mark.parametrize(
+        ("payload", "field_path"),
+        [
+            (
+                {
+                    "kind": "action",
+                    "metadata": {"name": "strict-action"},
+                    "mystery": True,
+                },
+                "mystery",
+            ),
+            (
+                {
+                    "kind": "action",
+                    "metadata": {"name": "strict-action", "mystery": True},
+                },
+                "metadata.mystery",
+            ),
+            (
+                {
+                    "kind": "action",
+                    "metadata": {"name": "strict-action"},
+                    "platform": {
+                        "http": {
+                            "method": "GET",
+                            "path": "/strict",
+                            "mystery": True,
+                        }
+                    },
+                },
+                "platform.http.mystery",
+            ),
+            (
+                {
+                    "kind": "action",
+                    "metadata": {"name": "strict-action"},
+                    "input": {
+                        "value": {
+                            "type": "string",
+                            "default": "silently-unsupported",
+                        }
+                    },
+                },
+                "input.value.default",
+            ),
+            (
+                {
+                    "kind": "action",
+                    "metadata": {"name": "strict-action"},
+                    "input": {"value": {"type": "future-type"}},
+                },
+                "input.value.type",
+            ),
+        ],
+    )
+    def test_unknown_or_unsupported_schema_field_is_rejected(
+        self, payload: dict, field_path: str
+    ) -> None:
+        with pytest.raises(SpecParseError) as exc_info:
+            parse_spec(payload)
+
+        assert field_path in str(exc_info.value)
+
+    @pytest.mark.parametrize(
+        ("payload", "field_path"),
+        [
+            (
+                {
+                    "kind": "action",
+                    "metadata": {"name": "strict-types"},
+                    "platform": {
+                        "cli": {
+                            "command": "run",
+                            "exit_code": "0",
+                        }
+                    },
+                },
+                "platform.cli.exit_code",
+            ),
+            (
+                {
+                    "kind": "usecase",
+                    "metadata": {"name": "public-ref-alias"},
+                    "invariants": [{"ref": "invariants/example"}],
+                },
+                "invariants.0",
+            ),
+            (
+                {
+                    "kind": "usecase",
+                    "metadata": {"name": "public-requirement-aliases"},
+                    "requires": [
+                        {
+                            "ref": "components/example",
+                            "as_": "example",
+                        }
+                    ],
+                },
+                "requires.0",
+            ),
+            (
+                {
+                    "kind": "action",
+                    "metadata": {"name": "public-ui-alias"},
+                    "platform": {
+                        "ui": {
+                            "steps": [{"assert_condition": "visible"}],
+                        }
+                    },
+                },
+                "platform.ui.steps.0",
+            ),
+            (
+                {
+                    "kind": "invariant",
+                    "metadata": {"name": "public-transition-alias"},
+                    "type": "state-machine",
+                    "forbidden": [
+                        {
+                            "from_state": "pending",
+                            "to": "done",
+                            "reason": "not allowed",
+                        }
+                    ],
+                },
+                "forbidden.0",
+            ),
+        ],
+    )
+    def test_public_parser_rejects_coercion_and_internal_aliases(
+        self, payload: dict, field_path: str
+    ) -> None:
+        with pytest.raises(SpecParseError) as exc_info:
+            parse_spec(payload)
+
+        assert field_path in str(exc_info.value)

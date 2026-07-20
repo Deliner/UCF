@@ -29,27 +29,50 @@ class GetUrlStatsInterface(ABC, FrameworkActions):
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_fetch_stats(self, slug: Any) -> FetchStatsResult:
+    def action_fetch_stats(
+        self,
+        slug: Any,
+    ) -> FetchStatsResult:
         ...
 
     @abstractmethod
-    def action_render_stats(self, data: Any, format: Any) -> None:
+    def action_render_stats(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_return_not_found(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_creator_sees_total_click_count(self) -> None:
+    def verify_creator_sees_total_click_count(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_creator_sees_original_url(self) -> None:
+    def verify_creator_sees_original_url(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_creator_sees_creation_timestamp(self) -> None:
+    def verify_creator_sees_creation_timestamp(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

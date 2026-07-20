@@ -7,34 +7,47 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    GenerateTestCodeInterface,
-    LoaderContext,
-    GenerateResult,
+from .impl import (
+    generate_test_code_impl as generate_test_code_impl,
 )
-from .impl import generate_test_code_impl  # noqa: F401
+from .interface import GenerateTestCodeInterface
 
 
 @pytest.fixture
-def uc(generate_test_code_impl: GenerateTestCodeInterface) -> GenerateTestCodeInterface:
-    return generate_test_code_impl
+def uc(request: pytest.FixtureRequest) -> GenerateTestCodeInterface:
+    return request.getfixturevalue("generate_test_code_impl")
 
 
 class TestHappyPath:
 
     def test_generate_test_code_completes_successfully(
         self, uc: GenerateTestCodeInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        generate = uc.action_generate(usecase=inputs.get('target_usecase'), registry=loader.registry, output_dir=inputs.get('output_dir'))
+        generate = uc.action_generate(
+            usecase=inputs['target_usecase'],
+            registry=loader.registry,
+            output_dir=inputs['output_dir'],
+        )
 
-        render_result = uc.action_render_result(data={'interface_path': generate.interface_path, 'orchestrator_path': generate.orchestrator_path, 'impl_path': generate.impl_path, 'files_written': generate.files_written}, format='tree')
+        uc.action_render_result(
+            data={
+                'interface_path': generate.interface_path,
+                'orchestrator_path': generate.orchestrator_path,
+                'impl_path': generate.impl_path,
+                'files_written': generate.files_written,
+            },
+            format='tree',
+        )
 
 
-        uc.verify_for_each_usecase_interface_py_test_orchestrator_py_are()
-        uc.verify_impl_py_stubs_are_created_only_if_they_do_not_already_exist()
-        uc.verify_generated_code_is_deterministic_given_the_same_spec_input()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_for_each_usecase_interface_py_test_orchestrator_py_are()
+        _ = uc.verify_impl_py_stubs_are_created_only_if_they_do_not_already_exist()
+        _ = uc.verify_generated_code_is_deterministic_given_the_same_spec_input()
+        _ = uc.verify_required_inputs_validated()
 
 

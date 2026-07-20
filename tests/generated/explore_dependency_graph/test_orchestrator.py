@@ -7,52 +7,81 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    ExploreDependencyGraphInterface,
-    LoaderContext,
-    Graph_builderContext,
-    BuildJsonResult,
+from .impl import (
+    explore_dependency_graph_impl as explore_dependency_graph_impl,
 )
-from .impl import explore_dependency_graph_impl  # noqa: F401
+from .interface import ExploreDependencyGraphInterface
 
 
 @pytest.fixture
-def uc(explore_dependency_graph_impl: ExploreDependencyGraphInterface) -> ExploreDependencyGraphInterface:
-    return explore_dependency_graph_impl
+def uc(request: pytest.FixtureRequest) -> ExploreDependencyGraphInterface:
+    return request.getfixturevalue("explore_dependency_graph_impl")
 
 
 class TestHappyPath:
 
     def test_explore_dependency_graph_completes_successfully(
         self, uc: ExploreDependencyGraphInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
-        graph_builder = uc.setup_graph_builder()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
+        graph_builder = uc.setup_graph_builder(
+            registry=loader.registry,
+        )
 
-        build_json = uc.action_build_json(registry=loader.registry, graph=graph_builder.graph)
+        build_json = uc.action_build_json(
+            registry=loader.registry,
+            graph=graph_builder.graph,
+        )
 
-        render_graph = uc.action_render_graph(data={'nodes': build_json.nodes, 'links': build_json.links, 'node_count': build_json.node_count, 'edge_count': build_json.edge_count, 'graph_node_count': graph_builder.node_count, 'graph_edge_count': graph_builder.edge_count}, format='tree')
+        uc.action_render_graph(
+            data={
+                'nodes': build_json.nodes,
+                'links': build_json.links,
+                'node_count': build_json.node_count,
+                'edge_count': build_json.edge_count,
+                'graph_node_count': graph_builder.node_count,
+                'graph_edge_count': graph_builder.edge_count,
+            },
+            format='tree',
+        )
 
 
-        uc.verify_developer_sees_all_specs_as_graph_nodes()
-        uc.verify_developer_sees_all_dependency_edges_as_links()
-        uc.verify_nodes_carry_kind_and_name_metadata()
-        uc.verify_links_reference_valid_node_identifiers()
-        uc.verify_graph_acyclic()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_developer_sees_all_specs_as_graph_nodes()
+        _ = uc.verify_developer_sees_all_dependency_edges_as_links()
+        _ = uc.verify_nodes_carry_kind_and_name_metadata()
+        _ = uc.verify_links_reference_valid_node_identifiers()
+        _ = uc.verify_graph_acyclic()
+        _ = uc.verify_required_inputs_validated()
 
 
 class TestAltMermaidOutput:
 
     def test_mermaid_output(
         self, uc: ExploreDependencyGraphInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
-        graph_builder = uc.setup_graph_builder()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
+        graph_builder = uc.setup_graph_builder(
+            registry=loader.registry,
+        )
 
-        build_json = uc.action_build_json(registry=loader.registry, graph=graph_builder.graph)
+        build_json = uc.action_build_json(
+            registry=loader.registry,
+            graph=graph_builder.graph,
+        )
 
-        render_mermaid = uc.action_render_graph(data={'nodes': build_json.nodes, 'links': build_json.links}, format='mermaid')
+        uc.action_render_mermaid(
+            data={
+                'nodes': build_json.nodes,
+                'links': build_json.links,
+            },
+            format='mermaid',
+        )
 
 
 
@@ -60,13 +89,27 @@ class TestAltJsonOutput:
 
     def test_json_output(
         self, uc: ExploreDependencyGraphInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
-        graph_builder = uc.setup_graph_builder()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
+        graph_builder = uc.setup_graph_builder(
+            registry=loader.registry,
+        )
 
-        build_json = uc.action_build_json(registry=loader.registry, graph=graph_builder.graph)
+        build_json = uc.action_build_json(
+            registry=loader.registry,
+            graph=graph_builder.graph,
+        )
 
-        render_json = uc.action_render_graph(data={'nodes': build_json.nodes, 'links': build_json.links}, format='json')
+        uc.action_render_json(
+            data={
+                'nodes': build_json.nodes,
+                'links': build_json.links,
+            },
+            format='json',
+        )
 
 
 
@@ -74,11 +117,21 @@ class TestAltEmptyGraph:
 
     def test_empty_graph(
         self, uc: ExploreDependencyGraphInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
-        graph_builder = uc.setup_graph_builder()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
+        uc.setup_graph_builder(
+            registry=loader.registry,
+        )
 
-        render_empty = uc.action_render_graph(data={'message': 'no dependency edges found'}, format='table')
+        uc.action_render_empty(
+            data={
+                'message': 'no dependency edges found',
+            },
+            format='table',
+        )
 
 
 
@@ -86,11 +139,21 @@ class TestAltRegistryNotLoaded:
 
     def test_registry_not_loaded(
         self, uc: ExploreDependencyGraphInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
-        graph_builder = uc.setup_graph_builder()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
+        uc.setup_graph_builder(
+            registry=loader.registry,
+        )
 
-        render_error = uc.action_render_graph(data={'error': 'registry not loaded'}, format='table')
+        uc.action_render_error(
+            data={
+                'error': 'registry not loaded',
+            },
+            format='table',
+        )
 
 
 

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling==1.31.0"]
 build-backend = "hatchling.build"
 
 [project]
@@ -26,6 +26,7 @@ dev = [
     "pytest-cov>=5.0",
     "ruff>=0.5",
     "httpx>=0.28",
+    "jsonschema>=4.23",
 ]
 
 [project.scripts]

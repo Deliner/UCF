@@ -7,40 +7,47 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    CreateShortUrlInterface,
-    ValidateUrlResult,
-    GenerateSlugResult,
-    CheckExistsResult,
-    StoreUrlResult,
+from .impl import (
+    create_short_url_impl as create_short_url_impl,
 )
-from .impl import create_short_url_impl  # noqa: F401
+from .interface import CreateShortUrlInterface
 
 
 @pytest.fixture
-def uc(create_short_url_impl: CreateShortUrlInterface) -> CreateShortUrlInterface:
-    return create_short_url_impl
+def uc(request: pytest.FixtureRequest) -> CreateShortUrlInterface:
+    return request.getfixturevalue("create_short_url_impl")
 
 
 class TestHappyPath:
 
     def test_create_short_url_completes_successfully(
         self, uc: CreateShortUrlInterface,
+        inputs: dict[str, object],
     ) -> None:
 
-        validate_url = uc.action_validate_url(url=inputs.get('original_url'))
+        uc.action_validate_url(
+            url=inputs['original_url'],
+        )
 
-        generate_slug = uc.action_generate_slug(length=6)
+        generate_slug = uc.action_generate_slug(
+            length=6,
+        )
 
-        check_exists = uc.action_check_exists(slug=generate_slug.slug)
+        uc.action_check_exists(
+            slug=generate_slug.slug,
+        )
 
-        store_url = uc.action_store_url(slug=generate_slug.slug, original_url=inputs.get('original_url'), created_by=inputs.get('created_by'))
+        uc.action_store_url(
+            slug=generate_slug.slug,
+            original_url=inputs['original_url'],
+            created_by=inputs['created_by'],
+        )
 
 
-        uc.verify_short_url_is_created_and_stored()
-        uc.verify_slug_is_unique_in_database()
-        uc.verify_click_count_is_initialized_to_0()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_short_url_is_created_and_stored()
+        _ = uc.verify_slug_is_unique_in_database()
+        _ = uc.verify_click_count_is_initialized_to_0()
+        _ = uc.verify_required_inputs_validated()
 
 
 class TestAltInvalidUrl:
@@ -49,7 +56,12 @@ class TestAltInvalidUrl:
         self, uc: CreateShortUrlInterface,
     ) -> None:
 
-        return_error = uc.action_return_error(data={'error': 'invalid URL format'}, format='json')
+        uc.action_return_error(
+            data={
+                'error': 'invalid URL format',
+            },
+            format='json',
+        )
 
 
 
@@ -59,7 +71,9 @@ class TestAltSlugCollision:
         self, uc: CreateShortUrlInterface,
     ) -> None:
 
-        retry_generate = uc.action_generate_slug(length=8)
+        uc.action_retry_generate(
+            length=8,
+        )
 
 
 

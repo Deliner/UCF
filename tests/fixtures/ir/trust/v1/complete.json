@@ -1,0 +1,333 @@
+{
+  "kind": "trust_ir",
+  "trust_ir_version": "1.0.0",
+  "document_id": "document.trust-reservation-review",
+  "subject_document": {
+    "kind": "behavior_document_ref",
+    "document_id": "document.checkout-reservation",
+    "ir_version": "1.0.0",
+    "canonical_digest": {
+      "kind": "digest",
+      "algorithm": "sha-256",
+      "value": "5e6063cff77f19a238418c3275ea50a73b1960e285f616c5ee995e0a05f24e9a"
+    }
+  },
+  "records": [
+    {
+      "kind": "source_record",
+      "id": "source.declaration",
+      "source_uri": "urn:ucf:source:desired-behavior",
+      "source_revision": {
+        "kind": "digest",
+        "algorithm": "sha-256",
+        "value": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "producer": {
+        "kind": "producer",
+        "name": "org.ucf.fixture.declaration",
+        "version": "1.0.0"
+      },
+      "captured_at": "2026-07-19T01:00:00Z"
+    },
+    {
+      "kind": "source_record",
+      "id": "source.observation",
+      "source_uri": "urn:ucf:source:implementation-snapshot",
+      "source_revision": {
+        "kind": "digest",
+        "algorithm": "sha-256",
+        "value": "1f40fc92da241694750979ee6cf582f2d5d7d28e18335de05abc54d0560e0f53"
+      },
+      "producer": {
+        "kind": "producer",
+        "name": "org.ucf.fixture.discovery",
+        "version": "1.2.0"
+      },
+      "captured_at": "2026-07-19T01:01:00Z"
+    },
+    {
+      "kind": "source_record",
+      "id": "source.reconciliation",
+      "source_uri": "urn:ucf:source:review-decision",
+      "source_revision": {
+        "kind": "digest",
+        "algorithm": "sha-256",
+        "value": "3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      "producer": {
+        "kind": "producer",
+        "name": "org.ucf.fixture.reconciliation",
+        "version": "1.0.0"
+      },
+      "captured_at": "2026-07-19T01:02:00Z"
+    },
+    {
+      "kind": "source_record",
+      "id": "source.claims",
+      "source_uri": "urn:ucf:source:claim-evaluation",
+      "source_revision": {
+        "kind": "digest",
+        "algorithm": "sha-256",
+        "value": "4444444444444444444444444444444444444444444444444444444444444444"
+      },
+      "producer": {
+        "kind": "producer",
+        "name": "org.ucf.fixture.claim-evaluator",
+        "version": "1.0.0"
+      },
+      "captured_at": "2026-07-19T01:03:00Z"
+    },
+    {
+      "kind": "declaration",
+      "id": "declaration.reservation-status",
+      "subject": {
+        "kind": "behavior_entity_ref",
+        "document_id": "document.checkout-reservation",
+        "ir_version": "1.0.0",
+        "canonical_digest": {
+          "kind": "digest",
+          "algorithm": "sha-256",
+          "value": "5e6063cff77f19a238418c3275ea50a73b1960e285f616c5ee995e0a05f24e9a"
+        },
+        "target_kind": "effect",
+        "target_id": "effect.reservation-created"
+      },
+      "trace": {
+        "kind": "record_ref",
+        "target_kind": "source_record",
+        "target_id": "source.declaration"
+      }
+    },
+    {
+      "kind": "observed_fact",
+      "id": "observed.reservation-status",
+      "subject": {
+        "kind": "behavior_entity_ref",
+        "document_id": "document.checkout-reservation",
+        "ir_version": "1.0.0",
+        "canonical_digest": {
+          "kind": "digest",
+          "algorithm": "sha-256",
+          "value": "5e6063cff77f19a238418c3275ea50a73b1960e285f616c5ee995e0a05f24e9a"
+        },
+        "target_kind": "effect",
+        "target_id": "effect.reservation-created"
+      },
+      "assertion": {
+        "kind": "fact_assertion",
+        "target": {
+          "kind": "domain_target",
+          "subject": "reservation",
+          "path": [
+            "status"
+          ]
+        },
+        "value": {
+          "kind": "string",
+          "value": "cancelled"
+        }
+      },
+      "trace": {
+        "kind": "record_ref",
+        "target_kind": "source_record",
+        "target_id": "source.observation"
+      }
+    },
+    {
+      "kind": "behavior_candidate",
+      "id": "candidate.reservation-status-mapping",
+      "candidate_type": "mapping",
+      "subjects": [
+        {
+          "kind": "record_ref",
+          "target_kind": "declaration",
+          "target_id": "declaration.reservation-status"
+        },
+        {
+          "kind": "record_ref",
+          "target_kind": "observed_fact",
+          "target_id": "observed.reservation-status"
+        }
+      ],
+      "confidence": {
+        "kind": "confidence",
+        "scale": "decimal-0-to-1",
+        "value": "0.62"
+      },
+      "trace": {
+        "kind": "record_ref",
+        "target_kind": "source_record",
+        "target_id": "source.observation"
+      }
+    },
+    {
+      "kind": "mapping",
+      "id": "mapping.reservation-status",
+      "declaration": {
+        "kind": "record_ref",
+        "target_kind": "declaration",
+        "target_id": "declaration.reservation-status"
+      },
+      "observation": {
+        "kind": "record_ref",
+        "target_kind": "observed_fact",
+        "target_id": "observed.reservation-status"
+      },
+      "relationship": "same-behavior-slot",
+      "disposition": "conflict",
+      "trace": {
+        "kind": "record_ref",
+        "target_kind": "source_record",
+        "target_id": "source.reconciliation"
+      }
+    },
+    {
+      "kind": "claim",
+      "id": "claim.reservation-status-observed",
+      "level": "observed",
+      "subject": {
+        "kind": "behavior_entity_ref",
+        "document_id": "document.checkout-reservation",
+        "ir_version": "1.0.0",
+        "canonical_digest": {
+          "kind": "digest",
+          "algorithm": "sha-256",
+          "value": "5e6063cff77f19a238418c3275ea50a73b1960e285f616c5ee995e0a05f24e9a"
+        },
+        "target_kind": "effect",
+        "target_id": "effect.reservation-created"
+      },
+      "basis": {
+        "kind": "observed_claim_basis",
+        "fact": {
+          "kind": "record_ref",
+          "target_kind": "observed_fact",
+          "target_id": "observed.reservation-status"
+        }
+      },
+      "trace": {
+        "kind": "record_ref",
+        "target_kind": "source_record",
+        "target_id": "source.claims"
+      }
+    },
+    {
+      "kind": "claim",
+      "id": "claim.reservation-status-declared",
+      "level": "declared",
+      "subject": {
+        "kind": "behavior_entity_ref",
+        "document_id": "document.checkout-reservation",
+        "ir_version": "1.0.0",
+        "canonical_digest": {
+          "kind": "digest",
+          "algorithm": "sha-256",
+          "value": "5e6063cff77f19a238418c3275ea50a73b1960e285f616c5ee995e0a05f24e9a"
+        },
+        "target_kind": "effect",
+        "target_id": "effect.reservation-created"
+      },
+      "basis": {
+        "kind": "declared_claim_basis",
+        "declaration": {
+          "kind": "record_ref",
+          "target_kind": "declaration",
+          "target_id": "declaration.reservation-status"
+        }
+      },
+      "trace": {
+        "kind": "record_ref",
+        "target_kind": "source_record",
+        "target_id": "source.claims"
+      }
+    },
+    {
+      "kind": "claim",
+      "id": "claim.reservation-status-mapped",
+      "level": "mapped",
+      "subject": {
+        "kind": "behavior_entity_ref",
+        "document_id": "document.checkout-reservation",
+        "ir_version": "1.0.0",
+        "canonical_digest": {
+          "kind": "digest",
+          "algorithm": "sha-256",
+          "value": "5e6063cff77f19a238418c3275ea50a73b1960e285f616c5ee995e0a05f24e9a"
+        },
+        "target_kind": "effect",
+        "target_id": "effect.reservation-created"
+      },
+      "basis": {
+        "kind": "mapped_claim_basis",
+        "mapping": {
+          "kind": "record_ref",
+          "target_kind": "mapping",
+          "target_id": "mapping.reservation-status"
+        }
+      },
+      "trace": {
+        "kind": "record_ref",
+        "target_kind": "source_record",
+        "target_id": "source.claims"
+      }
+    },
+    {
+      "kind": "claim",
+      "id": "claim.reservation-present-tested",
+      "level": "tested",
+      "subject": {
+        "kind": "behavior_entity_ref",
+        "document_id": "document.checkout-reservation",
+        "ir_version": "1.0.0",
+        "canonical_digest": {
+          "kind": "digest",
+          "algorithm": "sha-256",
+          "value": "5e6063cff77f19a238418c3275ea50a73b1960e285f616c5ee995e0a05f24e9a"
+        },
+        "target_kind": "invariant",
+        "target_id": "invariant.reservation-present"
+      },
+      "basis": {
+        "kind": "tested_claim_basis",
+        "evidence": {
+          "kind": "behavior_entity_ref",
+          "document_id": "document.checkout-reservation",
+          "ir_version": "1.0.0",
+          "canonical_digest": {
+            "kind": "digest",
+            "algorithm": "sha-256",
+            "value": "5e6063cff77f19a238418c3275ea50a73b1960e285f616c5ee995e0a05f24e9a"
+          },
+          "target_kind": "verification_evidence",
+          "target_id": "evidence.reservation-present"
+        },
+        "artifact": {
+          "kind": "record_ref",
+          "target_kind": "source_record",
+          "target_id": "source.observation"
+        },
+        "check": {
+          "kind": "check",
+          "id": "check.reservation-present",
+          "version": "1.0.0",
+          "procedure_uri": "urn:ucf:check:fixture-roundtrip"
+        },
+        "environment": {
+          "kind": "digest",
+          "algorithm": "sha-256",
+          "value": "8d680f6c6a943c45c73cfa8d8f8879ab0db078de3c9f621c26914e1c25e703a5"
+        },
+        "producer": {
+          "kind": "producer",
+          "name": "org.ucf.fixture",
+          "version": "1.0.0"
+        }
+      },
+      "trace": {
+        "kind": "record_ref",
+        "target_kind": "source_record",
+        "target_id": "source.claims"
+      }
+    }
+  ]
+}

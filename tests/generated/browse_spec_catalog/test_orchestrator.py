@@ -7,47 +7,69 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    BrowseSpecCatalogInterface,
-    LoaderContext,
-    ListSpecsResult,
+from .impl import (
+    browse_spec_catalog_impl as browse_spec_catalog_impl,
 )
-from .impl import browse_spec_catalog_impl  # noqa: F401
+from .interface import BrowseSpecCatalogInterface
 
 
 @pytest.fixture
-def uc(browse_spec_catalog_impl: BrowseSpecCatalogInterface) -> BrowseSpecCatalogInterface:
-    return browse_spec_catalog_impl
+def uc(request: pytest.FixtureRequest) -> BrowseSpecCatalogInterface:
+    return request.getfixturevalue("browse_spec_catalog_impl")
 
 
 class TestHappyPath:
 
     def test_browse_spec_catalog_completes_successfully(
         self, uc: BrowseSpecCatalogInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        list_specs = uc.action_list_specs(registry=loader.registry, kind_filter=inputs.get('kind_filter'), search_query=inputs.get('search_query'))
+        list_specs = uc.action_list_specs(
+            registry=loader.registry,
+            kind_filter=inputs['kind_filter'],
+            search_query=inputs['search_query'],
+        )
 
-        render_results = uc.action_render_results(data={'specs': list_specs.specs, 'total_count': list_specs.total_count, 'kind_counts': list_specs.kind_counts}, format='table')
+        uc.action_render_results(
+            data={
+                'specs': list_specs.specs,
+                'total_count': list_specs.total_count,
+                'kind_counts': list_specs.kind_counts,
+            },
+            format='table',
+        )
 
 
-        uc.verify_developer_receives_a_list_of_specs_matching_the_filter()
-        uc.verify_spec_counts_per_kind_are_reported()
-        uc.verify_empty_result_shows_a_clear_message()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_developer_receives_a_list_of_specs_matching_the_filter()
+        _ = uc.verify_spec_counts_per_kind_are_reported()
+        _ = uc.verify_empty_result_shows_a_clear_message()
+        _ = uc.verify_required_inputs_validated()
 
 
 class TestAltNoFilter:
 
     def test_no_filter(
         self, uc: BrowseSpecCatalogInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        list_all = uc.action_list_specs(registry=loader.registry)
+        list_all = uc.action_list_all(
+            registry=loader.registry,
+        )
 
-        render_all = uc.action_render_results(data={'specs': list_all.specs, 'total_count': list_all.total_count})
+        uc.action_render_all(
+            data={
+                'specs': list_all.specs,
+                'total_count': list_all.total_count,
+            },
+        )
 
 
 
@@ -55,10 +77,18 @@ class TestAltNoResults:
 
     def test_no_results(
         self, uc: BrowseSpecCatalogInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        render_empty = uc.action_render_results(data={'message': 'no specs match the current filter'}, format='table')
+        uc.action_render_empty(
+            data={
+                'message': 'no specs match the current filter',
+            },
+            format='table',
+        )
 
 
 
@@ -66,10 +96,18 @@ class TestAltRegistryNotLoaded:
 
     def test_registry_not_loaded(
         self, uc: BrowseSpecCatalogInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        render_registry_error = uc.action_render_results(data={'error': 'registry not loaded'}, format='table')
+        uc.action_render_registry_error(
+            data={
+                'error': 'registry not loaded',
+            },
+            format='table',
+        )
 
 
 
@@ -77,10 +115,18 @@ class TestAltInvalidKindFilter:
 
     def test_invalid_kind_filter(
         self, uc: BrowseSpecCatalogInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        render_kind_error = uc.action_render_results(data={'error': 'unrecognized kind filter'}, format='table')
+        uc.action_render_kind_error(
+            data={
+                'error': 'unrecognized kind filter',
+            },
+            format='table',
+        )
 
 
 

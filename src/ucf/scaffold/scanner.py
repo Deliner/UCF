@@ -69,11 +69,13 @@ def _extract_params(args: ast.arguments) -> list[ParamInfo]:
         default = None
         if default_idx >= 0 and default_idx < len(args.defaults):
             default = ast.unparse(args.defaults[default_idx])
-        params.append(ParamInfo(
-            name=arg.arg,
-            annotation=_annotation_to_str(arg.annotation),
-            default=default,
-        ))
+        params.append(
+            ParamInfo(
+                name=arg.arg,
+                annotation=_annotation_to_str(arg.annotation),
+                default=default,
+            )
+        )
     return params
 
 
@@ -133,7 +135,9 @@ class ASTScanner:
                     result.classes.append(self._extract_class(node, rel))
 
     def _extract_function(
-        self, node: ast.FunctionDef | ast.AsyncFunctionDef, rel_path: str,
+        self,
+        node: ast.FunctionDef | ast.AsyncFunctionDef,
+        rel_path: str,
     ) -> FunctionInfo:
         return FunctionInfo(
             name=node.name,
@@ -149,12 +153,14 @@ class ASTScanner:
         for item in node.body:
             if isinstance(item, ast.FunctionDef | ast.AsyncFunctionDef):
                 if _is_public(item.name):
-                    methods.append(MethodInfo(
-                        name=item.name,
-                        params=_extract_params(item.args),
-                        return_type=_annotation_to_str(item.returns),
-                        docstring=ast.get_docstring(item) or "",
-                    ))
+                    methods.append(
+                        MethodInfo(
+                            name=item.name,
+                            params=_extract_params(item.args),
+                            return_type=_annotation_to_str(item.returns),
+                            docstring=ast.get_docstring(item) or "",
+                        )
+                    )
 
         bases = [ast.unparse(b) for b in node.bases]
 

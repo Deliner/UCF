@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-import pytest
-
 from ucf.graph.dependency import DependencyGraph
 from ucf.models.spec import parse_spec
 from ucf.parser.registry import SpecRegistry
-
 
 ACTION_A = {
     "kind": "action",
@@ -97,7 +94,12 @@ class TestDependencyGraph:
                     "name": "fallback",
                     "trigger": "error",
                     "steps": [
-                        {"id": "s2", "use": "actions/action-b", "input": {}, "output": {}},
+                        {
+                            "id": "s2",
+                            "use": "actions/action-b",
+                            "input": {},
+                            "output": {},
+                        },
                     ],
                 },
             ],

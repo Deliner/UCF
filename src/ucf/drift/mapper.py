@@ -1,7 +1,7 @@
-"""Spec-to-code mapper — builds bidirectional mappings between specs and implementations.
-
-@implements("actions/build-spec-code-map")
-"""
+(
+    "Spec-to-code mapper — builds bidirectional mappings between specs and "
+    'implementations.\n\n@implements("actions/build-spec-code-map")\n'
+)
 
 from __future__ import annotations
 
@@ -21,7 +21,9 @@ _KIND_PLURALS = {
     "invariant": "invariants",
 }
 
-_SPEC_REF_RE = re.compile(r"^(?:(?:actions|events|components|protocols|use-cases|invariants)/)?(.+)$")
+_SPEC_REF_RE = re.compile(
+    r"^(?:(?:actions|events|components|protocols|use-cases|invariants)/)?(.+)$"
+)
 
 
 @dataclass
@@ -60,9 +62,7 @@ class SpecCodeMapper:
         if self.convention:
             self._apply_convention(result, all_refs)
 
-        result.mapped_count = sum(
-            1 for paths in result.spec_to_code.values() if paths
-        )
+        result.mapped_count = sum(1 for paths in result.spec_to_code.values() if paths)
 
         return result
 

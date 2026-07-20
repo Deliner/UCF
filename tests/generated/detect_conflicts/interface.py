@@ -36,37 +36,59 @@ class DetectConflictsInterface(ABC, FrameworkActions):
     # ── State Setup (from requires) ──
 
     @abstractmethod
-    def setup_loader(self) -> LoaderContext:
+    def setup_loader(
+        self,
+        specs_dir: Any,
+    ) -> LoaderContext:
         ...
 
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_build_graph(self, registry: Any) -> BuildGraphResult:
+    def action_build_graph(
+        self,
+        registry: Any,
+    ) -> BuildGraphResult:
         ...
 
     @abstractmethod
-    def action_detect(self, graph: Any, registry: Any) -> DetectResult:
+    def action_detect(
+        self,
+        graph: Any,
+        registry: Any,
+    ) -> DetectResult:
         ...
 
     @abstractmethod
-    def action_render_conflicts(self, data: Any, format: Any) -> None:
+    def action_render_conflicts(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_all_write_write_conflicts_between_independent_specs_are(self) -> None:
+    def verify_all_write_write_conflicts_between_independent_specs_are(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_intra_usecase_conflicts_are_filtered_out(self) -> None:
+    def verify_intra_usecase_conflicts_are_filtered_out(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_each_conflict_pair_identifies_the_shared_resource(self) -> None:
+    def verify_each_conflict_pair_identifies_the_shared_resource(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

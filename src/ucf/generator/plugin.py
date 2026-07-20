@@ -28,22 +28,57 @@ class GeneratedFile:
     overwrite: bool = True
 
 
+class UnsupportedFeatureError(ValueError):
+    """Raised before generation when a plugin cannot honor declared semantics."""
+
+    def __init__(
+        self,
+        plugin_name: str,
+        usecase_name: str,
+        features: list[str],
+    ) -> None:
+        self.plugin_name = plugin_name
+        self.usecase_name = usecase_name
+        self.features = tuple(features)
+        super().__init__(
+            f"Generator '{plugin_name}' cannot generate use case "
+            f"'{usecase_name}': unsupported feature(s): {', '.join(features)}"
+        )
+
+
 @runtime_checkable
 class GeneratorPlugin(Protocol):
     name: str
     language: str
 
     def generate_interface(
-        self, spec: UseCaseSpec, registry: SpecRegistry,
+        self,
+        spec: UseCaseSpec,
+        registry: SpecRegistry,
     ) -> GeneratedFile: ...
 
     def generate_orchestrator(
-        self, spec: UseCaseSpec, registry: SpecRegistry,
+        self,
+        spec: UseCaseSpec,
+        registry: SpecRegistry,
     ) -> GeneratedFile: ...
 
     def generate_impl_stub(
-        self, spec: UseCaseSpec, registry: SpecRegistry,
+        self,
+        spec: UseCaseSpec,
+        registry: SpecRegistry,
     ) -> GeneratedFile: ...
+
+
+@runtime_checkable
+class SpecValidatingGeneratorPlugin(Protocol):
+    """Optional preflight contract for plugins with explicit feature limits."""
+
+    def validate_spec(
+        self,
+        spec: UseCaseSpec,
+        registry: SpecRegistry,
+    ) -> None: ...
 
 
 @dataclass
@@ -67,13 +102,20 @@ class GeneratorEngine:
         self.output_dir = output_dir
 
     def generate_all(self) -> list[GenerationResult]:
-        results = []
-        for uc in self.registry.usecases():
-            result = self.generate_usecase(uc)
-            results.append(result)
-        return results
+        usecases = self.registry.usecases()
+        for uc in usecases:
+            self._validate_plugin_support(uc)
+        return [self._generate_validated_usecase(uc) for uc in usecases]
 
     def generate_usecase(self, uc: UseCaseSpec) -> GenerationResult:
+        self._validate_plugin_support(uc)
+        return self._generate_validated_usecase(uc)
+
+    def _validate_plugin_support(self, uc: UseCaseSpec) -> None:
+        if isinstance(self.plugin, SpecValidatingGeneratorPlugin):
+            self.plugin.validate_spec(uc, self.registry)
+
+    def _generate_validated_usecase(self, uc: UseCaseSpec) -> GenerationResult:
         result = GenerationResult(usecase_name=uc.metadata.name)
         safe_name = _safe_module_name(uc.metadata.name)
         uc_dir = self.output_dir / safe_name

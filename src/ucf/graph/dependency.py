@@ -8,17 +8,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 
 import networkx as nx
 
 from ucf.models.action import ActionSpec
-from ucf.models.protocol import ProtocolSpec
-from ucf.models.usecase import UseCaseSpec
+from ucf.models.protocol import ProtocolSpec, implementation_reference
+from ucf.models.usecase import UseCaseSpec, invariant_reference
 from ucf.parser.registry import SpecRegistry
 
 
-class EdgeType(str, Enum):
+class EdgeType(StrEnum):
     DEPENDS_ON = "depends_on"
     IMPLEMENTS = "implements"
     CONFLICTS_WITH = "conflicts_with"
@@ -30,6 +30,7 @@ class EdgeType(str, Enum):
 @dataclass
 class ImpactResult:
     """Result of an impact analysis query."""
+
     target: str
     direct_dependents: list[str] = field(default_factory=list)
     transitive_dependents: list[str] = field(default_factory=list)
@@ -40,6 +41,7 @@ class ImpactResult:
 @dataclass
 class CoverageReport:
     """Spec coverage statistics."""
+
     counts: dict[str, tuple[int, int]] = field(default_factory=dict)
     orphans: list[str] = field(default_factory=list)
 
@@ -70,8 +72,8 @@ class DependencyGraph:
 
         for proto in self.registry.protocols():
             proto_id = f"protocol/{proto.metadata.name}"
-            for impl_ref in proto.implementations:
-                target = self._normalize_ref(impl_ref.ref)
+            for implementation in proto.implementations:
+                target = self._normalize_ref(implementation_reference(implementation))
                 if self.g.has_node(target):
                     self.g.add_edge(target, proto_id, type=EdgeType.IMPLEMENTS.value)
 
@@ -116,10 +118,7 @@ class DependencyGraph:
                 self.g.add_edge(uc_id, target, type=EdgeType.DEPENDS_ON.value)
 
         for inv_ref in uc.invariants:
-            if isinstance(inv_ref, dict):
-                ref = inv_ref.get("$ref", "")
-            else:
-                ref = inv_ref.ref
+            ref = invariant_reference(inv_ref)
             target = self._normalize_ref(ref)
             if self.g.has_node(target):
                 self.g.add_edge(uc_id, target, type=EdgeType.DEPENDS_ON.value)
@@ -188,7 +187,7 @@ class DependencyGraph:
             if len(unique) < 2:
                 continue
             for i, w1 in enumerate(unique):
-                for w2 in unique[i + 1:]:
+                for w2 in unique[i + 1 :]:
                     if not _is_related(w1, w2):
                         conflicts.append((w1, w2, resource))
 
@@ -196,10 +195,18 @@ class DependencyGraph:
 
     def coverage(self) -> CoverageReport:
         report = CoverageReport()
-        for kind in ("action", "event", "component", "protocol", "usecase", "invariant"):
+        for kind in (
+            "action",
+            "event",
+            "component",
+            "protocol",
+            "usecase",
+            "invariant",
+        ):
             specs = self.registry.specs_of_kind(kind)
             referenced = sum(
-                1 for s in specs
+                1
+                for s in specs
                 if self.g.in_degree(self._node_id(s)) > 0
                 or self.g.out_degree(self._node_id(s)) > 0
             )
@@ -215,7 +222,7 @@ class DependencyGraph:
         lines = ["graph TD"]
         for node in self.g.nodes():
             safe = node.replace("/", "_").replace("-", "_")
-            lines.append(f"    {safe}[\"{node}\"]")
+            lines.append(f'    {safe}["{node}"]')
 
         for u, v, data in self.g.edges(data=True):
             u_safe = u.replace("/", "_").replace("-", "_")

@@ -27,55 +27,181 @@ class ValidateResult:
     info_count: int
 
 
+@dataclass(frozen=True)
+class ValidatePartialResult:
+    issues: list[Any]
+
+
 class ValidateSpecDirectoryInterface(ABC, FrameworkActions):
     """Interface with framework-provided actions inherited from FrameworkActions."""
 
     # ── State Setup (from requires) ──
 
     @abstractmethod
-    def setup_loader(self) -> LoaderContext:
+    def setup_loader(
+        self,
+        specs_dir: Any,
+    ) -> LoaderContext:
         ...
 
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_validate(self, registry: Any) -> ValidateResult:
+    def action_validate(
+        self,
+        registry: Any,
+    ) -> ValidateResult:
         ...
 
     @abstractmethod
-    def action_render_results(self, data: Any, format: Any) -> None:
+    def action_render_results(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_file_error(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_yaml_error(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_mapping_error(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_kind_missing(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_unknown_kind(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_validation_error(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_ref_error(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_depth_error(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_depth_invalid(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_errors(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_validate_partial(
+        self,
+        registry: Any,
+    ) -> ValidatePartialResult:
+        ...
+
+    @abstractmethod
+    def action_render_partial_results(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_all_loaded_specs_have_been_validated(self) -> None:
+    def verify_all_loaded_specs_have_been_validated(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_all_issues_are_reported_with_severity_category_and(self) -> None:
+    def verify_all_issues_are_reported_with_severity_category_and(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_exit_code_is_1_if_any_errors_exist_0_otherwise(self) -> None:
+    def verify_exit_code_is_1_if_any_errors_exist_0_otherwise(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_spec_names_unique(self) -> None:
+    def verify_spec_names_unique(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_refs_resolvable(self) -> None:
+    def verify_refs_resolvable(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_kind_determines_schema(self) -> None:
+    def verify_kind_determines_schema(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_no_circular_refs(self) -> None:
+    def verify_no_circular_refs(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

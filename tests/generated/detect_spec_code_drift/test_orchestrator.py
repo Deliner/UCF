@@ -7,54 +7,80 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    DetectSpecCodeDriftInterface,
-    LoaderContext,
-    ScannerContext,
-    BuildMapResult,
-    DetectResult,
+from .impl import (
+    detect_spec_code_drift_impl as detect_spec_code_drift_impl,
 )
-from .impl import detect_spec_code_drift_impl  # noqa: F401
+from .interface import DetectSpecCodeDriftInterface
 
 
 @pytest.fixture
-def uc(detect_spec_code_drift_impl: DetectSpecCodeDriftInterface) -> DetectSpecCodeDriftInterface:
-    return detect_spec_code_drift_impl
+def uc(request: pytest.FixtureRequest) -> DetectSpecCodeDriftInterface:
+    return request.getfixturevalue("detect_spec_code_drift_impl")
 
 
 class TestHappyPath:
 
     def test_detect_spec_code_drift_completes_successfully(
         self, uc: DetectSpecCodeDriftInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
-        scanner = uc.setup_scanner()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
+        scanner = uc.setup_scanner(
+            source_dir=inputs['source_dir'],
+        )
 
-        build_map = uc.action_build_map(registry=loader.registry, implementations=scanner.implementations)
+        build_map = uc.action_build_map(
+            registry=loader.registry,
+            implementations=scanner.implementations,
+        )
 
-        detect = uc.action_detect(registry=loader.registry, spec_to_code=build_map.spec_to_code, code_to_spec=build_map.code_to_spec)
+        detect = uc.action_detect(
+            registry=loader.registry,
+            spec_to_code=build_map.spec_to_code,
+            code_to_spec=build_map.code_to_spec,
+        )
 
-        render_drift = uc.action_render_drift(data={'unimplemented_specs': detect.unimplemented_specs, 'orphan_code': detect.orphan_code, 'stale_mappings': detect.stale_mappings, 'drift_count': detect.drift_count, 'mapped_count': build_map.mapped_count}, format='table')
+        uc.action_render_drift(
+            data={
+                'unimplemented_specs': detect.unimplemented_specs,
+                'orphan_code': detect.orphan_code,
+                'stale_mappings': detect.stale_mappings,
+                'drift_count': detect.drift_count,
+                'mapped_count': build_map.mapped_count,
+            },
+            format='table',
+        )
 
 
-        uc.verify_every_spec_without_an_implementation_is_reported_as()
-        uc.verify_every_implements_marker_referencing_a_missing_spec_is()
-        uc.verify_drift_count_correctly_sums_unimplemented_orphan_stale()
-        uc.verify_output_is_rendered_in_the_requested_format()
-        uc.verify_spec_has_implementation()
-        uc.verify_implementation_has_spec()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_every_spec_without_an_implementation_is_reported_as()
+        _ = uc.verify_every_implements_marker_referencing_a_missing_spec_is()
+        _ = uc.verify_drift_count_correctly_sums_unimplemented_orphan_stale()
+        _ = uc.verify_output_is_rendered_in_the_requested_format()
+        _ = uc.verify_spec_has_implementation()
+        _ = uc.verify_implementation_has_spec()
+        _ = uc.verify_required_inputs_validated()
 
 
 class TestAltCustomConvention:
 
     def test_custom_convention(
         self, uc: DetectSpecCodeDriftInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
-        scanner = uc.setup_scanner()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
+        scanner = uc.setup_scanner(
+            source_dir=inputs['source_dir'],
+        )
 
-        build_map_custom = uc.action_build_map(registry=loader.registry, implementations=scanner.implementations, convention=inputs.get('convention'))
+        uc.action_build_map_custom(
+            registry=loader.registry,
+            implementations=scanner.implementations,
+            convention=inputs['convention'],
+        )
 
 
 
@@ -62,13 +88,27 @@ class TestAltNoDriftFound:
 
     def test_no_drift_found(
         self, uc: DetectSpecCodeDriftInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
-        scanner = uc.setup_scanner()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
+        scanner = uc.setup_scanner(
+            source_dir=inputs['source_dir'],
+        )
 
-        build_map = uc.action_build_map(registry=loader.registry, implementations=scanner.implementations)
+        build_map = uc.action_build_map(
+            registry=loader.registry,
+            implementations=scanner.implementations,
+        )
 
-        render_clean = uc.action_render_drift(data={'message': 'all specs are mapped to implementations', 'mapped_count': build_map.mapped_count}, format='tree')
+        uc.action_render_clean(
+            data={
+                'message': 'all specs are mapped to implementations',
+                'mapped_count': build_map.mapped_count,
+            },
+            format='tree',
+        )
 
 
 

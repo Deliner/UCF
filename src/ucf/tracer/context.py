@@ -4,22 +4,22 @@ from __future__ import annotations
 
 import copy
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 
 
-class SlotState(str, Enum):
+class SlotState(StrEnum):
     AVAILABLE = "available"
     MUTATED = "mutated"
     INVALIDATED = "invalidated"
 
 
-class FindingSeverity(str, Enum):
+class FindingSeverity(StrEnum):
     ERROR = "error"
     WARNING = "warning"
     INFO = "info"
 
 
-class FindingCategory(str, Enum):
+class FindingCategory(StrEnum):
     DATA_GAP = "data_gap"
     DEAD_DATA = "dead_data"
     TYPE_MISMATCH = "type_mismatch"
@@ -93,7 +93,10 @@ class ActionEffect:
 
     @classmethod
     def from_step_spec(cls, step: dict) -> ActionEffect:
-        """Build effect from a use case step, deriving reads/writes from input/output."""
+        (
+            "Build effect from a use case step, deriving reads/writes from "
+            "input/output."
+        )
         reads: list[ReadEffect] = []
         writes: list[WriteEffect] = []
 
@@ -104,7 +107,9 @@ class ActionEffect:
                     reads.append(ReadEffect(field=parts[2]))
 
         for field_name, binding in step.get("output", {}).items():
-            writes.append(WriteEffect(field=binding if isinstance(binding, str) else field_name))
+            writes.append(
+                WriteEffect(field=binding if isinstance(binding, str) else field_name)
+            )
 
         return cls(reads=reads, writes=writes)
 

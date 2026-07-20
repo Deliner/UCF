@@ -51,65 +51,135 @@ class ExploreDependencyGraphWebInterface(ABC, FrameworkActions):
     # ── State Setup (from requires) ──
 
     @abstractmethod
-    def setup_loader(self) -> LoaderContext:
+    def setup_loader(
+        self,
+        specs_dir: Any,
+    ) -> LoaderContext:
         ...
 
     @abstractmethod
-    def setup_graph_builder(self) -> Graph_builderContext:
+    def setup_graph_builder(
+        self,
+        registry: Any,
+    ) -> Graph_builderContext:
         ...
 
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_build_json(self, registry: Any, graph: Any) -> BuildJsonResult:
+    def action_build_json(
+        self,
+        registry: Any,
+        graph: Any,
+    ) -> BuildJsonResult:
         ...
 
     @abstractmethod
-    def action_render_graph(self, data: Any, format: Any) -> None:
+    def action_render_graph(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
         ...
 
     @abstractmethod
-    def action_click_node(self, node_id: Any) -> ClickNodeResult:
+    def action_click_node(
+        self,
+        node_id: Any,
+    ) -> ClickNodeResult:
         ...
 
     @abstractmethod
-    def action_toggle_view(self, target_view: Any) -> ToggleViewResult:
+    def action_toggle_view(
+        self,
+        target_view: Any,
+    ) -> ToggleViewResult:
+        ...
+
+    @abstractmethod
+    def action_render_mermaid(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_json(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_empty(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_error(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_developer_sees_all_specs_as_graph_nodes(self) -> None:
+    def verify_developer_sees_all_specs_as_graph_nodes(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_developer_sees_all_dependency_edges_as_links(self) -> None:
+    def verify_developer_sees_all_dependency_edges_as_links(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_nodes_carry_kind_and_name_metadata(self) -> None:
+    def verify_nodes_carry_kind_and_name_metadata(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_links_reference_valid_node_identifiers(self) -> None:
+    def verify_links_reference_valid_node_identifiers(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_clicking_a_node_highlights_its_connections(self) -> None:
+    def verify_clicking_a_node_highlights_its_connections(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_tooltip_shows_node_kind_and_name(self) -> None:
+    def verify_tooltip_shows_node_kind_and_name(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_toggling_view_switches_between_d3_interactive_and_mermaid(self) -> None:
+    def verify_toggling_view_switches_between_d3_interactive_and_mermaid(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_graph_acyclic(self) -> None:
+    def verify_graph_acyclic(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

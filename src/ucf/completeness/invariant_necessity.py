@@ -8,7 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from ucf.models.invariant import InvariantSpec
-from ucf.models.usecase import UseCaseSpec
+from ucf.models.usecase import UseCaseSpec, invariant_reference
 from ucf.parser.registry import SpecRegistry
 from ucf.tracer.context import Finding, FindingCategory, FindingSeverity
 
@@ -25,7 +25,10 @@ class InvariantCoverage:
 
 
 class InvariantNecessityAnalyzer:
-    """For each invariant, check that at least one UC exercises the constrained actions."""
+    (
+        "For each invariant, check that at least one UC exercises the "
+        "constrained actions."
+    )
 
     def __init__(self, registry: SpecRegistry) -> None:
         self.registry = registry
@@ -54,19 +57,22 @@ class InvariantNecessityAnalyzer:
             coverages.append(cov)
 
             if not cov.is_testable:
-                findings.append(Finding(
-                    severity=FindingSeverity.INFO,
-                    category=FindingCategory.UNTESTABLE_INVARIANT,
-                    step_id=f"invariants/{inv.metadata.name}",
-                    message=(
-                        f"Invariant '{inv.metadata.name}' (rule: {inv.rule or 'composite'}) "
-                        f"is not exercised by any use case"
-                    ),
-                    suggestion=(
-                        "Either the invariant is unnecessary, or there's a missing "
-                        "use case that could violate it"
-                    ),
-                ))
+                findings.append(
+                    Finding(
+                        severity=FindingSeverity.INFO,
+                        category=FindingCategory.UNTESTABLE_INVARIANT,
+                        step_id=f"invariants/{inv.metadata.name}",
+                        message=(
+                            f"Invariant '{inv.metadata.name}' "
+                            f"(rule: {inv.rule or 'composite'}) "
+                            f"is not exercised by any use case"
+                        ),
+                        suggestion=(
+                            "Either the invariant is unnecessary, or there's a missing "
+                            "use case that could violate it"
+                        ),
+                    )
+                )
 
         return coverages, findings
 
@@ -89,18 +95,14 @@ class InvariantNecessityAnalyzer:
         return actions
 
     def _find_ucs_referencing_invariant(self, inv: InvariantSpec) -> set[str]:
-        """Check if any UC directly references this invariant (by $ref or resolved name)."""
+        (
+            "Check if any UC directly references this invariant "
+            "(by $ref or resolved name)."
+        )
         inv_ref = f"invariants/{inv.metadata.name}"
-        inv_name = inv.metadata.name
         result: set[str] = set()
         for uc in self.registry.usecases():
             for inv_ref_item in uc.invariants:
-                if isinstance(inv_ref_item, dict):
-                    ref = inv_ref_item.get("$ref", "")
-                    resolved_name = inv_ref_item.get("metadata", {}).get("name", "")
-                    if ref == inv_ref or resolved_name == inv_name:
-                        result.add(uc.metadata.name)
-                else:
-                    if inv_ref_item.ref == inv_ref:
-                        result.add(uc.metadata.name)
+                if invariant_reference(inv_ref_item) == inv_ref:
+                    result.add(uc.metadata.name)
         return result

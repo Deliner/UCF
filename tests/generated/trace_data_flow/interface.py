@@ -31,37 +31,58 @@ class TraceDataFlowInterface(ABC, FrameworkActions):
     # ── State Setup (from requires) ──
 
     @abstractmethod
-    def setup_loader(self) -> LoaderContext:
+    def setup_loader(
+        self,
+        specs_dir: Any,
+    ) -> LoaderContext:
         ...
 
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_trace(self, usecase: Any, registry: Any) -> TraceResult:
+    def action_trace(
+        self,
+        usecase: Any,
+        registry: Any,
+    ) -> TraceResult:
         ...
 
     @abstractmethod
-    def action_render_trace(self, data: Any, format: Any) -> None:
+    def action_render_trace(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_every_step_in_the_use_case_has_been_traced(self) -> None:
+    def verify_every_step_in_the_use_case_has_been_traced(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_data_gaps_and_dead_data_are_reported(self) -> None:
+    def verify_data_gaps_and_dead_data_are_reported(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_branch_divergences_between_happy_path_and_alt_flows_are(self) -> None:
+    def verify_branch_divergences_between_happy_path_and_alt_flows_are(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_refs_resolvable(self) -> None:
+    def verify_refs_resolvable(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

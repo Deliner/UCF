@@ -1,0 +1,381 @@
+{
+  "$comment": "Generated deterministically from UCF change-governance profile 1.0.0 models; do not edit by hand. The x-ucf-runtime-semantic-checks annotation names only additional checks beyond JSON Schema.",
+  "$defs": {
+    "BehaviorDeltaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "change_id": {
+          "$ref": "#/$defs/OpenSpecChangeId"
+        },
+        "change_lifecycle_version": {
+          "const": "1.0.0",
+          "title": "Change Lifecycle Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "behavior_delta_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:change-lifecycle:behavior-delta:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "change_lifecycle_version",
+        "schema_uri",
+        "change_id",
+        "canonical_digest"
+      ],
+      "title": "BehaviorDeltaRef",
+      "type": "object"
+    },
+    "BehaviorDocumentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "document_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "ir_version": {
+          "const": "1.0.0",
+          "title": "Ir Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "behavior_document_ref",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "document_id",
+        "ir_version",
+        "canonical_digest"
+      ],
+      "title": "BehaviorDocumentRef",
+      "type": "object"
+    },
+    "ChangeProposalRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "change_id": {
+          "$ref": "#/$defs/OpenSpecChangeId"
+        },
+        "change_lifecycle_version": {
+          "const": "1.0.0",
+          "title": "Change Lifecycle Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "change_proposal_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:change-lifecycle:proposal:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "change_lifecycle_version",
+        "schema_uri",
+        "change_id",
+        "canonical_digest"
+      ],
+      "title": "ChangeProposalRef",
+      "type": "object"
+    },
+    "DecisionAssessmentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "change_governance_version": {
+          "const": "1.0.0",
+          "title": "Change Governance Version",
+          "type": "string"
+        },
+        "change_id": {
+          "$ref": "#/$defs/OpenSpecChangeId"
+        },
+        "kind": {
+          "const": "decision_assessment_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:change-governance:decision-assessment:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "change_governance_version",
+        "schema_uri",
+        "change_id",
+        "canonical_digest"
+      ],
+      "title": "DecisionAssessmentRef",
+      "type": "object"
+    },
+    "DecisionClass": {
+      "enum": [
+        "public_contract_or_serialized_boundary",
+        "production_dependency_license_or_hosted_service",
+        "destructive_or_irreversible_migration",
+        "security_privacy_correctness_or_gate_weakening",
+        "material_product_semantics",
+        "scope_expansion_for_preexisting_failure"
+      ],
+      "title": "DecisionClass",
+      "type": "string"
+    },
+    "DecisionEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "decision_evidence",
+          "title": "Kind",
+          "type": "string"
+        },
+        "source_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "source_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "summary": {
+          "$ref": "#/$defs/GovernanceReason"
+        }
+      },
+      "required": [
+        "kind",
+        "source_uri",
+        "source_digest",
+        "summary"
+      ],
+      "title": "DecisionEvidence",
+      "type": "object"
+    },
+    "DecisionOutcome": {
+      "enum": [
+        "approved",
+        "rejected"
+      ],
+      "title": "DecisionOutcome",
+      "type": "string"
+    },
+    "DeclaredDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "decision_class": {
+          "$ref": "#/$defs/DecisionClass"
+        },
+        "evidence": {
+          "$ref": "#/$defs/DecisionEvidence"
+        },
+        "kind": {
+          "const": "declared_decision",
+          "title": "Kind",
+          "type": "string"
+        },
+        "outcome": {
+          "$ref": "#/$defs/DecisionOutcome"
+        }
+      },
+      "required": [
+        "kind",
+        "decision_class",
+        "outcome",
+        "evidence"
+      ],
+      "title": "DeclaredDecision",
+      "type": "object"
+    },
+    "Digest": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "sha-256",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "kind": {
+          "const": "digest",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/DigestValue"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm",
+        "value"
+      ],
+      "title": "Digest",
+      "type": "object"
+    },
+    "DigestValue": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "GovernanceReason": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "type": "string"
+    },
+    "ImpactReportRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "change_governance_version": {
+          "const": "1.0.0",
+          "title": "Change Governance Version",
+          "type": "string"
+        },
+        "change_id": {
+          "$ref": "#/$defs/OpenSpecChangeId"
+        },
+        "kind": {
+          "const": "impact_report_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:change-governance:impact-report:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "change_governance_version",
+        "schema_uri",
+        "change_id",
+        "canonical_digest"
+      ],
+      "title": "ImpactReportRef",
+      "type": "object"
+    },
+    "OpenSpecChangeId": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "type": "string"
+    },
+    "URI": {
+      "maxLength": 2048,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9+.-]*:[^\\s]+$",
+      "type": "string"
+    }
+  },
+  "$id": "urn:ucf:change-governance:decision-declaration:1.0.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "assessment": {
+      "$ref": "#/$defs/DecisionAssessmentRef"
+    },
+    "base_behavior": {
+      "$ref": "#/$defs/BehaviorDocumentRef"
+    },
+    "change_governance_version": {
+      "const": "1.0.0",
+      "title": "Change Governance Version",
+      "type": "string"
+    },
+    "change_id": {
+      "$ref": "#/$defs/OpenSpecChangeId"
+    },
+    "decision_policy_uri": {
+      "const": "urn:ucf:change-governance:human-decision-policy:1.0.0",
+      "title": "Decision Policy Uri",
+      "type": "string"
+    },
+    "decisions": {
+      "items": {
+        "$ref": "#/$defs/DeclaredDecision"
+      },
+      "maxItems": 6,
+      "minItems": 1,
+      "title": "Decisions",
+      "type": "array"
+    },
+    "delta": {
+      "$ref": "#/$defs/BehaviorDeltaRef"
+    },
+    "final_behavior": {
+      "$ref": "#/$defs/BehaviorDocumentRef"
+    },
+    "impact": {
+      "$ref": "#/$defs/ImpactReportRef"
+    },
+    "kind": {
+      "const": "decision_declaration",
+      "title": "Kind",
+      "type": "string"
+    },
+    "proposal": {
+      "$ref": "#/$defs/ChangeProposalRef"
+    },
+    "schema_uri": {
+      "const": "urn:ucf:change-governance:decision-declaration:1.0.0",
+      "title": "Schema Uri",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "change_governance_version",
+    "schema_uri",
+    "change_id",
+    "proposal",
+    "delta",
+    "base_behavior",
+    "final_behavior",
+    "impact",
+    "assessment",
+    "decision_policy_uri",
+    "decisions"
+  ],
+  "title": "UCF change decision declaration 1.0.0",
+  "type": "object",
+  "x-ucf-change-governance-version": "1.0.0",
+  "x-ucf-document-kind": "decision_declaration",
+  "x-ucf-runtime-semantic-checks": [
+    "strict UTF-8 and duplicate-member JSON decoding",
+    "maximum JSON and typed nesting depth 128",
+    "exact canonical runtime model and container types",
+    "exact impact and assessment predecessor replay",
+    "exact applicable decision-class coverage",
+    "rejection preserved as a blocking decision outcome"
+  ]
+}

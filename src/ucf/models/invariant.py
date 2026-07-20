@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import ConfigDict, Field
 
-from ucf.models.base import Metadata
+from ucf.models.base import Metadata, SpecModel
 
 
-class InvariantType(str, Enum):
+class InvariantType(StrEnum):
     DATA = "data"
     RELATIONSHIP = "relationship"
     AGGREGATE = "aggregate"
@@ -20,25 +20,25 @@ class InvariantType(str, Enum):
     COMPOSITE = "composite"
 
 
-class TransitionDef(BaseModel):
+class TransitionDef(SpecModel):
     """State machine transitions map: state -> list of allowed next states."""
 
 
-class ForbiddenTransition(BaseModel):
+class ForbiddenTransition(SpecModel):
     from_state: str = Field(alias="from")
     to: str
     reason: str
 
-    model_config = {"populate_by_name": True}
+    model_config = ConfigDict(populate_by_name=True)
 
 
-class AppliesTo(BaseModel):
+class AppliesTo(SpecModel):
     resource: str | None = None
     action: str | None = None
     usecase: str | None = None
 
 
-class InvariantSpec(BaseModel):
+class InvariantSpec(SpecModel):
     kind: Literal["invariant"] = "invariant"
     metadata: Metadata
     type: InvariantType

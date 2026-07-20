@@ -1,0 +1,22 @@
+kind: action
+metadata:
+  name: log-warning
+  version: 0.1.0
+  owner: ucf-core
+  tags: [logging, framework]
+
+input:
+  message:
+    type: string
+    required: true
+    description: warning message to record
+
+output:
+  logged:
+    type: boolean
+
+preconditions:
+  - message is not empty
+
+postconditions:
+  - warning is recorded without changing behavior intent

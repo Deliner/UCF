@@ -1,0 +1,8 @@
+{
+  "kind": "behavior_ir",
+  "ir_version": "1.0.0",
+  "document_id": "document.first",
+  "document_id": "document.second",
+  "roots": [],
+  "entities": []
+}

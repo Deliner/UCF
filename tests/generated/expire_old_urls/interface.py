@@ -31,27 +31,49 @@ class ExpireOldUrlsInterface(ABC, FrameworkActions):
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_find_expired(self, days_threshold: Any) -> FindExpiredResult:
+    def action_find_expired(
+        self,
+        days_threshold: Any,
+    ) -> FindExpiredResult:
         ...
 
     @abstractmethod
-    def action_delete_batch(self, slugs: Any) -> DeleteBatchResult:
+    def action_delete_batch(
+        self,
+        slugs: Any,
+    ) -> DeleteBatchResult:
+        ...
+
+    @abstractmethod
+    def action_log_empty(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_all_expired_urls_are_deleted_from_database(self) -> None:
+    def verify_all_expired_urls_are_deleted_from_database(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_deletion_count_matches_number_of_found_expired_urls(self) -> None:
+    def verify_deletion_count_matches_number_of_found_expired_urls(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_failed_slugs_is_empty_if_all_deletions_successful(self) -> None:
+    def verify_failed_slugs_is_empty_if_all_deletions_successful(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

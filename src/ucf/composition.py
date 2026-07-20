@@ -8,7 +8,7 @@
 
 from __future__ import annotations
 
-from ucf.models.usecase import UseCaseSpec
+from ucf.models.usecase import UseCaseSpec, invariant_reference
 from ucf.parser.registry import SpecRegistry
 
 
@@ -48,7 +48,8 @@ def resolve_extends(
     if not isinstance(parent, UseCaseSpec):
         raise CompositionError(
             "PARENT_NOT_FOUND",
-            f"extends reference '{uc.extends}' resolves to a {parent.kind}, not a use case",
+            f"extends reference '{uc.extends}' resolves to a {parent.kind}, "
+            "not a use case",
         )
 
     if parent.metadata.name in chain:
@@ -61,7 +62,9 @@ def resolve_extends(
 
     if parent.extends is not None:
         parent, ancestor_chain, ancestor_step_ids = resolve_extends(
-            parent, registry, _chain=chain,
+            parent,
+            registry,
+            _chain=chain,
         )
         chain = ancestor_chain
     else:
@@ -80,8 +83,7 @@ def resolve_extends(
 
     merged_requires = list(parent.requires)
     existing_refs = {
-        r.ref if hasattr(r, "ref") else r.get("$ref", "")
-        for r in merged_requires
+        r.ref if hasattr(r, "ref") else r.get("$ref", "") for r in merged_requires
     }
     for r in uc.requires:
         ref_val = r.ref if hasattr(r, "ref") else r.get("$ref", "")
@@ -89,12 +91,9 @@ def resolve_extends(
             merged_requires.append(r)
 
     merged_invariants = list(parent.invariants)
-    existing_inv = {
-        i.ref if hasattr(i, "ref") else str(i)
-        for i in merged_invariants
-    }
+    existing_inv = {invariant_reference(i) for i in merged_invariants}
     for i in uc.invariants:
-        inv_val = i.ref if hasattr(i, "ref") else str(i)
+        inv_val = invariant_reference(i)
         if inv_val not in existing_inv:
             merged_invariants.append(i)
 

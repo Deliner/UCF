@@ -7,52 +7,80 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    InspectSpecDetailInterface,
-    LoaderContext,
-    Graph_builderContext,
-    GetDetailResult,
-    GetRelsResult,
+from .impl import (
+    inspect_spec_detail_impl as inspect_spec_detail_impl,
 )
-from .impl import inspect_spec_detail_impl  # noqa: F401
+from .interface import InspectSpecDetailInterface
 
 
 @pytest.fixture
-def uc(inspect_spec_detail_impl: InspectSpecDetailInterface) -> InspectSpecDetailInterface:
-    return inspect_spec_detail_impl
+def uc(request: pytest.FixtureRequest) -> InspectSpecDetailInterface:
+    return request.getfixturevalue("inspect_spec_detail_impl")
 
 
 class TestHappyPath:
 
     def test_inspect_spec_detail_completes_successfully(
         self, uc: InspectSpecDetailInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
-        graph_builder = uc.setup_graph_builder()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
+        graph_builder = uc.setup_graph_builder(
+            registry=loader.registry,
+        )
 
-        get_detail = uc.action_get_detail(registry=loader.registry, kind=inputs.get('kind'), name=inputs.get('name'))
+        get_detail = uc.action_get_detail(
+            registry=loader.registry,
+            kind=inputs['kind'],
+            name=inputs['name'],
+        )
 
-        get_rels = uc.action_get_rels(registry=loader.registry, graph=graph_builder.graph, spec_ref=inputs.get('spec_ref'))
+        get_rels = uc.action_get_rels(
+            registry=loader.registry,
+            graph=graph_builder.graph,
+            spec_ref=inputs['spec_ref'],
+        )
 
-        render_detail = uc.action_render_detail(data={'spec': get_detail.spec, 'raw_yaml': get_detail.raw_yaml, 'impl_status': get_detail.impl_status, 'upstream': get_rels.upstream, 'downstream': get_rels.downstream}, format='tree')
+        uc.action_render_detail(
+            data={
+                'spec': get_detail.spec,
+                'raw_yaml': get_detail.raw_yaml,
+                'impl_status': get_detail.impl_status,
+                'upstream': get_rels.upstream,
+                'downstream': get_rels.downstream,
+            },
+            format='tree',
+        )
 
 
-        uc.verify_developer_sees_parsed_spec_metadata_and_schema()
-        uc.verify_developer_sees_raw_yaml_source()
-        uc.verify_developer_sees_upstream_and_downstream_relationships()
-        uc.verify_developer_sees_implementation_status()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_developer_sees_parsed_spec_metadata_and_schema()
+        _ = uc.verify_developer_sees_raw_yaml_source()
+        _ = uc.verify_developer_sees_upstream_and_downstream_relationships()
+        _ = uc.verify_developer_sees_implementation_status()
+        _ = uc.verify_required_inputs_validated()
 
 
 class TestAltSpecNotFound:
 
     def test_spec_not_found(
         self, uc: InspectSpecDetailInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
-        graph_builder = uc.setup_graph_builder()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
+        uc.setup_graph_builder(
+            registry=loader.registry,
+        )
 
-        render_404 = uc.action_render_detail(data={'message': 'spec not found'}, format='table')
+        uc.action_render_404(
+            data={
+                'message': 'spec not found',
+            },
+            format='table',
+        )
 
 
 

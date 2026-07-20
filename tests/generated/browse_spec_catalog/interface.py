@@ -26,39 +26,104 @@ class ListSpecsResult:
     kind_counts: Any
 
 
+@dataclass(frozen=True)
+class ListAllResult:
+    specs: list[Any]
+    total_count: int
+    kind_counts: Any
+
+
 class BrowseSpecCatalogInterface(ABC, FrameworkActions):
     """Interface with framework-provided actions inherited from FrameworkActions."""
 
     # ── State Setup (from requires) ──
 
     @abstractmethod
-    def setup_loader(self) -> LoaderContext:
+    def setup_loader(
+        self,
+        specs_dir: Any,
+    ) -> LoaderContext:
         ...
 
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_list_specs(self, registry: Any, kind_filter: Any, search_query: Any) -> ListSpecsResult:
+    def action_list_specs(
+        self,
+        registry: Any,
+        kind_filter: Any,
+        search_query: Any,
+    ) -> ListSpecsResult:
         ...
 
     @abstractmethod
-    def action_render_results(self, data: Any, format: Any) -> None:
+    def action_render_results(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_list_all(
+        self,
+        registry: Any,
+    ) -> ListAllResult:
+        ...
+
+    @abstractmethod
+    def action_render_all(
+        self,
+        data: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_empty(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_registry_error(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_kind_error(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_developer_receives_a_list_of_specs_matching_the_filter(self) -> None:
+    def verify_developer_receives_a_list_of_specs_matching_the_filter(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_spec_counts_per_kind_are_reported(self) -> None:
+    def verify_spec_counts_per_kind_are_reported(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_empty_result_shows_a_clear_message(self) -> None:
+    def verify_empty_result_shows_a_clear_message(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

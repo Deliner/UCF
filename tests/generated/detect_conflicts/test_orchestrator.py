@@ -7,37 +7,48 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    DetectConflictsInterface,
-    LoaderContext,
-    BuildGraphResult,
-    DetectResult,
+from .impl import (
+    detect_conflicts_impl as detect_conflicts_impl,
 )
-from .impl import detect_conflicts_impl  # noqa: F401
+from .interface import DetectConflictsInterface
 
 
 @pytest.fixture
-def uc(detect_conflicts_impl: DetectConflictsInterface) -> DetectConflictsInterface:
-    return detect_conflicts_impl
+def uc(request: pytest.FixtureRequest) -> DetectConflictsInterface:
+    return request.getfixturevalue("detect_conflicts_impl")
 
 
 class TestHappyPath:
 
     def test_detect_conflicts_completes_successfully(
         self, uc: DetectConflictsInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        build_graph = uc.action_build_graph(registry=loader.registry)
+        build_graph = uc.action_build_graph(
+            registry=loader.registry,
+        )
 
-        detect = uc.action_detect(graph=build_graph.graph, registry=loader.registry)
+        detect = uc.action_detect(
+            graph=build_graph.graph,
+            registry=loader.registry,
+        )
 
-        render_conflicts = uc.action_render_conflicts(data={'conflicts': detect.conflicts, 'conflict_count': detect.conflict_count}, format='table')
+        uc.action_render_conflicts(
+            data={
+                'conflicts': detect.conflicts,
+                'conflict_count': detect.conflict_count,
+            },
+            format='table',
+        )
 
 
-        uc.verify_all_write_write_conflicts_between_independent_specs_are()
-        uc.verify_intra_usecase_conflicts_are_filtered_out()
-        uc.verify_each_conflict_pair_identifies_the_shared_resource()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_all_write_write_conflicts_between_independent_specs_are()
+        _ = uc.verify_intra_usecase_conflicts_are_filtered_out()
+        _ = uc.verify_each_conflict_pair_identifies_the_shared_resource()
+        _ = uc.verify_required_inputs_validated()
 
 

@@ -16,6 +16,7 @@ env/
 # IDE / editor
 .idea/
 .vscode/
+.cursor/settings.json
 *.swp
 *.swo
 *~
@@ -31,3 +32,6 @@ htmlcov/
 
 # Ruff
 .ruff_cache/
+
+# Local verification evidence
+.artifacts/

@@ -9,6 +9,10 @@ from typing import Any
 
 import pytest
 
+from ucf.models.action import ActionSpec
+from ucf.models.usecase import AlternativeFlow, UseCaseSpec
+from ucf.parser.registry import SpecRegistry
+
 from .interface import (
     ExtractErrorCodeResult,
     FindTriggerActionResult,
@@ -20,7 +24,8 @@ from .interface import (
 class GenerateAltFlowVerificationImpl(GenerateAltFlowVerificationInterface):
     """Implements alt flow trigger verification for generator."""
 
-    def __init__(self) -> None:
+    def __init__(self, registry: SpecRegistry) -> None:
+        self._registry = registry
         self._generated_code = None
         self._error_code = None
         self._action_ref = None
@@ -29,12 +34,12 @@ class GenerateAltFlowVerificationImpl(GenerateAltFlowVerificationInterface):
 
     def action_extract_error_code(self, alt_flow: Any) -> ExtractErrorCodeResult:
         """Extract error code from alternative flow spec."""
-        if alt_flow is None or not hasattr(alt_flow, "handles_error"):
-            # For test purposes, return mock data
-            error_code = "VALIDATION_ERROR"
-        else:
-            error_code = alt_flow.handles_error or "UNKNOWN_ERROR"
-        
+        if not isinstance(alt_flow, AlternativeFlow):
+            raise TypeError("alt_flow must be an AlternativeFlow")
+        if not alt_flow.handles_error:
+            raise ValueError("alternative flow does not declare handles_error")
+
+        error_code = alt_flow.handles_error
         self._error_code = error_code
         return ExtractErrorCodeResult(error_code=error_code)
 
@@ -42,15 +47,22 @@ class GenerateAltFlowVerificationImpl(GenerateAltFlowVerificationInterface):
         self, usecase_spec: Any, error_code: Any
     ) -> FindTriggerActionResult:
         """Find which action in main flow can raise this error."""
-        # For test purposes, mock the logic
-        # In real impl, would:
-        # 1. Iterate through usecase_spec.steps
-        # 2. Load each action spec from registry
-        # 3. Check if action.errors contains error_code
-        
-        action_ref = "actions/validate-email"
-        step_id = "validate-input"
-        
+        if not isinstance(usecase_spec, UseCaseSpec):
+            raise TypeError("usecase_spec must be a UseCaseSpec")
+
+        matches: list[tuple[str, str]] = []
+        for step in usecase_spec.steps:
+            action = self._registry.resolve_ref(step.use)
+            if not isinstance(action, ActionSpec):
+                continue
+            if any(error.code == error_code for error in action.errors):
+                matches.append((step.use, step.id))
+        if len(matches) != 1:
+            raise ValueError(
+                f"expected one action declaring {error_code}, found {len(matches)}"
+            )
+
+        action_ref, step_id = matches[0]
         self._action_ref = action_ref
         return FindTriggerActionResult(action_ref=action_ref, step_id=step_id)
 
@@ -58,20 +70,21 @@ class GenerateAltFlowVerificationImpl(GenerateAltFlowVerificationInterface):
         self, action_ref: Any, error_code: Any
     ) -> GenerateAssertionResult:
         """Generate Python assertion code to verify trigger was called."""
-        # Generate assertion that checks if error was raised
-        code = f"""
+        code = f"""\
 # Verify that {action_ref} raised {error_code}
 assert uc._validation_called, "Expected validation to be triggered"
-assert uc._last_error_code == "{error_code}", f"Expected {{'{error_code}'}}, got {{{{uc._last_error_code}}}}"
+assert uc._last_error_code == {str(error_code)!r}, (
+    f"Expected {str(error_code)!r}, got {{uc._last_error_code}}"
+)
 """.strip()
-        
+
         self._generated_code = code
         return GenerateAssertionResult(code=code)
 
     def action_skip_verification(self, message: Any) -> None:
         """Log warning for alt flows without error handlers."""
-        # In real impl, would log to console or file
-        pass
+        self._skipped_message = str(message)
+        self.render_cli_output({"warning": self._skipped_message}, "text")
 
     # ── Verifications ──
 
@@ -115,5 +128,10 @@ assert uc._last_error_code == "{error_code}", f"Expected {{'{error_code}'}}, got
 
 
 @pytest.fixture
-def generate_alt_flow_verification_impl() -> GenerateAltFlowVerificationImpl:
-    return GenerateAltFlowVerificationImpl()
+def generate_alt_flow_verification_impl(
+    inputs: dict[str, object],
+) -> GenerateAltFlowVerificationImpl:
+    registry = inputs["registry"]
+    if not isinstance(registry, SpecRegistry):
+        raise TypeError("inputs.registry must be a SpecRegistry")
+    return GenerateAltFlowVerificationImpl(registry)

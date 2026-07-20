@@ -8,10 +8,10 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 
 
-class ExpressionNamespace(str, Enum):
+class ExpressionNamespace(StrEnum):
     INPUTS = "inputs"
     STEPS = "steps"
     EVENT = "event"
@@ -46,9 +46,7 @@ class ResolvedExpression:
 _EXPR_RE = re.compile(r"\$([a-zA-Z_][a-zA-Z0-9_\-]*)(?:\.([a-zA-Z0-9_.\-]+))?")
 
 
-_FULL_EXPR_RE = re.compile(
-    r"^\$([a-zA-Z_][a-zA-Z0-9_\-]*)(?:\.([a-zA-Z0-9_.\-]+))?$"
-)
+_FULL_EXPR_RE = re.compile(r"^\$([a-zA-Z_][a-zA-Z0-9_\-]*)(?:\.([a-zA-Z0-9_.\-]+))?$")
 
 
 def parse_expression(expr: str) -> ResolvedExpression | None:
@@ -106,7 +104,8 @@ class ExpressionContext:
 
         if ns not in self.available:
             component_aliases = {
-                alias for alias in self.available
+                alias
+                for alias in self.available
                 if alias not in {n.value for n in ExpressionNamespace}
             }
             if ns in component_aliases:
@@ -152,12 +151,14 @@ def validate_expressions_in_value(
     if isinstance(value, str):
         for expr in extract_expressions(value):
             if not ctx.can_resolve(expr):
-                errors.append(ExpressionError(
-                    expression=expr.raw,
-                    location=location,
-                    message=f"Cannot resolve '{expr.raw}': "
-                            f"namespace '{expr.namespace}' not available",
-                ))
+                errors.append(
+                    ExpressionError(
+                        expression=expr.raw,
+                        location=location,
+                        message=f"Cannot resolve '{expr.raw}': "
+                        f"namespace '{expr.namespace}' not available",
+                    )
+                )
     elif isinstance(value, dict):
         for k, v in value.items():
             errors.extend(validate_expressions_in_value(v, ctx, f"{location}.{k}"))

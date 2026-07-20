@@ -1,0 +1,13 @@
+{
+  "kind": "behavior_ir",
+  "ir_version": "1.0.0",
+  "document_id": "document.invalid-broken-reference",
+  "roots": [
+    {
+      "kind": "entity_ref",
+      "target_kind": "use_case",
+      "target_id": "use-case.missing"
+    }
+  ],
+  "entities": []
+}

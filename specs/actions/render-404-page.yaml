@@ -4,7 +4,6 @@ metadata:
   version: 1.0.0
   owner: url-shortener
   tags: [error-handling, ui]
-  framework: true
 
 input:
   short_code:
@@ -20,7 +19,7 @@ output:
 platform:
   http:
     method: RESPONSE
-    status: 404
+    path: /{short_code}
 
 preconditions:
   - short_code is provided

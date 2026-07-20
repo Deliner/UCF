@@ -1,0 +1,739 @@
+{
+  "$comment": "Generated deterministically from UCF implementation-evidence profile 1.0.0 models; do not edit by hand. Exact bundle, source, mapping, producer, capability, procedure, result, and successor checks remain runtime semantics.",
+  "$defs": {
+    "BehaviorDocumentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "document_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "ir_version": {
+          "const": "1.0.0",
+          "title": "Ir Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "behavior_document_ref",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "document_id",
+        "ir_version",
+        "canonical_digest"
+      ],
+      "title": "BehaviorDocumentRef",
+      "type": "object"
+    },
+    "BehaviorEntityRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "document_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "ir_version": {
+          "const": "1.0.0",
+          "title": "Ir Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "behavior_entity_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/EntityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "document_id",
+        "ir_version",
+        "canonical_digest",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "BehaviorEntityRef",
+      "type": "object"
+    },
+    "BooleanValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "boolean",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "BooleanValue",
+      "type": "object"
+    },
+    "CanonicalDecimal": {
+      "pattern": "^(?:0|[1-9][0-9]*|-[1-9][0-9]*|-?(?:0|[1-9][0-9]*)\\.[0-9]*[1-9])$",
+      "type": "string"
+    },
+    "CapabilitySelection": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "capability",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/QualifiedName"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "version"
+      ],
+      "title": "CapabilitySelection",
+      "type": "object"
+    },
+    "Check": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "check",
+          "title": "Kind",
+          "type": "string"
+        },
+        "procedure_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "version",
+        "procedure_uri"
+      ],
+      "title": "Check",
+      "type": "object"
+    },
+    "DecimalValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "decimal",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/CanonicalDecimal"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "DecimalValue",
+      "type": "object"
+    },
+    "Digest": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "sha-256",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "kind": {
+          "const": "digest",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/DigestValue"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm",
+        "value"
+      ],
+      "title": "Digest",
+      "type": "object"
+    },
+    "DigestValue": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "EntityKind": {
+      "enum": [
+        "action",
+        "use_case",
+        "step",
+        "binding",
+        "effect",
+        "observation",
+        "invariant",
+        "provenance",
+        "verification_evidence",
+        "capability_requirement"
+      ],
+      "title": "EntityKind",
+      "type": "string"
+    },
+    "EntityRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "entity_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/EntityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "EntityRef",
+      "type": "object"
+    },
+    "ExecutionEnvironment": {
+      "additionalProperties": false,
+      "properties": {
+        "identity_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "kind": {
+          "const": "execution_environment",
+          "title": "Kind",
+          "type": "string"
+        },
+        "revision": {
+          "$ref": "#/$defs/Digest"
+        }
+      },
+      "required": [
+        "kind",
+        "identity_uri",
+        "revision"
+      ],
+      "title": "ExecutionEnvironment",
+      "type": "object"
+    },
+    "ExecutionPortValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "execution_port_value",
+          "title": "Kind",
+          "type": "string"
+        },
+        "port": {
+          "$ref": "#/$defs/PortRef"
+        },
+        "value": {
+          "$ref": "#/$defs/IRValue"
+        }
+      },
+      "required": [
+        "kind",
+        "port",
+        "value"
+      ],
+      "title": "ExecutionPortValue",
+      "type": "object"
+    },
+    "IRValue": {
+      "discriminator": {
+        "mapping": {
+          "boolean": "#/$defs/BooleanValue",
+          "decimal": "#/$defs/DecimalValue",
+          "integer": "#/$defs/IntegerValue",
+          "list": "#/$defs/ListValue",
+          "null": "#/$defs/NullValue",
+          "record": "#/$defs/RecordValue",
+          "string": "#/$defs/StringValue",
+          "timestamp": "#/$defs/TimestampValue"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/NullValue"
+        },
+        {
+          "$ref": "#/$defs/BooleanValue"
+        },
+        {
+          "$ref": "#/$defs/StringValue"
+        },
+        {
+          "$ref": "#/$defs/IntegerValue"
+        },
+        {
+          "$ref": "#/$defs/DecimalValue"
+        },
+        {
+          "$ref": "#/$defs/TimestampValue"
+        },
+        {
+          "$ref": "#/$defs/ListValue"
+        },
+        {
+          "$ref": "#/$defs/RecordValue"
+        }
+      ]
+    },
+    "Identifier": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "type": "string"
+    },
+    "ImplementationMappingResultId": {
+      "pattern": "^mapping\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "ImplementationMappingResultRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "implementation_mapping_result_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:adapter:implementation-mapping-result:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/ImplementationMappingResultId"
+        }
+      },
+      "required": [
+        "kind",
+        "schema_uri",
+        "schema_version",
+        "target_id",
+        "canonical_digest"
+      ],
+      "title": "ImplementationMappingResultRef",
+      "type": "object"
+    },
+    "ImplementationSource": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "implementation_source",
+          "title": "Kind",
+          "type": "string"
+        },
+        "records": {
+          "items": {
+            "$ref": "#/$defs/InventoryRecordRef"
+          },
+          "maxItems": 256,
+          "minItems": 1,
+          "title": "Records",
+          "type": "array"
+        },
+        "source_revision": {
+          "$ref": "#/$defs/Digest"
+        },
+        "subject_uri": {
+          "$ref": "#/$defs/URI"
+        }
+      },
+      "required": [
+        "kind",
+        "subject_uri",
+        "source_revision",
+        "records"
+      ],
+      "title": "ImplementationSource",
+      "type": "object"
+    },
+    "IntegerValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "integer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/SafeInteger"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "IntegerValue",
+      "type": "object"
+    },
+    "InventoryRecordId": {
+      "pattern": "^(?:api|diagnostic|entry|ignore|interface|manifest|provenance|test)\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "InventoryRecordKind": {
+      "enum": [
+        "api_description",
+        "build_manifest",
+        "inventory_diagnostic",
+        "inventory_ignore_match",
+        "inventory_provenance",
+        "public_interface",
+        "repository_entry",
+        "test_asset"
+      ],
+      "title": "InventoryRecordKind",
+      "type": "string"
+    },
+    "InventoryRecordRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "inventory_record_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/InventoryRecordId"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/InventoryRecordKind"
+        }
+      },
+      "required": [
+        "kind",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "InventoryRecordRef",
+      "type": "object"
+    },
+    "ListValue": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/IRValue"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "kind": {
+          "const": "list",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "items"
+      ],
+      "title": "ListValue",
+      "type": "object"
+    },
+    "NormalizedVersion": {
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "type": "string"
+    },
+    "NullValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "null",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "NullValue",
+      "type": "object"
+    },
+    "PortRef": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "enum": [
+            "input",
+            "output"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "kind": {
+          "const": "port_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "owner": {
+          "$ref": "#/$defs/EntityRef"
+        }
+      },
+      "required": [
+        "kind",
+        "owner",
+        "direction",
+        "name"
+      ],
+      "title": "PortRef",
+      "type": "object"
+    },
+    "QualifiedName": {
+      "maxLength": 255,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*)+$",
+      "type": "string"
+    },
+    "RecordEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "record_entry",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "value": {
+          "$ref": "#/$defs/IRValue"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "value"
+      ],
+      "title": "RecordEntry",
+      "type": "object"
+    },
+    "RecordValue": {
+      "additionalProperties": false,
+      "properties": {
+        "entries": {
+          "items": {
+            "$ref": "#/$defs/RecordEntry"
+          },
+          "title": "Entries",
+          "type": "array"
+        },
+        "kind": {
+          "const": "record",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "entries"
+      ],
+      "title": "RecordValue",
+      "type": "object"
+    },
+    "SafeInteger": {
+      "maximum": 9007199254740991,
+      "minimum": -9007199254740991,
+      "type": "integer"
+    },
+    "StringValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "string",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "StringValue",
+      "type": "object"
+    },
+    "Timestamp": {
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+      "type": "string"
+    },
+    "TimestampValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "timestamp",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/Timestamp"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "TimestampValue",
+      "type": "object"
+    },
+    "URI": {
+      "maxLength": 2048,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9+.-]*:[^\\s]+$",
+      "type": "string"
+    }
+  },
+  "$id": "urn:ucf:adapter:execution-verification-request:1.0.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "adapter_procedure_uri": {
+      "$ref": "#/$defs/URI"
+    },
+    "base_behavior": {
+      "$ref": "#/$defs/BehaviorDocumentRef"
+    },
+    "capability": {
+      "$ref": "#/$defs/CapabilitySelection"
+    },
+    "check": {
+      "$ref": "#/$defs/Check"
+    },
+    "environment": {
+      "$ref": "#/$defs/ExecutionEnvironment"
+    },
+    "expected_outputs": {
+      "items": {
+        "$ref": "#/$defs/ExecutionPortValue"
+      },
+      "maxItems": 256,
+      "title": "Expected Outputs",
+      "type": "array"
+    },
+    "implementation_evidence_version": {
+      "const": "1.0.0",
+      "title": "Implementation Evidence Version",
+      "type": "string"
+    },
+    "inputs": {
+      "items": {
+        "$ref": "#/$defs/ExecutionPortValue"
+      },
+      "maxItems": 256,
+      "title": "Inputs",
+      "type": "array"
+    },
+    "kind": {
+      "const": "execution_verification_request",
+      "title": "Kind",
+      "type": "string"
+    },
+    "mapping": {
+      "$ref": "#/$defs/ImplementationMappingResultRef"
+    },
+    "profile_procedure_uri": {
+      "const": "urn:ucf:implementation-evidence:verify:1.0.0",
+      "title": "Profile Procedure Uri",
+      "type": "string"
+    },
+    "schema_uri": {
+      "const": "urn:ucf:adapter:execution-verification-request:1.0.0",
+      "title": "Schema Uri",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/ImplementationSource"
+    },
+    "subject": {
+      "$ref": "#/$defs/BehaviorEntityRef"
+    }
+  },
+  "required": [
+    "kind",
+    "implementation_evidence_version",
+    "schema_uri",
+    "capability",
+    "profile_procedure_uri",
+    "adapter_procedure_uri",
+    "mapping",
+    "base_behavior",
+    "subject",
+    "inputs",
+    "expected_outputs",
+    "source",
+    "environment",
+    "check"
+  ],
+  "title": "UCF execution verification request profile 1.0.0",
+  "type": "object",
+  "x-ucf-document-kind": "execution_verification_request",
+  "x-ucf-implementation-evidence-version": "1.0.0",
+  "x-ucf-runtime-semantic-checks": [
+    "strict UTF-8 and duplicate-member JSON decoding",
+    "maximum JSON nesting depth 128",
+    "exact reviewed bundle, behavior, and inventory identity",
+    "reviewed materialization roots only",
+    "canonical unique behavior and inventory references",
+    "exactly one complete source binding per requested target",
+    "candidate public interface and evidence containment",
+    "content-derived mapping and verification result identities",
+    "exact echoed request and initialized producer",
+    "exact selected operation capability and procedure",
+    "current source revision before and after execution",
+    "exact mapping, subject, check, and environment coordinates",
+    "passed-only tested evidence successor projection",
+    "no mapped or verified claim promotion",
+    "maximum 256 bindings or records"
+  ]
+}

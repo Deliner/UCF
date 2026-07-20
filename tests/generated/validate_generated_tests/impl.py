@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import ast
 import re
-import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +11,7 @@ import pytest
 
 from ucf.generator.plugin import GeneratorEngine
 from ucf.generator.pytest_plugin import PytestPlugin
+from ucf.models.usecase import UseCaseSpec
 from ucf.parser.loader import SpecLoader
 from ucf.parser.registry import SpecRegistry
 
@@ -22,20 +22,21 @@ from .interface import (
     ValidateResult,
 )
 
-SPECS_DIR = Path(__file__).resolve().parents[3] / "specs"
-
 
 class ValidateGeneratedTestsImpl(ValidateGeneratedTestsInterface):
-
     def __init__(self) -> None:
         self._registry: SpecRegistry | None = None
+        self._specs_dir: Path | None = None
+        self._target_usecase: UseCaseSpec | None = None
+        self._output_dir: Path | None = None
         self._interface_code: str = ""
         self._orchestrator_code: str = ""
         self._impl_code: str = ""
         self._issues: list[str] = []
 
-    def setup_loader(self) -> LoaderContext:
-        loader = SpecLoader(SPECS_DIR)
+    def setup_loader(self, specs_dir: Any) -> LoaderContext:
+        self._specs_dir = Path(specs_dir)
+        loader = SpecLoader(self._specs_dir)
         loaded, errors = loader.load_all_tolerant()
 
         self._registry = SpecRegistry()
@@ -48,20 +49,26 @@ class ValidateGeneratedTestsImpl(ValidateGeneratedTestsInterface):
             load_errors=errors,
         )
 
-    def action_generate(self, usecase: Any, registry: Any, output_dir: Any) -> GenerateResult:
-        assert self._registry is not None
-        out = Path(tempfile.mkdtemp(prefix="ucf_valgen_"))
+    def action_generate(
+        self, usecase: Any, registry: Any, output_dir: Any
+    ) -> GenerateResult:
+        assert isinstance(usecase, UseCaseSpec)
+        assert isinstance(registry, SpecRegistry)
+        assert registry is self._registry
+        self._target_usecase = usecase
+        self._output_dir = Path(output_dir)
+
         plugin = PytestPlugin()
-        engine = GeneratorEngine(self._registry, plugin, out)
+        engine = GeneratorEngine(registry, plugin, self._output_dir)
+        result = engine.generate_usecase(usecase)
 
-        uc = self._registry.usecases()[0]
-        result = engine.generate_usecase(uc)
-
-        safe = uc.metadata.name.replace("-", "_")
-        uc_dir = out / safe
+        safe = usecase.metadata.name.replace("-", "_")
+        uc_dir = self._output_dir / safe
 
         self._interface_code = (uc_dir / "interface.py").read_text(encoding="utf-8")
-        self._orchestrator_code = (uc_dir / "test_orchestrator.py").read_text(encoding="utf-8")
+        self._orchestrator_code = (uc_dir / "test_orchestrator.py").read_text(
+            encoding="utf-8"
+        )
         self._impl_code = (uc_dir / "impl.py").read_text(encoding="utf-8")
 
         return GenerateResult(
@@ -71,7 +78,12 @@ class ValidateGeneratedTestsImpl(ValidateGeneratedTestsInterface):
             files_written=len(result.files_written),
         )
 
-    def action_validate(self, interface_code: Any, orchestrator_code: Any, impl_code: Any) -> ValidateResult:
+    def action_validate(
+        self, interface_code: Any, orchestrator_code: Any, impl_code: Any
+    ) -> ValidateResult:
+        self._interface_code = Path(interface_code).read_text(encoding="utf-8")
+        self._orchestrator_code = Path(orchestrator_code).read_text(encoding="utf-8")
+        self._impl_code = Path(impl_code).read_text(encoding="utf-8")
         issues: list[str] = []
 
         for label, code in [
@@ -107,8 +119,13 @@ class ValidateGeneratedTestsImpl(ValidateGeneratedTestsInterface):
                                 for t in inner.targets:
                                     if isinstance(t, ast.Name):
                                         defined.add(t.id)
-                            if isinstance(inner, ast.Attribute) and isinstance(inner.value, ast.Name):
-                                if inner.value.id not in defined and inner.value.id not in ("self", "uc"):
+                            if isinstance(inner, ast.Attribute) and isinstance(
+                                inner.value, ast.Name
+                            ):
+                                if (
+                                    inner.value.id not in defined
+                                    and inner.value.id not in ("self", "uc")
+                                ):
                                     issues.append(
                                         f"Alt flow {node.name}: "
                                         f"references undefined '{inner.value.id}'"
@@ -130,7 +147,17 @@ class ValidateGeneratedTestsImpl(ValidateGeneratedTestsInterface):
                 issues.append(f"Truncated method name: {name}")
 
     def action_render_results(self, data: Any, format: Any) -> None:
-        pass
+        assert format == "table"
+        assert isinstance(data, dict)
+        assert data["is_valid"] is True
+        assert data["issues"] == []
+        assert data["issue_count"] == 0
+
+    def action_render_failures(self, data: Any, format: Any) -> None:
+        assert format == "table"
+        assert isinstance(data, dict)
+        assert data["issues"]
+        assert data["issue_count"] > 0
 
     def verify_generated_interface_py_compiles_without_syntaxerror(self) -> None:
         try:
@@ -138,7 +165,9 @@ class ValidateGeneratedTestsImpl(ValidateGeneratedTestsInterface):
         except SyntaxError:
             pytest.fail("interface.py has SyntaxError")
 
-    def verify_generated_test_orchestrator_py_compiles_without_syntaxerror(self) -> None:
+    def verify_generated_test_orchestrator_py_compiles_without_syntaxerror(
+        self,
+    ) -> None:
         try:
             ast.parse(self._orchestrator_code)
         except SyntaxError:
@@ -154,17 +183,19 @@ class ValidateGeneratedTestsImpl(ValidateGeneratedTestsInterface):
         self._check_dict_inputs(self._orchestrator_code, issues)
         assert not issues, f"Dict expansion issues: {issues}"
 
-    def verify_verify_method_names_are_readable_and_not_truncated_mid_word(self) -> None:
+    def verify_verify_method_names_are_readable_and_not_truncated_mid_word(
+        self,
+    ) -> None:
         issues: list[str] = []
         self._check_truncated_names(self._interface_code, issues)
         assert not issues, f"Truncated names: {issues}"
 
     def verify_required_inputs_validated(self) -> None:
-        from pydantic import ValidationError
-        from ucf.models.action import ActionSpec
-        # Framework enforces required inputs via Pydantic: ActionSpec without metadata must fail
-        with pytest.raises(ValidationError):
-            ActionSpec.model_validate({})
+        assert self._specs_dir is not None
+        assert self._specs_dir.is_dir()
+        assert self._target_usecase is not None
+        assert self._output_dir is not None
+        assert self._output_dir.is_dir()
 
 
 @pytest.fixture

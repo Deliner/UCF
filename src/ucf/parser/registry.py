@@ -26,6 +26,28 @@ _KIND_PLURAL: dict[type, str] = {
 }
 
 
+class DuplicateSpecError(ValueError):
+    """Raised before a duplicate registry identity can overwrite evidence."""
+
+    def __init__(
+        self,
+        kind: str,
+        name: str,
+        existing_path: Path | None,
+        duplicate_path: Path | None,
+    ) -> None:
+        self.kind = kind
+        self.name = name
+        self.existing_path = existing_path
+        self.duplicate_path = duplicate_path
+        first = str(existing_path) if existing_path is not None else "<unknown>"
+        second = str(duplicate_path) if duplicate_path is not None else "<unknown>"
+        super().__init__(
+            f"Duplicate spec '{kind}/{name}': first defined at {first}; "
+            f"duplicate at {second}"
+        )
+
+
 class SpecRegistry:
     """Holds all loaded specs indexed by kind and name."""
 
@@ -37,19 +59,20 @@ class SpecRegistry:
     def register(self, spec: AnySpec, path: Path | None = None) -> None:
         kind = spec.kind
         name = spec.metadata.name
+        plural = _KIND_PLURAL.get(type(spec), f"{kind}s")
+        ref_key = f"{plural}/{name}"
 
         existing = self._by_kind.get(kind, {}).get(name)
         if existing is not None:
-            import warnings
-            warnings.warn(
-                f"Duplicate spec '{kind}/{name}' — overwriting previous definition",
-                stacklevel=2,
+            raise DuplicateSpecError(
+                kind,
+                name,
+                self._paths.get(ref_key),
+                path,
             )
 
         self._by_kind.setdefault(kind, {})[name] = spec
 
-        plural = _KIND_PLURAL.get(type(spec), f"{kind}s")
-        ref_key = f"{plural}/{name}"
         self._by_ref[ref_key] = spec
 
         if path is not None:
@@ -94,16 +117,22 @@ class SpecRegistry:
         return [s for s in self.specs_of_kind("event") if isinstance(s, EventSpec)]
 
     def components(self) -> list[ComponentSpec]:
-        return [s for s in self.specs_of_kind("component") if isinstance(s, ComponentSpec)]
+        return [
+            s for s in self.specs_of_kind("component") if isinstance(s, ComponentSpec)
+        ]
 
     def protocols(self) -> list[ProtocolSpec]:
-        return [s for s in self.specs_of_kind("protocol") if isinstance(s, ProtocolSpec)]
+        return [
+            s for s in self.specs_of_kind("protocol") if isinstance(s, ProtocolSpec)
+        ]
 
     def usecases(self) -> list[UseCaseSpec]:
         return [s for s in self.specs_of_kind("usecase") if isinstance(s, UseCaseSpec)]
 
     def invariants(self) -> list[InvariantSpec]:
-        return [s for s in self.specs_of_kind("invariant") if isinstance(s, InvariantSpec)]
+        return [
+            s for s in self.specs_of_kind("invariant") if isinstance(s, InvariantSpec)
+        ]
 
     @property
     def counts(self) -> dict[str, int]:

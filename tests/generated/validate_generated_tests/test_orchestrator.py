@@ -7,54 +7,86 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    ValidateGeneratedTestsInterface,
-    LoaderContext,
-    GenerateResult,
-    ValidateResult,
+from .impl import (
+    validate_generated_tests_impl as validate_generated_tests_impl,
 )
-from .impl import validate_generated_tests_impl  # noqa: F401
+from .interface import ValidateGeneratedTestsInterface
 
 
 @pytest.fixture
-def uc(validate_generated_tests_impl: ValidateGeneratedTestsInterface) -> ValidateGeneratedTestsInterface:
-    return validate_generated_tests_impl
+def uc(request: pytest.FixtureRequest) -> ValidateGeneratedTestsInterface:
+    return request.getfixturevalue("validate_generated_tests_impl")
 
 
 class TestHappyPath:
 
     def test_validate_generated_tests_completes_successfully(
         self, uc: ValidateGeneratedTestsInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        generate = uc.action_generate(usecase=inputs.get('target_usecase'), registry=loader.registry, output_dir=inputs.get('output_dir'))
+        generate = uc.action_generate(
+            usecase=inputs['target_usecase'],
+            registry=loader.registry,
+            output_dir=inputs['output_dir'],
+        )
 
-        validate = uc.action_validate(interface_code=generate.interface_path, orchestrator_code=generate.orchestrator_path, impl_code=generate.impl_path)
+        validate = uc.action_validate(
+            interface_code=generate.interface_path,
+            orchestrator_code=generate.orchestrator_path,
+            impl_code=generate.impl_path,
+        )
 
-        render_results = uc.action_render_results(data={'is_valid': validate.is_valid, 'issues': validate.issues, 'issue_count': validate.issue_count}, format='table')
+        uc.action_render_results(
+            data={
+                'is_valid': validate.is_valid,
+                'issues': validate.issues,
+                'issue_count': validate.issue_count,
+            },
+            format='table',
+        )
 
 
-        uc.verify_generated_interface_py_compiles_without_syntaxerror()
-        uc.verify_generated_test_orchestrator_py_compiles_without_syntaxerror()
-        uc.verify_orchestrator_does_not_reference_undefined_variables()
-        uc.verify_nested_dict_inputs_are_passed_as_single_dict_arguments()
-        uc.verify_verify_method_names_are_readable_and_not_truncated_mid_word()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_generated_interface_py_compiles_without_syntaxerror()
+        _ = uc.verify_generated_test_orchestrator_py_compiles_without_syntaxerror()
+        _ = uc.verify_orchestrator_does_not_reference_undefined_variables()
+        _ = uc.verify_nested_dict_inputs_are_passed_as_single_dict_arguments()
+        _ = uc.verify_verify_method_names_are_readable_and_not_truncated_mid_word()
+        _ = uc.verify_required_inputs_validated()
 
 
 class TestAltValidationFailures:
 
     def test_validation_failures(
         self, uc: ValidateGeneratedTestsInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        generate = uc.action_generate(usecase=inputs.get('target_usecase'), registry=loader.registry, output_dir=inputs.get('output_dir'))
+        generate = uc.action_generate(
+            usecase=inputs['target_usecase'],
+            registry=loader.registry,
+            output_dir=inputs['output_dir'],
+        )
 
-        validate = uc.action_validate(interface_code=generate.interface_path, orchestrator_code=generate.orchestrator_path, impl_code=generate.impl_path)
+        validate = uc.action_validate(
+            interface_code=generate.interface_path,
+            orchestrator_code=generate.orchestrator_path,
+            impl_code=generate.impl_path,
+        )
 
-        render_failures = uc.action_render_results(data={'issues': validate.issues, 'issue_count': validate.issue_count}, format='table')
+        uc.action_render_failures(
+            data={
+                'issues': validate.issues,
+                'issue_count': validate.issue_count,
+            },
+            format='table',
+        )
 
 
 

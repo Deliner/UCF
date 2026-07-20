@@ -12,11 +12,18 @@ import pytest
 from ucf.shortener import URLShortener
 
 from .interface import (
+    AcquireClickLockResult,
     IncrementClicksResult,
     LookupUrlResult,
     RedirectResult,
     RedirectToOriginalInterface,
+    ReleaseClickLockResult,
 )
+
+HAPPY_SLUG = "test123"
+MISSING_SLUG = "missing123"
+ORIGINAL_URL = "https://example.com/page"
+CREATED_AT = 1_700_000_000.0
 
 
 class RedirectToOriginalImpl(RedirectToOriginalInterface):
@@ -26,7 +33,7 @@ class RedirectToOriginalImpl(RedirectToOriginalInterface):
         self._redirect_status = None
         self._initial_count = None
         self._new_count = None
-        self._locks = {}  # lock_id → (resource, key)
+        self._locks: dict[str, tuple[Any, Any, Any]] = {}
 
     # ── Actions ──
 
@@ -45,45 +52,39 @@ class RedirectToOriginalImpl(RedirectToOriginalInterface):
 
     def action_acquire_click_lock(
         self, resource: Any, key: Any, timeout: Any
-    ) -> Any:
+    ) -> AcquireClickLockResult:
         """Acquire a lock on a resource."""
-        import uuid
-        from dataclasses import dataclass
-        
-        @dataclass
-        class LockResult:
-            lock_id: str
-            acquired: bool
-        
-        lock_id = str(uuid.uuid4())
-        self._locks[lock_id] = (resource, key)
-        return LockResult(lock_id=lock_id, acquired=True)
+        lock_id = f"{resource}:{key}:{timeout}"
+        self._locks[lock_id] = (resource, key, timeout)
+        return AcquireClickLockResult(lock_id=lock_id, acquired=True)
 
-    def action_release_click_lock(self, lock_id: Any) -> Any:
+    def action_release_click_lock(self, lock_id: Any) -> ReleaseClickLockResult:
         """Release a previously acquired lock."""
-        from dataclasses import dataclass
-        
-        @dataclass
-        class ReleaseResult:
-            released: bool
-        
         if lock_id in self._locks:
             del self._locks[lock_id]
-            return ReleaseResult(released=True)
-        return ReleaseResult(released=False)
+            return ReleaseClickLockResult(released=True)
+        return ReleaseClickLockResult(released=False)
 
     def action_redirect(self, target_url: Any, status_code: Any) -> RedirectResult:
         self._redirect_url = target_url
         self._redirect_status = status_code
         return RedirectResult(redirected=True)
 
+    def action_return_404(self, data: Any, format: Any) -> None:
+        slug = data["slug"]
+        if self.service.get_by_slug(slug) is not None:
+            raise ValueError(
+                f"Cannot render not-found response for existing slug '{slug}'"
+            )
+        self._not_found_response = {"data": data, "format": format}
+
     # ── Verifications ──
 
     def verify_visitor_is_redirected_to_original_url(self) -> None:
         assert self._redirect_url is not None, "No redirect URL set"
-        assert self._redirect_url.startswith(
-            "http"
-        ), f"Invalid redirect URL: {self._redirect_url}"
+        assert self._redirect_url.startswith("http"), (
+            f"Invalid redirect URL: {self._redirect_url}"
+        )
 
     def verify_click_count_is_incremented_by_1(self) -> None:
         assert self._initial_count is not None, "Initial count not captured"
@@ -110,40 +111,12 @@ class RedirectToOriginalImpl(RedirectToOriginalInterface):
 @pytest.fixture
 def redirect_to_original_impl() -> RedirectToOriginalImpl:
     impl = RedirectToOriginalImpl()
-    
-    # Pre-populate test URL
-    impl.service.store_url(
-        slug="test123",
-        original_url="https://example.com/page",
+
+    record = impl.service.store_url(
+        slug=HAPPY_SLUG,
+        original_url=ORIGINAL_URL,
         created_by="test_user",
     )
-    
-    # Monkey-patch actions to use test slug when None passed
-    original_lookup = impl.action_lookup_url
-    
-    def lookup_with_default(slug):
-        return original_lookup(slug if slug is not None else "test123")
-    
-    impl.action_lookup_url = lookup_with_default
-    
-    original_acquire_lock = impl.action_acquire_click_lock
-    
-    def acquire_with_default(resource, key, timeout):
-        return original_acquire_lock(resource, key if key is not None else "test123", timeout)
-    
-    impl.action_acquire_click_lock = acquire_with_default
-    
-    original_increment = impl.action_increment_clicks
-    
-    def increment_with_default(slug):
-        return original_increment(slug if slug is not None else "test123")
-    
-    impl.action_increment_clicks = increment_with_default
-    
-    # Add missing action_return_404 for alt flow
-    def action_return_404(data, format):
-        impl._alt_flow_404 = data
-    
-    impl.action_return_404 = action_return_404
-    
+    record.created_at = CREATED_AT
+
     return impl

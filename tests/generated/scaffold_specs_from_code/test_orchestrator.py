@@ -7,47 +7,66 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    ScaffoldSpecsFromCodeInterface,
-    ScanResult,
-    GenerateResult,
+from .impl import (
+    scaffold_specs_from_code_impl as scaffold_specs_from_code_impl,
 )
-from .impl import scaffold_specs_from_code_impl  # noqa: F401
+from .interface import ScaffoldSpecsFromCodeInterface
 
 
 @pytest.fixture
-def uc(scaffold_specs_from_code_impl: ScaffoldSpecsFromCodeInterface) -> ScaffoldSpecsFromCodeInterface:
-    return scaffold_specs_from_code_impl
+def uc(request: pytest.FixtureRequest) -> ScaffoldSpecsFromCodeInterface:
+    return request.getfixturevalue("scaffold_specs_from_code_impl")
 
 
 class TestHappyPath:
 
     def test_scaffold_specs_from_code_completes_successfully(
         self, uc: ScaffoldSpecsFromCodeInterface,
+        inputs: dict[str, object],
     ) -> None:
 
-        scan = uc.action_scan(source_dir=inputs.get('source_dir'), patterns=inputs.get('patterns'))
+        scan = uc.action_scan(
+            source_dir=inputs['source_dir'],
+            patterns=inputs['patterns'],
+        )
 
-        generate = uc.action_generate(functions=scan.functions, classes=scan.classes, output_dir=inputs.get('output_dir'))
+        generate = uc.action_generate(
+            functions=scan.functions,
+            classes=scan.classes,
+            output_dir=inputs['output_dir'],
+        )
 
-        render_results = uc.action_render_results(data={'scanned_count': scan.scanned_count, 'functions_found': scan.functions, 'classes_found': scan.classes, 'action_specs': generate.action_specs, 'component_specs': generate.component_specs, 'specs_written': generate.specs_written}, format='tree')
+        uc.action_render_results(
+            data={
+                'scanned_count': scan.scanned_count,
+                'functions_found': scan.functions,
+                'classes_found': scan.classes,
+                'action_specs': generate.action_specs,
+                'component_specs': generate.component_specs,
+                'specs_written': generate.specs_written,
+            },
+            format='tree',
+        )
 
 
-        uc.verify_every_public_function_in_the_source_directory_has_a()
-        uc.verify_every_class_with_public_methods_has_a_corresponding()
-        uc.verify_generated_specs_are_valid_yaml_that_passes_ucf_validate()
-        uc.verify_existing_specs_are_never_overwritten()
-        uc.verify_output_reports_the_number_of_files_scanned_and_specs()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_every_public_function_in_the_source_directory_has_a()
+        _ = uc.verify_every_class_with_public_methods_has_a_corresponding()
+        _ = uc.verify_generated_specs_are_valid_yaml_that_passes_ucf_validate()
+        _ = uc.verify_existing_specs_are_never_overwritten()
+        _ = uc.verify_output_reports_the_number_of_files_scanned_and_specs()
+        _ = uc.verify_required_inputs_validated()
 
 
 class TestAltDefaultPatterns:
 
     def test_default_patterns(
         self, uc: ScaffoldSpecsFromCodeInterface,
+        inputs: dict[str, object],
     ) -> None:
 
-        scan_defaults = uc.action_scan(source_dir=inputs.get('source_dir'))
+        uc.action_scan_defaults(
+            source_dir=inputs['source_dir'],
+        )
 
 
 
@@ -55,11 +74,21 @@ class TestAltNoCodeFound:
 
     def test_no_code_found(
         self, uc: ScaffoldSpecsFromCodeInterface,
+        inputs: dict[str, object],
     ) -> None:
 
-        scan = uc.action_scan(source_dir=inputs.get('source_dir'), patterns=inputs.get('patterns'))
+        scan = uc.action_scan(
+            source_dir=inputs['source_dir'],
+            patterns=inputs['patterns'],
+        )
 
-        render_empty = uc.action_render_results(data={'message': 'no Python code found in source directory', 'scanned_count': scan.scanned_count}, format='tree')
+        uc.action_render_empty(
+            data={
+                'message': 'no Python code found in source directory',
+                'scanned_count': scan.scanned_count,
+            },
+            format='tree',
+        )
 
 
 

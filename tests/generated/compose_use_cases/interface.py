@@ -32,41 +32,86 @@ class ComposeUseCasesInterface(ABC, FrameworkActions):
     # ── State Setup (from requires) ──
 
     @abstractmethod
-    def setup_loader(self) -> LoaderContext:
+    def setup_loader(
+        self,
+        specs_dir: Any,
+    ) -> LoaderContext:
         ...
 
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_resolve(self, usecase: Any, registry: Any) -> ResolveResult:
+    def action_resolve(
+        self,
+        usecase: Any,
+        registry: Any,
+    ) -> ResolveResult:
+        ...
+
+    @abstractmethod
+    def action_render_parent_error(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_cycle_error(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_clash_error(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_flattened_uc_has_parent_steps_followed_by_child_steps(self) -> None:
+    def verify_flattened_uc_has_parent_steps_followed_by_child_steps(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_parent_postconditions_are_preserved_in_the_result(self) -> None:
+    def verify_parent_postconditions_are_preserved_in_the_result(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_extends_chain_is_acyclic(self) -> None:
+    def verify_extends_chain_is_acyclic(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_no_step_id_appears_in_both_parent_and_child(self) -> None:
+    def verify_no_step_id_appears_in_both_parent_and_child(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_no_circular_extends(self) -> None:
+    def verify_no_circular_extends(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_extends_no_step_id_clash(self) -> None:
+    def verify_extends_no_step_id_clash(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

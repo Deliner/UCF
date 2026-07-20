@@ -1,5 +1,9 @@
 # UCF Framework Bottle Necks
 
+> **Status: Historical evidence.** Capability and release claims in this
+> document are not current; [the capability matrix](docs/CAPABILITIES.md)
+> controls the current status.
+
 Found by implementing **URL Shortener** product (Feb 2026).
 
 ## 🟢 FIXED

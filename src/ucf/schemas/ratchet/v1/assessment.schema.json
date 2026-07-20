@@ -1,0 +1,669 @@
+{
+  "$comment": "Generated deterministically from UCF ratchet profile 1.0.0 models; do not edit by hand. Content identities, canonical order, resolved references, exact source projections, predecessor lineage, and recomputed summaries remain runtime semantics.",
+  "$defs": {
+    "AssessmentId": {
+      "pattern": "^assessment\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "BehaviorEntityRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "document_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "ir_version": {
+          "const": "1.0.0",
+          "title": "Ir Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "behavior_entity_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/EntityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "document_id",
+        "ir_version",
+        "canonical_digest",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "BehaviorEntityRef",
+      "type": "object"
+    },
+    "BehaviorSubjectId": {
+      "pattern": "^subject\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "BehaviorSubjectKey": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "behavior_subject_key",
+          "title": "Kind",
+          "type": "string"
+        },
+        "subject_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/EntityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "subject_uri",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "BehaviorSubjectKey",
+      "type": "object"
+    },
+    "BehaviorSubjectRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "behavior_subject_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/BehaviorSubjectId"
+        }
+      },
+      "required": [
+        "kind",
+        "target_id"
+      ],
+      "title": "BehaviorSubjectRef",
+      "type": "object"
+    },
+    "BehaviorSubjectSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/BehaviorSubjectId"
+        },
+        "key": {
+          "$ref": "#/$defs/BehaviorSubjectKey"
+        },
+        "kind": {
+          "const": "behavior_subject_snapshot",
+          "title": "Kind",
+          "type": "string"
+        },
+        "observed": {
+          "$ref": "#/$defs/ObservedFingerprint"
+        },
+        "semantic": {
+          "$ref": "#/$defs/SemanticFingerprint"
+        },
+        "trace": {
+          "$ref": "#/$defs/SubjectTrace"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "key",
+        "semantic",
+        "observed",
+        "trace"
+      ],
+      "title": "BehaviorSubjectSnapshot",
+      "type": "object"
+    },
+    "CandidateRef": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": {
+          "$ref": "#/$defs/DiscoveryCandidateId"
+        },
+        "discovery_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "candidate_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "semantic_digest": {
+          "$ref": "#/$defs/Digest"
+        }
+      },
+      "required": [
+        "kind",
+        "discovery_digest",
+        "candidate_id",
+        "semantic_digest"
+      ],
+      "title": "CandidateRef",
+      "type": "object"
+    },
+    "CaptureContext": {
+      "additionalProperties": false,
+      "properties": {
+        "captured_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "environment": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "capture_context",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "captured_at",
+        "environment"
+      ],
+      "title": "CaptureContext",
+      "type": "object"
+    },
+    "DecisionId": {
+      "pattern": "^decision\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "Digest": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "sha-256",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "kind": {
+          "const": "digest",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/DigestValue"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm",
+        "value"
+      ],
+      "title": "Digest",
+      "type": "object"
+    },
+    "DigestValue": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "DiscoveryCandidateId": {
+      "pattern": "^candidate\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "EntityKind": {
+      "enum": [
+        "action",
+        "use_case",
+        "step",
+        "binding",
+        "effect",
+        "observation",
+        "invariant",
+        "provenance",
+        "verification_evidence",
+        "capability_requirement"
+      ],
+      "title": "EntityKind",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "type": "string"
+    },
+    "NormalizedVersion": {
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "type": "string"
+    },
+    "ObservedFingerprint": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm_uri": {
+          "const": "urn:ucf:ratchet:fingerprint:observed-subject:1.0.0",
+          "title": "Algorithm Uri",
+          "type": "string"
+        },
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "observed_fingerprint",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm_uri",
+        "digest"
+      ],
+      "title": "ObservedFingerprint",
+      "type": "object"
+    },
+    "OnboardingBundleRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "onboarding_bundle_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:onboarding:bundle:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "schema_uri",
+        "schema_version",
+        "canonical_digest"
+      ],
+      "title": "OnboardingBundleRef",
+      "type": "object"
+    },
+    "PolicyId": {
+      "pattern": "^policy\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "Producer": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "producer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/QualifiedName"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "version"
+      ],
+      "title": "Producer",
+      "type": "object"
+    },
+    "QualifiedName": {
+      "maxLength": 255,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*)+$",
+      "type": "string"
+    },
+    "RatchetPolicyRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "ratchet_policy_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:ratchet:policy:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/PolicyId"
+        }
+      },
+      "required": [
+        "kind",
+        "schema_uri",
+        "schema_version",
+        "target_id",
+        "canonical_digest"
+      ],
+      "title": "RatchetPolicyRef",
+      "type": "object"
+    },
+    "RatchetRuleRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "ratchet_rule_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "target_id",
+        "version"
+      ],
+      "title": "RatchetRuleRef",
+      "type": "object"
+    },
+    "RatchetViolation": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ViolationId"
+        },
+        "key": {
+          "$ref": "#/$defs/ViolationKey"
+        },
+        "kind": {
+          "const": "ratchet_violation",
+          "title": "Kind",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "key",
+        "message"
+      ],
+      "title": "RatchetViolation",
+      "type": "object"
+    },
+    "RuleCoverage": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "ratchet_rule_coverage",
+          "title": "Kind",
+          "type": "string"
+        },
+        "rule": {
+          "$ref": "#/$defs/RatchetRuleRef"
+        },
+        "status": {
+          "enum": [
+            "complete",
+            "partial"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "subjects": {
+          "items": {
+            "$ref": "#/$defs/BehaviorSubjectRef"
+          },
+          "maxItems": 256,
+          "title": "Subjects",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "rule",
+        "status",
+        "subjects"
+      ],
+      "title": "RuleCoverage",
+      "type": "object"
+    },
+    "SemanticFingerprint": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm_uri": {
+          "const": "urn:ucf:ratchet:fingerprint:behavior-subject:1.0.0",
+          "title": "Algorithm Uri",
+          "type": "string"
+        },
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "semantic_fingerprint",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm_uri",
+        "digest"
+      ],
+      "title": "SemanticFingerprint",
+      "type": "object"
+    },
+    "SubjectTrace": {
+      "additionalProperties": false,
+      "properties": {
+        "behavior": {
+          "$ref": "#/$defs/BehaviorEntityRef"
+        },
+        "candidate": {
+          "$ref": "#/$defs/CandidateRef"
+        },
+        "decision_id": {
+          "$ref": "#/$defs/DecisionId"
+        },
+        "inventory_source_revision": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "ratchet_subject_trace",
+          "title": "Kind",
+          "type": "string"
+        },
+        "onboarding_bundle": {
+          "$ref": "#/$defs/OnboardingBundleRef"
+        }
+      },
+      "required": [
+        "kind",
+        "onboarding_bundle",
+        "behavior",
+        "inventory_source_revision",
+        "candidate",
+        "decision_id"
+      ],
+      "title": "SubjectTrace",
+      "type": "object"
+    },
+    "Timestamp": {
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+      "type": "string"
+    },
+    "URI": {
+      "maxLength": 2048,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9+.-]*:[^\\s]+$",
+      "type": "string"
+    },
+    "ViolationId": {
+      "pattern": "^violation\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "ViolationKey": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "violation_key",
+          "title": "Kind",
+          "type": "string"
+        },
+        "rule": {
+          "$ref": "#/$defs/RatchetRuleRef"
+        },
+        "slot": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "subject": {
+          "$ref": "#/$defs/BehaviorSubjectRef"
+        }
+      },
+      "required": [
+        "kind",
+        "rule",
+        "subject",
+        "slot"
+      ],
+      "title": "ViolationKey",
+      "type": "object"
+    }
+  },
+  "$id": "urn:ucf:ratchet:assessment:1.0.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "capture_context": {
+      "$ref": "#/$defs/CaptureContext"
+    },
+    "coverage": {
+      "items": {
+        "$ref": "#/$defs/RuleCoverage"
+      },
+      "maxItems": 256,
+      "title": "Coverage",
+      "type": "array"
+    },
+    "id": {
+      "$ref": "#/$defs/AssessmentId"
+    },
+    "kind": {
+      "const": "ratchet_assessment",
+      "title": "Kind",
+      "type": "string"
+    },
+    "policy": {
+      "$ref": "#/$defs/RatchetPolicyRef"
+    },
+    "procedure_uri": {
+      "$ref": "#/$defs/URI"
+    },
+    "producer": {
+      "$ref": "#/$defs/Producer"
+    },
+    "ratchet_version": {
+      "const": "1.0.0",
+      "title": "Ratchet Version",
+      "type": "string"
+    },
+    "schema_uri": {
+      "const": "urn:ucf:ratchet:assessment:1.0.0",
+      "title": "Schema Uri",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/OnboardingBundleRef"
+    },
+    "subject_coverage": {
+      "enum": [
+        "complete",
+        "partial"
+      ],
+      "title": "Subject Coverage",
+      "type": "string"
+    },
+    "subjects": {
+      "items": {
+        "$ref": "#/$defs/BehaviorSubjectSnapshot"
+      },
+      "maxItems": 256,
+      "title": "Subjects",
+      "type": "array"
+    },
+    "violations": {
+      "items": {
+        "$ref": "#/$defs/RatchetViolation"
+      },
+      "maxItems": 65536,
+      "title": "Violations",
+      "type": "array"
+    }
+  },
+  "required": [
+    "kind",
+    "ratchet_version",
+    "schema_uri",
+    "id",
+    "policy",
+    "source",
+    "producer",
+    "procedure_uri",
+    "capture_context",
+    "subject_coverage",
+    "subjects",
+    "coverage",
+    "violations"
+  ],
+  "title": "UCF ratchet assessment profile 1.0.0",
+  "type": "object",
+  "x-ucf-document-kind": "ratchet_assessment",
+  "x-ucf-normative-algorithms": [
+    "urn:ucf:ratchet:fingerprint:observed-subject:1.0.0",
+    "urn:ucf:ratchet:evaluate:1.0.0",
+    "urn:ucf:ratchet:fingerprint:behavior-subject:1.0.0"
+  ],
+  "x-ucf-ratchet-version": "1.0.0",
+  "x-ucf-runtime-semantic-checks": [
+    "strict UTF-8 and duplicate-member JSON decoding",
+    "maximum JSON nesting depth 128",
+    "content-derived policy, subject, violation, assessment, baseline, and report identities",
+    "exact policy, onboarding bundle, assessment, baseline, predecessor, and report references",
+    "canonical unique rule, subject, violation, classification, allowance, and protection order",
+    "resolved non-provenance behavior subject projection",
+    "resolved rename-neutral observed evidence projection",
+    "complete subject and rule coverage before baseline creation or advance",
+    "recomputed unchanged, touched, regression, resolution, and unknown classifications",
+    "immutable predecessor-bound tightening with retained protected resolutions",
+    "explicit review delta without implicit baseline weakening",
+    "maximum 256 policy rules",
+    "maximum 256 current subjects",
+    "maximum 65536 violation identities"
+  ]
+}

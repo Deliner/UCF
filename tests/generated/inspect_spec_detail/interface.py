@@ -46,45 +46,83 @@ class InspectSpecDetailInterface(ABC, FrameworkActions):
     # ── State Setup (from requires) ──
 
     @abstractmethod
-    def setup_loader(self) -> LoaderContext:
+    def setup_loader(
+        self,
+        specs_dir: Any,
+    ) -> LoaderContext:
         ...
 
     @abstractmethod
-    def setup_graph_builder(self) -> Graph_builderContext:
+    def setup_graph_builder(
+        self,
+        registry: Any,
+    ) -> Graph_builderContext:
         ...
 
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_get_detail(self, registry: Any, kind: Any, name: Any) -> GetDetailResult:
+    def action_get_detail(
+        self,
+        registry: Any,
+        kind: Any,
+        name: Any,
+    ) -> GetDetailResult:
         ...
 
     @abstractmethod
-    def action_get_rels(self, registry: Any, graph: Any, spec_ref: Any) -> GetRelsResult:
+    def action_get_rels(
+        self,
+        registry: Any,
+        graph: Any,
+        spec_ref: Any,
+    ) -> GetRelsResult:
         ...
 
     @abstractmethod
-    def action_render_detail(self, data: Any, format: Any) -> None:
+    def action_render_detail(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_404(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_developer_sees_parsed_spec_metadata_and_schema(self) -> None:
+    def verify_developer_sees_parsed_spec_metadata_and_schema(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_developer_sees_raw_yaml_source(self) -> None:
+    def verify_developer_sees_raw_yaml_source(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_developer_sees_upstream_and_downstream_relationships(self) -> None:
+    def verify_developer_sees_upstream_and_downstream_relationships(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_developer_sees_implementation_status(self) -> None:
+    def verify_developer_sees_implementation_status(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

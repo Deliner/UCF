@@ -46,39 +46,73 @@ class RedirectToOriginalInterface(ABC, FrameworkActions):
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_lookup_url(self, slug: Any) -> LookupUrlResult:
+    def action_lookup_url(
+        self,
+        slug: Any,
+    ) -> LookupUrlResult:
         ...
 
     @abstractmethod
-    def action_acquire_click_lock(self, resource: Any, key: Any, timeout: Any) -> AcquireClickLockResult:
+    def action_acquire_click_lock(
+        self,
+        resource: Any,
+        key: Any,
+        timeout: Any,
+    ) -> AcquireClickLockResult:
         ...
 
     @abstractmethod
-    def action_increment_clicks(self, slug: Any) -> IncrementClicksResult:
+    def action_increment_clicks(
+        self,
+        slug: Any,
+    ) -> IncrementClicksResult:
         ...
 
     @abstractmethod
-    def action_release_click_lock(self, lock_id: Any) -> ReleaseClickLockResult:
+    def action_release_click_lock(
+        self,
+        lock_id: Any,
+    ) -> ReleaseClickLockResult:
         ...
 
     @abstractmethod
-    def action_redirect(self, target_url: Any, status_code: Any) -> RedirectResult:
+    def action_redirect(
+        self,
+        target_url: Any,
+        status_code: Any,
+    ) -> RedirectResult:
+        ...
+
+    @abstractmethod
+    def action_return_404(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_visitor_is_redirected_to_original_url(self) -> None:
+    def verify_visitor_is_redirected_to_original_url(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_click_count_is_incremented_by_1(self) -> None:
+    def verify_click_count_is_incremented_by_1(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_redirect_uses_302_found_status(self) -> None:
+    def verify_redirect_uses_302_found_status(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

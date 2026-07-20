@@ -16,6 +16,10 @@
 
 from __future__ import annotations
 
+import os
+import stat
+import tempfile
+from collections.abc import Callable
 from pathlib import Path
 
 import typer
@@ -29,20 +33,2951 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 console = Console()
+ir_app = typer.Typer(help="Versioned behavior IR operations")
+app.add_typer(ir_app, name="ir")
+trust_app = typer.Typer(help="Versioned intent and evidence trust IR operations")
+app.add_typer(trust_app, name="trust")
+adapter_app = typer.Typer(help="Out-of-process adapter protocol operations")
+app.add_typer(adapter_app, name="adapter")
+ratchet_app = typer.Typer(help="Versioned brownfield baseline-and-ratchet operations")
+app.add_typer(ratchet_app, name="ratchet")
+change_app = typer.Typer(
+    help="Versioned OpenSpec-compatible change lifecycle operations"
+)
+app.add_typer(change_app, name="change")
+generation_app = typer.Typer(
+    help="Versioned deterministic generation operations"
+)
+app.add_typer(generation_app, name="generation")
+evidence_app = typer.Typer(
+    help="Versioned verification-evidence freshness operations"
+)
+app.add_typer(evidence_app, name="evidence")
+
+
+@evidence_app.command("record")
+def evidence_record(
+    result_path: Path = typer.Option(..., "--result"),
+    mapping_result_path: Path = typer.Option(..., "--mapping-result"),
+    onboarding_bundle_path: Path = typer.Option(..., "--onboarding-bundle"),
+    inventory_path: Path = typer.Option(..., "--inventory"),
+    mapping_adapter_name: str = typer.Option(
+        ...,
+        "--mapping-adapter-name",
+    ),
+    mapping_adapter_version: str = typer.Option(
+        ...,
+        "--mapping-adapter-version",
+    ),
+    verification_adapter_name: str = typer.Option(
+        ...,
+        "--verification-adapter-name",
+    ),
+    verification_adapter_version: str = typer.Option(
+        ...,
+        "--verification-adapter-version",
+    ),
+    mapping_capability_version: str = typer.Option(
+        ...,
+        "--mapping-capability-version",
+    ),
+    verification_capability_version: str = typer.Option(
+        ...,
+        "--verification-capability-version",
+    ),
+    output: Path = typer.Option(..., "--output"),
+) -> None:
+    """Record one exact passed verification without promoting it to verified."""
+    from ucf.evidence_status import (
+        canonical_evidence_status_json,
+        record_verification_evidence,
+    )
+
+    try:
+        context, inputs = _read_evidence_status_context(
+            result_path=result_path,
+            mapping_result_path=mapping_result_path,
+            onboarding_bundle_path=onboarding_bundle_path,
+            inventory_path=inventory_path,
+            mapping_adapter_name=mapping_adapter_name,
+            mapping_adapter_version=mapping_adapter_version,
+            verification_adapter_name=verification_adapter_name,
+            verification_adapter_version=verification_adapter_version,
+            mapping_capability_version=mapping_capability_version,
+            verification_capability_version=(
+                verification_capability_version
+            ),
+        )
+        envelope = record_verification_evidence(
+            context["result"],
+            request=context["result"].request,
+            mapping_result=context["mapping_result"],
+            bundle=context["bundle"],
+            current_inventory=context["inventory"],
+            mapping_initialized_adapter=context["mapping_adapter"],
+            initialized_adapter=context["verification_adapter"],
+            negotiated_capabilities=context["capabilities"],
+        )
+        destination = _file_destination(
+            output,
+            inputs=tuple(inputs),
+            label="verification evidence output",
+        )
+
+        def validate_source() -> None:
+            _validate_change_input_snapshots(
+                inputs,
+                label="verification evidence",
+            )
+
+        _publish_exact_file(
+            destination,
+            canonical_evidence_status_json(envelope),
+            before_publish=validate_source,
+        )
+    except (OSError, TypeError, ValueError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+
+
+@evidence_app.command("assess")
+def evidence_assess(
+    envelope_path: Path = typer.Option(..., "--envelope"),
+    recorded_result_path: Path = typer.Option(..., "--recorded-result"),
+    recorded_mapping_result_path: Path = typer.Option(
+        ...,
+        "--recorded-mapping-result",
+    ),
+    recorded_onboarding_bundle_path: Path = typer.Option(
+        ...,
+        "--recorded-onboarding-bundle",
+    ),
+    recorded_inventory_path: Path = typer.Option(
+        ...,
+        "--recorded-inventory",
+    ),
+    recorded_mapping_adapter_name: str = typer.Option(
+        ...,
+        "--recorded-mapping-adapter-name",
+    ),
+    recorded_mapping_adapter_version: str = typer.Option(
+        ...,
+        "--recorded-mapping-adapter-version",
+    ),
+    recorded_verification_adapter_name: str = typer.Option(
+        ...,
+        "--recorded-verification-adapter-name",
+    ),
+    recorded_verification_adapter_version: str = typer.Option(
+        ...,
+        "--recorded-verification-adapter-version",
+    ),
+    recorded_mapping_capability_version: str = typer.Option(
+        ...,
+        "--recorded-mapping-capability-version",
+    ),
+    recorded_verification_capability_version: str = typer.Option(
+        ...,
+        "--recorded-verification-capability-version",
+    ),
+    output: Path = typer.Option(..., "--output"),
+    current_result_path: Path | None = typer.Option(
+        None,
+        "--current-result",
+    ),
+    current_mapping_result_path: Path | None = typer.Option(
+        None,
+        "--current-mapping-result",
+    ),
+    current_onboarding_bundle_path: Path | None = typer.Option(
+        None,
+        "--current-onboarding-bundle",
+    ),
+    current_inventory_path: Path | None = typer.Option(
+        None,
+        "--current-inventory",
+    ),
+    current_mapping_adapter_name: str | None = typer.Option(
+        None,
+        "--current-mapping-adapter-name",
+    ),
+    current_mapping_adapter_version: str | None = typer.Option(
+        None,
+        "--current-mapping-adapter-version",
+    ),
+    current_verification_adapter_name: str | None = typer.Option(
+        None,
+        "--current-verification-adapter-name",
+    ),
+    current_verification_adapter_version: str | None = typer.Option(
+        None,
+        "--current-verification-adapter-version",
+    ),
+    current_mapping_capability_version: str | None = typer.Option(
+        None,
+        "--current-mapping-capability-version",
+    ),
+    current_verification_capability_version: str | None = typer.Option(
+        None,
+        "--current-verification-capability-version",
+    ),
+) -> None:
+    """Assess exact evidence as fresh, stale, or indeterminate."""
+    from ucf.evidence_status import (
+        EvidenceStatus,
+        assess_verification_evidence,
+        canonical_evidence_status_json,
+        parse_verification_evidence_envelope_json,
+    )
+
+    try:
+        envelope_payload, envelope_snapshot = _read_runtime_input(
+            envelope_path
+        )
+        envelope = parse_verification_evidence_envelope_json(
+            envelope_payload
+        )
+        recorded, inputs = _read_evidence_status_context(
+            result_path=recorded_result_path,
+            mapping_result_path=recorded_mapping_result_path,
+            onboarding_bundle_path=recorded_onboarding_bundle_path,
+            inventory_path=recorded_inventory_path,
+            mapping_adapter_name=recorded_mapping_adapter_name,
+            mapping_adapter_version=recorded_mapping_adapter_version,
+            verification_adapter_name=(
+                recorded_verification_adapter_name
+            ),
+            verification_adapter_version=(
+                recorded_verification_adapter_version
+            ),
+            mapping_capability_version=(
+                recorded_mapping_capability_version
+            ),
+            verification_capability_version=(
+                recorded_verification_capability_version
+            ),
+        )
+        inputs[envelope_path] = (
+            envelope_payload,
+            envelope_snapshot,
+        )
+        current, current_inputs = _read_optional_evidence_status_context(
+            result_path=current_result_path,
+            mapping_result_path=current_mapping_result_path,
+            onboarding_bundle_path=current_onboarding_bundle_path,
+            inventory_path=current_inventory_path,
+            mapping_adapter_name=current_mapping_adapter_name,
+            mapping_adapter_version=current_mapping_adapter_version,
+            verification_adapter_name=current_verification_adapter_name,
+            verification_adapter_version=(
+                current_verification_adapter_version
+            ),
+            mapping_capability_version=(
+                current_mapping_capability_version
+            ),
+            verification_capability_version=(
+                current_verification_capability_version
+            ),
+        )
+        inputs.update(current_inputs)
+        current_arguments = (
+            {}
+            if current is None
+            else {
+                "current_result": current["result"],
+                "current_request": current["result"].request,
+                "current_mapping_result": current["mapping_result"],
+                "current_bundle": current["bundle"],
+                "current_inventory": current["inventory"],
+                "current_mapping_initialized_adapter": (
+                    current["mapping_adapter"]
+                ),
+                "current_initialized_adapter": (
+                    current["verification_adapter"]
+                ),
+                "current_negotiated_capabilities": (
+                    current["capabilities"]
+                ),
+            }
+        )
+        assessment = assess_verification_evidence(
+            envelope,
+            recorded_result=recorded["result"],
+            recorded_request=recorded["result"].request,
+            recorded_mapping_result=recorded["mapping_result"],
+            recorded_bundle=recorded["bundle"],
+            recorded_current_inventory=recorded["inventory"],
+            recorded_mapping_initialized_adapter=(
+                recorded["mapping_adapter"]
+            ),
+            recorded_initialized_adapter=(
+                recorded["verification_adapter"]
+            ),
+            recorded_negotiated_capabilities=recorded["capabilities"],
+            **current_arguments,
+        )
+        destination = _file_destination(
+            output,
+            inputs=tuple(inputs),
+            label="verification evidence assessment output",
+        )
+
+        def validate_source() -> None:
+            _validate_change_input_snapshots(
+                inputs,
+                label="verification evidence assessment",
+            )
+
+        _publish_exact_file(
+            destination,
+            canonical_evidence_status_json(assessment),
+            before_publish=validate_source,
+        )
+    except (OSError, TypeError, ValueError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+    if assessment.status is not EvidenceStatus.FRESH:
+        raise typer.Exit(code=1)
+
+
+@generation_app.command(
+    "run",
+    context_settings={
+        "allow_extra_args": True,
+        "ignore_unknown_options": True,
+    },
+)
+def generation_run(
+    request_path: Path = typer.Argument(
+        ...,
+        help="Exact canonical generation request",
+    ),
+    command: list[str] = typer.Argument(
+        ...,
+        help="External generation adapter executable and argv after --",
+    ),
+    destination: Path = typer.Option(
+        ...,
+        "--destination",
+        help="Generated-only receipt-backed output directory",
+    ),
+    adapter_cwd: Path = typer.Option(
+        Path("."),
+        "--adapter-cwd",
+        help="Existing adapter working directory",
+    ),
+    operation_timeout: float = typer.Option(
+        30.0,
+        "--operation-timeout",
+        help="Positive timeout in seconds for generation",
+    ),
+) -> None:
+    """Generate through an external adapter and safely publish its exact tree."""
+    import asyncio
+
+    from pydantic import ValidationError
+
+    from ucf.generation import (
+        GenerationClientError,
+        GenerationPublicationError,
+        GenerationValidationError,
+        generate_with_adapter,
+        parse_generation_request_json,
+        publish_generation_result,
+    )
+    from ucf.ir import IRValidationError
+
+    try:
+        _validate_operation_timeout(operation_timeout)
+        request_payload, request_snapshot = _read_runtime_input(request_path)
+        request = parse_generation_request_json(request_payload)
+        request_absolute = request_path.absolute()
+        destination_absolute = destination.absolute()
+        if (
+            request_absolute == destination_absolute
+            or request_absolute.is_relative_to(destination_absolute)
+        ):
+            raise ValueError(
+                "generation destination must not contain its request"
+            )
+        result = asyncio.run(
+            generate_with_adapter(
+                command=tuple(command),
+                cwd=adapter_cwd,
+                request=request,
+                operation_timeout=operation_timeout,
+            )
+        )
+
+        def validate_source() -> None:
+            if _snapshot_runtime_input(request_path) != request_snapshot:
+                raise ValueError(
+                    "generation request changed before publication"
+                )
+
+        status = publish_generation_result(
+            result,
+            destination,
+            before_commit=validate_source,
+        )
+    except (
+        GenerationClientError,
+        GenerationPublicationError,
+        GenerationValidationError,
+        IRValidationError,
+        ValidationError,
+        OSError,
+        TypeError,
+        ValueError,
+    ) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+    typer.echo(status.value)
+
+
+@change_app.command("import-openspec")
+def change_import_openspec(
+    change_directory: Path = typer.Argument(
+        ...,
+        help="OpenSpec <root>/changes/<change-id> directory",
+    ),
+    base_behavior_path: Path = typer.Option(
+        ...,
+        "--base-behavior",
+        help="Exact accepted base Behavior IR document",
+    ),
+    output: Path = typer.Option(
+        ...,
+        "--output",
+        help="Canonical immutable change proposal path",
+    ),
+) -> None:
+    """Import one pinned OpenSpec profile read-only and byte-exactly."""
+    from ucf.change_lifecycle import (
+        ChangeLifecycleValidationError,
+        canonical_change_lifecycle_json,
+        import_openspec_change,
+    )
+    from ucf.ir import IRValidationError, parse_ir_json
+
+    try:
+        behavior_payload, behavior_snapshot = _read_runtime_input(base_behavior_path)
+        behavior = parse_ir_json(behavior_payload)
+        proposal = import_openspec_change(change_directory, behavior)
+        encoded = canonical_change_lifecycle_json(proposal)
+
+        def validate_source() -> None:
+            if _snapshot_runtime_input(base_behavior_path) != behavior_snapshot:
+                raise ValueError("base Behavior input changed during import")
+            confirmation = import_openspec_change(
+                change_directory,
+                behavior,
+            )
+            if canonical_change_lifecycle_json(confirmation) != encoded:
+                raise ValueError("OpenSpec workspace changed during import")
+
+        destination = _file_destination(
+            output,
+            inputs=(base_behavior_path,),
+            label="change proposal output",
+        )
+        openspec_root = change_directory.absolute().parent.parent
+        if destination.parent == openspec_root or (
+            destination.parent.is_relative_to(openspec_root)
+        ):
+            raise ValueError("change proposal output must be outside the OpenSpec root")
+        _publish_exact_file(
+            destination,
+            encoded,
+            before_publish=validate_source,
+        )
+    except (
+        ChangeLifecycleValidationError,
+        IRValidationError,
+        OSError,
+        TypeError,
+        ValueError,
+    ) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+
+
+@change_app.command("export-openspec")
+def change_export_openspec(
+    proposal_path: Path = typer.Argument(
+        ...,
+        help="Canonical UCF change proposal document",
+    ),
+    destination: Path = typer.Option(
+        ...,
+        "--destination",
+        help="Absent or byte-identical OpenSpec root directory",
+    ),
+) -> None:
+    """Export preserved OpenSpec artifacts without merging user content."""
+    from ucf.change_lifecycle import (
+        ChangeLifecycleValidationError,
+        export_openspec_change,
+        parse_change_proposal_json,
+    )
+
+    try:
+        payload, snapshot = _read_runtime_input(proposal_path)
+        proposal = parse_change_proposal_json(payload)
+        destination_absolute = destination.absolute()
+        proposal_absolute = proposal_path.absolute()
+        if (
+            proposal_absolute == destination_absolute
+            or proposal_absolute.is_relative_to(destination_absolute)
+        ):
+            raise ValueError("OpenSpec export destination must not contain its input")
+
+        def validate_source() -> None:
+            if _snapshot_runtime_input(proposal_path) != snapshot:
+                raise ValueError("change proposal input changed")
+
+        export_openspec_change(
+            proposal,
+            destination,
+            before_publish=validate_source,
+        )
+        validate_source()
+    except (
+        ChangeLifecycleValidationError,
+        OSError,
+        TypeError,
+        ValueError,
+    ) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+
+
+@change_app.command("derive-delta")
+def change_derive_delta(
+    proposal_path: Path = typer.Option(
+        ...,
+        "--proposal",
+        help="Exact predecessor change proposal",
+    ),
+    base_behavior_path: Path = typer.Option(
+        ...,
+        "--base-behavior",
+        help="Exact proposal base Behavior IR",
+    ),
+    final_behavior_path: Path = typer.Option(
+        ...,
+        "--final-behavior",
+        help="Reviewed final Behavior IR",
+    ),
+    output: Path = typer.Option(
+        ...,
+        "--output",
+        help="Canonical immutable behavior delta path",
+    ),
+) -> None:
+    """Derive the exhaustive typed difference between two Behavior documents."""
+    from ucf.change_lifecycle import (
+        ChangeLifecycleValidationError,
+        canonical_change_lifecycle_json,
+        derive_behavior_delta,
+        parse_change_proposal_json,
+    )
+    from ucf.ir import IRValidationError, parse_ir_json
+
+    input_paths = (
+        proposal_path,
+        base_behavior_path,
+        final_behavior_path,
+    )
+    try:
+        proposal_payload, proposal_snapshot = _read_runtime_input(proposal_path)
+        base_payload, base_snapshot = _read_runtime_input(base_behavior_path)
+        final_payload, final_snapshot = _read_runtime_input(final_behavior_path)
+        proposal = parse_change_proposal_json(proposal_payload)
+        base = parse_ir_json(base_payload)
+        final = parse_ir_json(final_payload)
+        delta = derive_behavior_delta(proposal, base, final)
+        encoded = canonical_change_lifecycle_json(delta)
+        destination = _file_destination(
+            output,
+            inputs=input_paths,
+            label="behavior delta output",
+        )
+        snapshots = {
+            proposal_path: proposal_snapshot,
+            base_behavior_path: base_snapshot,
+            final_behavior_path: final_snapshot,
+        }
+
+        def validate_source() -> None:
+            for path, expected in snapshots.items():
+                if _snapshot_runtime_input(path) != expected:
+                    raise ValueError("change delta input changed")
+
+        _publish_exact_file(
+            destination,
+            encoded,
+            before_publish=validate_source,
+        )
+    except (
+        ChangeLifecycleValidationError,
+        IRValidationError,
+        OSError,
+        TypeError,
+        ValueError,
+    ) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+
+
+@change_app.command("derive-tasks")
+def change_derive_tasks(
+    proposal_path: Path = typer.Option(
+        ...,
+        "--proposal",
+        help="Exact predecessor change proposal",
+    ),
+    delta_path: Path = typer.Option(
+        ...,
+        "--delta",
+        help="Exact behavior delta",
+    ),
+    base_behavior_path: Path = typer.Option(
+        ...,
+        "--base-behavior",
+        help="Exact proposal base Behavior IR",
+    ),
+    final_behavior_path: Path = typer.Option(
+        ...,
+        "--final-behavior",
+        help="Reviewed final Behavior IR",
+    ),
+    subject_values: list[str] = typer.Option(
+        ...,
+        "--subject",
+        help="TASK=OPERATION:KIND:ID explicit subject assignment",
+    ),
+    dependency_values: list[str] = typer.Option(
+        [],
+        "--depends",
+        help="TASK=PREDECESSOR explicit dependency",
+    ),
+    output: Path = typer.Option(
+        ...,
+        "--output",
+        help="Canonical immutable task graph path",
+    ),
+) -> None:
+    """Map numbered OpenSpec checkboxes to explicit typed task coordinates."""
+    from ucf.change_lifecycle import (
+        ChangeLifecycleValidationError,
+        DeltaSubjectRef,
+        canonical_change_lifecycle_json,
+        derive_task_graph,
+        parse_behavior_delta_json,
+        parse_change_proposal_json,
+    )
+    from ucf.ir import IRValidationError, parse_ir_json
+    from ucf.ir.models import EntityKind
+
+    input_paths = (
+        proposal_path,
+        delta_path,
+        base_behavior_path,
+        final_behavior_path,
+    )
+    try:
+        proposal_payload, proposal_snapshot = _read_runtime_input(proposal_path)
+        delta_payload, delta_snapshot = _read_runtime_input(delta_path)
+        base_payload, base_snapshot = _read_runtime_input(base_behavior_path)
+        final_payload, final_snapshot = _read_runtime_input(final_behavior_path)
+        proposal = parse_change_proposal_json(proposal_payload)
+        delta = parse_behavior_delta_json(delta_payload)
+        base = parse_ir_json(base_payload)
+        final = parse_ir_json(final_payload)
+        assignments: dict[str, list[DeltaSubjectRef]] = {}
+        for value in subject_values:
+            task_id, separator, coordinate = value.partition("=")
+            components = coordinate.split(":", maxsplit=2)
+            if not separator or len(components) != 3:
+                raise ValueError("subject must be TASK=OPERATION:KIND:ID")
+            operation, target_kind, target_id = components
+            assignments.setdefault(task_id, []).append(
+                DeltaSubjectRef(
+                    kind="delta_subject_ref",
+                    operation=operation,
+                    target_kind=EntityKind(target_kind),
+                    target_id=target_id,
+                )
+            )
+        dependencies: dict[str, list[str]] = {}
+        for value in dependency_values:
+            task_id, separator, predecessor = value.partition("=")
+            if not separator or not task_id or not predecessor:
+                raise ValueError("dependency must be TASK=PREDECESSOR")
+            dependencies.setdefault(task_id, []).append(predecessor)
+        graph = derive_task_graph(
+            proposal,
+            delta,
+            base_behavior=base,
+            final_behavior=final,
+            subject_assignments={
+                task_id: tuple(subjects) for task_id, subjects in assignments.items()
+            },
+            dependencies={
+                task_id: tuple(predecessors)
+                for task_id, predecessors in dependencies.items()
+            },
+        )
+        encoded = canonical_change_lifecycle_json(graph)
+        destination = _file_destination(
+            output,
+            inputs=input_paths,
+            label="task graph output",
+        )
+        snapshots = {
+            proposal_path: proposal_snapshot,
+            delta_path: delta_snapshot,
+            base_behavior_path: base_snapshot,
+            final_behavior_path: final_snapshot,
+        }
+
+        def validate_source() -> None:
+            for path, expected in snapshots.items():
+                if _snapshot_runtime_input(path) != expected:
+                    raise ValueError("change task input changed")
+
+        _publish_exact_file(
+            destination,
+            encoded,
+            before_publish=validate_source,
+        )
+    except (
+        ChangeLifecycleValidationError,
+        IRValidationError,
+        OSError,
+        TypeError,
+        ValueError,
+    ) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+
+
+@change_app.command("complete-task")
+def change_complete_task(
+    proposal_path: Path = typer.Option(..., "--proposal"),
+    delta_path: Path = typer.Option(..., "--delta"),
+    task_graph_path: Path = typer.Option(..., "--tasks"),
+    base_behavior_path: Path = typer.Option(..., "--base-behavior"),
+    final_behavior_path: Path = typer.Option(..., "--final-behavior"),
+    task_id: str = typer.Option(..., "--task-id"),
+    output: Path = typer.Option(..., "--output"),
+) -> None:
+    """Create one immutable task-graph successor in dependency order."""
+    from ucf.change_lifecycle import (
+        ChangeLifecycleErrorCode,
+        ChangeLifecycleValidationError,
+        canonical_change_lifecycle_json,
+        complete_change_task,
+        parse_behavior_delta_json,
+        parse_change_proposal_json,
+        parse_task_graph_json,
+        validate_task_graph,
+    )
+    from ucf.ir import IRValidationError, parse_ir_json
+
+    input_paths = (
+        proposal_path,
+        delta_path,
+        task_graph_path,
+        base_behavior_path,
+        final_behavior_path,
+    )
+    try:
+        payloads_and_snapshots = {
+            path: _read_runtime_input(path) for path in input_paths
+        }
+        proposal = parse_change_proposal_json(payloads_and_snapshots[proposal_path][0])
+        delta = parse_behavior_delta_json(payloads_and_snapshots[delta_path][0])
+        graph = parse_task_graph_json(payloads_and_snapshots[task_graph_path][0])
+        base = parse_ir_json(payloads_and_snapshots[base_behavior_path][0])
+        final = parse_ir_json(payloads_and_snapshots[final_behavior_path][0])
+        validate_task_graph(
+            graph,
+            delta,
+            proposal,
+            base_behavior=base,
+            final_behavior=final,
+        )
+        successor = complete_change_task(
+            graph,
+            task_id,
+            delta=delta,
+            proposal=proposal,
+            base_behavior=base,
+            final_behavior=final,
+        )
+        validate_task_graph(
+            successor,
+            delta,
+            proposal,
+            base_behavior=base,
+            final_behavior=final,
+        )
+        destination = _file_destination(
+            output,
+            inputs=input_paths,
+            label="task graph successor output",
+        )
+
+        def validate_source() -> None:
+            for path, (_, expected) in payloads_and_snapshots.items():
+                if _snapshot_runtime_input(path) != expected:
+                    raise ValueError("change task input changed")
+
+        _publish_exact_file(
+            destination,
+            canonical_change_lifecycle_json(successor),
+            before_publish=validate_source,
+        )
+    except ChangeLifecycleValidationError as error:
+        typer.echo(str(error), err=True)
+        exit_code = (
+            1 if error.code is ChangeLifecycleErrorCode.INVALID_TRANSITION else 3
+        )
+        raise typer.Exit(code=exit_code) from error
+    except (IRValidationError, OSError, TypeError, ValueError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+
+
+@change_app.command("record-implementation")
+def change_record_implementation(
+    proposal_path: Path = typer.Option(..., "--proposal"),
+    delta_path: Path = typer.Option(..., "--delta"),
+    task_graph_path: Path = typer.Option(..., "--tasks"),
+    base_behavior_path: Path = typer.Option(..., "--base-behavior"),
+    final_behavior_path: Path = typer.Option(..., "--final-behavior"),
+    result_path: Path = typer.Option(..., "--result"),
+    mapping_result_path: Path = typer.Option(..., "--mapping-result"),
+    onboarding_bundle_path: Path = typer.Option(..., "--onboarding-bundle"),
+    current_inventory_path: Path = typer.Option(..., "--current-inventory"),
+    mapping_adapter_name: str = typer.Option(
+        ...,
+        "--mapping-adapter-name",
+    ),
+    mapping_adapter_version: str = typer.Option(
+        ...,
+        "--mapping-adapter-version",
+    ),
+    verification_adapter_name: str = typer.Option(
+        ...,
+        "--verification-adapter-name",
+    ),
+    verification_adapter_version: str = typer.Option(
+        ...,
+        "--verification-adapter-version",
+    ),
+    output: Path = typer.Option(..., "--output"),
+) -> None:
+    """Attach execution results only after full contextual validation."""
+    from ucf.change_lifecycle import (
+        ChangeLifecycleErrorCode,
+        ChangeLifecycleValidationError,
+        canonical_change_lifecycle_json,
+        derive_implementation_record,
+        parse_behavior_delta_json,
+        parse_change_proposal_json,
+        parse_task_graph_json,
+        validate_task_graph,
+    )
+    from ucf.ir import IRValidationError, parse_ir_json
+
+    lifecycle_paths = (
+        proposal_path,
+        delta_path,
+        task_graph_path,
+        base_behavior_path,
+        final_behavior_path,
+    )
+    try:
+        inputs = {path: _read_runtime_input(path) for path in lifecycle_paths}
+        context, evidence_inputs = _read_change_evidence_context(
+            result_path=result_path,
+            mapping_result_path=mapping_result_path,
+            onboarding_bundle_path=onboarding_bundle_path,
+            current_inventory_path=current_inventory_path,
+            mapping_adapter_name=mapping_adapter_name,
+            mapping_adapter_version=mapping_adapter_version,
+            verification_adapter_name=verification_adapter_name,
+            verification_adapter_version=verification_adapter_version,
+        )
+        inputs.update(evidence_inputs)
+        proposal = parse_change_proposal_json(inputs[proposal_path][0])
+        delta = parse_behavior_delta_json(inputs[delta_path][0])
+        graph = parse_task_graph_json(inputs[task_graph_path][0])
+        base = parse_ir_json(inputs[base_behavior_path][0])
+        final = parse_ir_json(inputs[final_behavior_path][0])
+        validate_task_graph(
+            graph,
+            delta,
+            proposal,
+            base_behavior=base,
+            final_behavior=final,
+        )
+        record = derive_implementation_record(
+            graph,
+            delta,
+            proposal,
+            base_behavior=base,
+            final_behavior=final,
+            evidence_contexts=(context,),
+        )
+        destination = _file_destination(
+            output,
+            inputs=tuple(inputs),
+            label="implementation record output",
+        )
+
+        def validate_source() -> None:
+            _validate_change_input_snapshots(
+                inputs,
+                label="implementation evidence",
+            )
+
+        _publish_exact_file(
+            destination,
+            canonical_change_lifecycle_json(record),
+            before_publish=validate_source,
+        )
+    except ChangeLifecycleValidationError as error:
+        typer.echo(str(error), err=True)
+        exit_code = 1 if error.code is ChangeLifecycleErrorCode.INCOMPLETE_TASKS else 3
+        raise typer.Exit(code=exit_code) from error
+    except (IRValidationError, OSError, TypeError, ValueError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+
+
+@change_app.command("verify")
+def change_verify(
+    proposal_path: Path = typer.Option(..., "--proposal"),
+    delta_path: Path = typer.Option(..., "--delta"),
+    task_graph_path: Path = typer.Option(..., "--tasks"),
+    implementation_path: Path = typer.Option(..., "--implementation"),
+    base_behavior_path: Path = typer.Option(..., "--base-behavior"),
+    final_behavior_path: Path = typer.Option(..., "--final-behavior"),
+    result_path: Path = typer.Option(..., "--result"),
+    mapping_result_path: Path = typer.Option(..., "--mapping-result"),
+    onboarding_bundle_path: Path = typer.Option(..., "--onboarding-bundle"),
+    current_inventory_path: Path = typer.Option(..., "--current-inventory"),
+    mapping_adapter_name: str = typer.Option(
+        ...,
+        "--mapping-adapter-name",
+    ),
+    mapping_adapter_version: str = typer.Option(
+        ...,
+        "--mapping-adapter-version",
+    ),
+    verification_adapter_name: str = typer.Option(
+        ...,
+        "--verification-adapter-name",
+    ),
+    verification_adapter_version: str = typer.Option(
+        ...,
+        "--verification-adapter-version",
+    ),
+    output: Path = typer.Option(..., "--output"),
+) -> None:
+    """Accept a change only after complete tasks and passing exact evidence."""
+    from ucf.change_lifecycle import (
+        ChangeLifecycleErrorCode,
+        ChangeLifecycleValidationError,
+        canonical_change_lifecycle_json,
+        derive_verification_record,
+        parse_behavior_delta_json,
+        parse_change_proposal_json,
+        parse_implementation_record_json,
+        parse_task_graph_json,
+    )
+    from ucf.ir import IRValidationError, parse_ir_json
+
+    lifecycle_paths = (
+        proposal_path,
+        delta_path,
+        task_graph_path,
+        implementation_path,
+        base_behavior_path,
+        final_behavior_path,
+    )
+    try:
+        inputs = {path: _read_runtime_input(path) for path in lifecycle_paths}
+        context, evidence_inputs = _read_change_evidence_context(
+            result_path=result_path,
+            mapping_result_path=mapping_result_path,
+            onboarding_bundle_path=onboarding_bundle_path,
+            current_inventory_path=current_inventory_path,
+            mapping_adapter_name=mapping_adapter_name,
+            mapping_adapter_version=mapping_adapter_version,
+            verification_adapter_name=verification_adapter_name,
+            verification_adapter_version=verification_adapter_version,
+        )
+        inputs.update(evidence_inputs)
+        proposal = parse_change_proposal_json(inputs[proposal_path][0])
+        delta = parse_behavior_delta_json(inputs[delta_path][0])
+        graph = parse_task_graph_json(inputs[task_graph_path][0])
+        implementation = parse_implementation_record_json(
+            inputs[implementation_path][0]
+        )
+        base = parse_ir_json(inputs[base_behavior_path][0])
+        final = parse_ir_json(inputs[final_behavior_path][0])
+        verification = derive_verification_record(
+            implementation,
+            graph,
+            delta,
+            proposal,
+            base_behavior=base,
+            final_behavior=final,
+            evidence_contexts=(context,),
+        )
+        destination = _file_destination(
+            output,
+            inputs=tuple(inputs),
+            label="verification record output",
+        )
+
+        def validate_source() -> None:
+            _validate_change_input_snapshots(
+                inputs,
+                label="verification",
+            )
+
+        _publish_exact_file(
+            destination,
+            canonical_change_lifecycle_json(verification),
+            before_publish=validate_source,
+        )
+    except ChangeLifecycleValidationError as error:
+        typer.echo(str(error), err=True)
+        exit_code = (
+            1
+            if error.code
+            in {
+                ChangeLifecycleErrorCode.EVIDENCE_NOT_PASSED,
+                ChangeLifecycleErrorCode.INCOMPLETE_TASKS,
+            }
+            else 3
+        )
+        raise typer.Exit(code=exit_code) from error
+    except (IRValidationError, OSError, TypeError, ValueError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+
+
+@change_app.command("archive")
+def change_archive(
+    proposal_path: Path = typer.Option(..., "--proposal"),
+    delta_path: Path = typer.Option(..., "--delta"),
+    task_graph_path: Path = typer.Option(..., "--tasks"),
+    implementation_path: Path = typer.Option(..., "--implementation"),
+    verification_path: Path = typer.Option(..., "--verification"),
+    base_behavior_path: Path = typer.Option(..., "--base-behavior"),
+    final_behavior_path: Path = typer.Option(..., "--final-behavior"),
+    result_path: Path = typer.Option(..., "--result"),
+    mapping_result_path: Path = typer.Option(..., "--mapping-result"),
+    onboarding_bundle_path: Path = typer.Option(..., "--onboarding-bundle"),
+    current_inventory_path: Path = typer.Option(..., "--current-inventory"),
+    mapping_adapter_name: str = typer.Option(
+        ...,
+        "--mapping-adapter-name",
+    ),
+    mapping_adapter_version: str = typer.Option(
+        ...,
+        "--mapping-adapter-version",
+    ),
+    verification_adapter_name: str = typer.Option(
+        ...,
+        "--verification-adapter-name",
+    ),
+    verification_adapter_version: str = typer.Option(
+        ...,
+        "--verification-adapter-version",
+    ),
+    output: Path = typer.Option(..., "--output"),
+) -> None:
+    """Archive one exact accepted chain without mutating its predecessors."""
+    from ucf.change_lifecycle import (
+        ChangeLifecycleErrorCode,
+        ChangeLifecycleValidationError,
+        canonical_change_lifecycle_json,
+        derive_archive_record,
+        parse_behavior_delta_json,
+        parse_change_proposal_json,
+        parse_implementation_record_json,
+        parse_task_graph_json,
+        parse_verification_record_json,
+    )
+    from ucf.ir import IRValidationError, parse_ir_json
+
+    lifecycle_paths = (
+        proposal_path,
+        delta_path,
+        task_graph_path,
+        implementation_path,
+        verification_path,
+        base_behavior_path,
+        final_behavior_path,
+    )
+    try:
+        inputs = {path: _read_runtime_input(path) for path in lifecycle_paths}
+        context, evidence_inputs = _read_change_evidence_context(
+            result_path=result_path,
+            mapping_result_path=mapping_result_path,
+            onboarding_bundle_path=onboarding_bundle_path,
+            current_inventory_path=current_inventory_path,
+            mapping_adapter_name=mapping_adapter_name,
+            mapping_adapter_version=mapping_adapter_version,
+            verification_adapter_name=verification_adapter_name,
+            verification_adapter_version=verification_adapter_version,
+        )
+        inputs.update(evidence_inputs)
+        proposal = parse_change_proposal_json(inputs[proposal_path][0])
+        delta = parse_behavior_delta_json(inputs[delta_path][0])
+        graph = parse_task_graph_json(inputs[task_graph_path][0])
+        implementation = parse_implementation_record_json(
+            inputs[implementation_path][0]
+        )
+        verification = parse_verification_record_json(inputs[verification_path][0])
+        base = parse_ir_json(inputs[base_behavior_path][0])
+        final = parse_ir_json(inputs[final_behavior_path][0])
+        archive = derive_archive_record(
+            proposal,
+            delta,
+            graph,
+            implementation,
+            verification,
+            base,
+            final,
+            evidence_contexts=(context,),
+        )
+        destination = _file_destination(
+            output,
+            inputs=tuple(inputs),
+            label="archive record output",
+        )
+
+        def validate_source() -> None:
+            _validate_change_input_snapshots(
+                inputs,
+                label="archive",
+            )
+
+        _publish_exact_file(
+            destination,
+            canonical_change_lifecycle_json(archive),
+            before_publish=validate_source,
+        )
+    except ChangeLifecycleValidationError as error:
+        typer.echo(str(error), err=True)
+        exit_code = (
+            1
+            if error.code
+            in {
+                ChangeLifecycleErrorCode.EVIDENCE_NOT_PASSED,
+                ChangeLifecycleErrorCode.INCOMPLETE_TASKS,
+            }
+            else 3
+        )
+        raise typer.Exit(code=exit_code) from error
+    except (
+        IRValidationError,
+        OSError,
+        TypeError,
+        ValueError,
+    ) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+
+
+@change_app.command("impact")
+def change_impact(
+    proposal_path: Path = typer.Option(..., "--proposal"),
+    delta_path: Path = typer.Option(..., "--delta"),
+    base_behavior_path: Path = typer.Option(..., "--base-behavior"),
+    final_behavior_path: Path = typer.Option(..., "--final-behavior"),
+    output: Path = typer.Option(..., "--output"),
+) -> None:
+    """Derive deterministic structural impact without semantic guessing."""
+    from ucf.change_governance import (
+        ChangeGovernanceValidationError,
+        canonical_change_governance_json,
+        derive_impact_report,
+    )
+    from ucf.change_lifecycle import ChangeLifecycleValidationError
+    from ucf.ir import IRValidationError
+
+    try:
+        inputs, proposal, delta, base, final = _read_change_governance_context(
+            proposal_path=proposal_path,
+            delta_path=delta_path,
+            base_behavior_path=base_behavior_path,
+            final_behavior_path=final_behavior_path,
+        )
+        report = derive_impact_report(
+            proposal,
+            delta,
+            base_behavior=base,
+            final_behavior=final,
+        )
+        destination = _file_destination(
+            output,
+            inputs=tuple(inputs),
+            label="change impact output",
+        )
+
+        def validate_source() -> None:
+            _validate_change_input_snapshots(inputs, label="change impact")
+
+        _publish_exact_file(
+            destination,
+            canonical_change_governance_json(report),
+            before_publish=validate_source,
+        )
+    except (
+        ChangeGovernanceValidationError,
+        ChangeLifecycleValidationError,
+        IRValidationError,
+        OSError,
+        TypeError,
+        ValueError,
+    ) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+
+
+@change_app.command("assess")
+def change_assess(
+    proposal_path: Path = typer.Option(..., "--proposal"),
+    delta_path: Path = typer.Option(..., "--delta"),
+    base_behavior_path: Path = typer.Option(..., "--base-behavior"),
+    final_behavior_path: Path = typer.Option(..., "--final-behavior"),
+    impact_path: Path = typer.Option(..., "--impact"),
+    assessment_path: Path = typer.Option(..., "--assessment"),
+    output: Path = typer.Option(..., "--output"),
+) -> None:
+    """Validate and publish one exhaustive authored decision assessment."""
+    from ucf.change_governance import (
+        ChangeGovernanceValidationError,
+        canonical_change_governance_json,
+        parse_decision_assessment_json,
+        parse_impact_report_json,
+        validate_decision_assessment,
+    )
+    from ucf.change_lifecycle import ChangeLifecycleValidationError
+    from ucf.ir import IRValidationError
+
+    try:
+        inputs, proposal, delta, base, final = _read_change_governance_context(
+            proposal_path=proposal_path,
+            delta_path=delta_path,
+            base_behavior_path=base_behavior_path,
+            final_behavior_path=final_behavior_path,
+        )
+        impact_payload, impact_snapshot = _read_runtime_input(impact_path)
+        assessment_payload, assessment_snapshot = _read_runtime_input(assessment_path)
+        inputs[impact_path] = (impact_payload, impact_snapshot)
+        inputs[assessment_path] = (
+            assessment_payload,
+            assessment_snapshot,
+        )
+        impact = parse_impact_report_json(impact_payload)
+        assessment = parse_decision_assessment_json(assessment_payload)
+        validate_decision_assessment(
+            assessment,
+            impact,
+            proposal,
+            delta,
+            base_behavior=base,
+            final_behavior=final,
+        )
+        destination = _file_destination(
+            output,
+            inputs=tuple(inputs),
+            label="decision assessment output",
+        )
+
+        def validate_source() -> None:
+            _validate_change_input_snapshots(
+                inputs,
+                label="decision assessment",
+            )
+
+        _publish_exact_file(
+            destination,
+            canonical_change_governance_json(assessment),
+            before_publish=validate_source,
+        )
+    except (
+        ChangeGovernanceValidationError,
+        ChangeLifecycleValidationError,
+        IRValidationError,
+        OSError,
+        TypeError,
+        ValueError,
+    ) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+
+
+@change_app.command("decide")
+def change_decide(
+    proposal_path: Path = typer.Option(..., "--proposal"),
+    delta_path: Path = typer.Option(..., "--delta"),
+    base_behavior_path: Path = typer.Option(..., "--base-behavior"),
+    final_behavior_path: Path = typer.Option(..., "--final-behavior"),
+    impact_path: Path = typer.Option(..., "--impact"),
+    assessment_path: Path = typer.Option(..., "--assessment"),
+    declaration_path: Path = typer.Option(..., "--declaration"),
+    output: Path = typer.Option(..., "--output"),
+) -> None:
+    """Validate and publish a decision bound to the exact applicable classes."""
+    from ucf.change_governance import (
+        ChangeGovernanceValidationError,
+        canonical_change_governance_json,
+        parse_decision_assessment_json,
+        parse_decision_declaration_json,
+        parse_impact_report_json,
+        validate_decision_declaration,
+    )
+    from ucf.change_lifecycle import ChangeLifecycleValidationError
+    from ucf.ir import IRValidationError
+
+    try:
+        inputs, proposal, delta, base, final = _read_change_governance_context(
+            proposal_path=proposal_path,
+            delta_path=delta_path,
+            base_behavior_path=base_behavior_path,
+            final_behavior_path=final_behavior_path,
+        )
+        for path in (impact_path, assessment_path, declaration_path):
+            inputs[path] = _read_runtime_input(path)
+        impact = parse_impact_report_json(inputs[impact_path][0])
+        assessment = parse_decision_assessment_json(inputs[assessment_path][0])
+        declaration = parse_decision_declaration_json(inputs[declaration_path][0])
+        validate_decision_declaration(
+            declaration,
+            assessment,
+            impact,
+            proposal,
+            delta,
+            base_behavior=base,
+            final_behavior=final,
+        )
+        destination = _file_destination(
+            output,
+            inputs=tuple(inputs),
+            label="decision declaration output",
+        )
+
+        def validate_source() -> None:
+            _validate_change_input_snapshots(
+                inputs,
+                label="decision declaration",
+            )
+
+        _publish_exact_file(
+            destination,
+            canonical_change_governance_json(declaration),
+            before_publish=validate_source,
+        )
+    except (
+        ChangeGovernanceValidationError,
+        ChangeLifecycleValidationError,
+        IRValidationError,
+        OSError,
+        TypeError,
+        ValueError,
+    ) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+
+
+@change_app.command("gate")
+def change_gate(
+    proposal_path: Path = typer.Option(..., "--proposal"),
+    delta_path: Path = typer.Option(..., "--delta"),
+    base_behavior_path: Path = typer.Option(..., "--base-behavior"),
+    final_behavior_path: Path = typer.Option(..., "--final-behavior"),
+    impact_path: Path = typer.Option(..., "--impact"),
+    assessment_path: Path = typer.Option(..., "--assessment"),
+    declaration_path: Path | None = typer.Option(None, "--declaration"),
+    output: Path = typer.Option(..., "--output"),
+) -> None:
+    """Recompute the exact approval gate; blocked outcomes exit with one."""
+    from ucf.change_governance import (
+        ChangeGovernanceValidationError,
+        GateStatus,
+        canonical_change_governance_json,
+        evaluate_change_gate,
+        parse_decision_assessment_json,
+        parse_decision_declaration_json,
+        parse_impact_report_json,
+    )
+    from ucf.change_lifecycle import ChangeLifecycleValidationError
+    from ucf.ir import IRValidationError
+
+    try:
+        inputs, proposal, delta, base, final = _read_change_governance_context(
+            proposal_path=proposal_path,
+            delta_path=delta_path,
+            base_behavior_path=base_behavior_path,
+            final_behavior_path=final_behavior_path,
+        )
+        for path in (impact_path, assessment_path):
+            inputs[path] = _read_runtime_input(path)
+        declaration = None
+        if declaration_path is not None:
+            inputs[declaration_path] = _read_runtime_input(declaration_path)
+            declaration = parse_decision_declaration_json(inputs[declaration_path][0])
+        impact = parse_impact_report_json(inputs[impact_path][0])
+        assessment = parse_decision_assessment_json(inputs[assessment_path][0])
+        gate = evaluate_change_gate(
+            assessment,
+            impact,
+            declaration,
+            proposal,
+            delta,
+            base_behavior=base,
+            final_behavior=final,
+        )
+        passing = {
+            GateStatus.PASS_NO_DECISION,
+            GateStatus.PASS_APPROVED,
+        }
+        if gate.status not in passing:
+            _validate_change_input_snapshots(inputs, label="change gate")
+            typer.echo(gate.status.value, err=True)
+            raise typer.Exit(code=1)
+        destination = _file_destination(
+            output,
+            inputs=tuple(inputs),
+            label="gate evaluation output",
+        )
+
+        def validate_source() -> None:
+            _validate_change_input_snapshots(inputs, label="change gate")
+
+        _publish_exact_file(
+            destination,
+            canonical_change_governance_json(gate),
+            before_publish=validate_source,
+        )
+    except (
+        ChangeGovernanceValidationError,
+        ChangeLifecycleValidationError,
+        IRValidationError,
+        OSError,
+        TypeError,
+        ValueError,
+    ) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+
+
+@adapter_app.command("kit")
+def adapter_kit(
+    extract: Path | None = typer.Option(
+        None,
+        "--extract",
+        help="Extract the complete conformance kit into an empty directory",
+    ),
+) -> None:
+    """Inspect or safely extract the installed adapter conformance kit."""
+    from ucf.adapter_conformance import (
+        canonical_conformance_json,
+        conformance_kit_index,
+        extract_conformance_kit,
+    )
+
+    try:
+        index = (
+            extract_conformance_kit(extract)
+            if extract is not None
+            else conformance_kit_index()
+        )
+    except (OSError, ValueError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+    typer.echo(
+        canonical_conformance_json(index).decode("utf-8"),
+        nl=False,
+    )
+
+
+@adapter_app.command(
+    "inventory",
+    context_settings={
+        "allow_extra_args": True,
+        "ignore_unknown_options": True,
+    },
+)
+def adapter_inventory(
+    root: Path = typer.Argument(
+        ...,
+        help="Existing repository root to inventory read-only",
+    ),
+    command: list[str] = typer.Argument(
+        ...,
+        help="Adapter executable and argv, conventionally after --",
+    ),
+    policy_path: Path = typer.Option(
+        ...,
+        "--policy",
+        help="Strict JSON exclusion policy",
+    ),
+    output: Path = typer.Option(
+        ...,
+        "--output",
+        help="Canonical snapshot path outside the repository root",
+    ),
+    subject_uri: str = typer.Option(
+        ...,
+        "--subject-uri",
+        help="Stable non-file URI identifying the inventoried repository",
+    ),
+    page_record_limit: int = typer.Option(
+        256,
+        "--page-record-limit",
+        min=1,
+        max=256,
+        help="Maximum logical records requested per adapter page",
+    ),
+    operation_timeout: float = typer.Option(
+        30.0,
+        "--operation-timeout",
+        help="Positive timeout in seconds for each adapter page",
+    ),
+) -> None:
+    """Collect one strict, deterministic, observed-only inventory snapshot."""
+    import asyncio
+
+    from pydantic import ValidationError
+
+    from ucf.adapter_protocol import AdapterProtocolError
+    from ucf.inventory import (
+        canonical_inventory_json,
+        collect_inventory,
+    )
+
+    try:
+        repository = _resolved_inventory_root(root)
+        destination = _outside_inventory_destination(
+            repository,
+            output,
+            inputs=(policy_path,),
+        )
+        _validate_operation_timeout(operation_timeout)
+        request = _inventory_request_from_options(
+            policy_path=policy_path,
+            subject_uri=subject_uri,
+            page_record_limit=page_record_limit,
+        )
+        snapshot = asyncio.run(
+            collect_inventory(
+                command=tuple(command),
+                cwd=repository,
+                request=request,
+                operation_timeout=operation_timeout,
+            )
+        )
+        _atomic_write(destination, canonical_inventory_json(snapshot))
+    except AdapterProtocolError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+    except ValidationError as error:
+        typer.echo("inventory command configuration is invalid", err=True)
+        raise typer.Exit(code=3) from error
+    except (OSError, ValueError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+
+
+@adapter_app.command(
+    "discover",
+    context_settings={"allow_extra_args": True},
+)
+def adapter_discover(
+    root: Path = typer.Argument(
+        ...,
+        help="Existing repository root to inspect read-only",
+    ),
+    command: list[str] = typer.Argument(
+        ...,
+        help="Adapter executable and argv after --",
+    ),
+    policy_path: Path = typer.Option(
+        ...,
+        "--policy",
+        help="Strict JSON exclusion policy",
+    ),
+    output: Path = typer.Option(
+        ...,
+        "--output",
+        help="Canonical discovery path outside the repository root",
+    ),
+    subject_uri: str = typer.Option(
+        ...,
+        "--subject-uri",
+        help="Stable non-file URI identifying the repository",
+    ),
+    page_record_limit: int = typer.Option(
+        256,
+        "--page-record-limit",
+        min=1,
+        max=256,
+        help="Maximum logical records requested per inventory page",
+    ),
+    operation_timeout: float = typer.Option(
+        30.0,
+        "--operation-timeout",
+        help="Positive timeout in seconds for each adapter operation",
+    ),
+) -> None:
+    """Export exact candidates for human review without materializing intent."""
+    import asyncio
+
+    from pydantic import ValidationError
+
+    from ucf.adapter_protocol import AdapterProtocolError
+    from ucf.onboarding import (
+        canonical_onboarding_json,
+        collect_onboarding_evidence,
+    )
+
+    try:
+        repository = _resolved_inventory_root(root)
+        destination = _outside_inventory_destination(
+            repository,
+            output,
+            inputs=(policy_path,),
+        )
+        _validate_operation_timeout(operation_timeout)
+        request = _inventory_request_from_options(
+            policy_path=policy_path,
+            subject_uri=subject_uri,
+            page_record_limit=page_record_limit,
+        )
+        evidence = asyncio.run(
+            collect_onboarding_evidence(
+                command=tuple(command),
+                cwd=repository,
+                inventory_request=request,
+                operation_timeout=operation_timeout,
+            )
+        )
+        _atomic_write(
+            destination,
+            canonical_onboarding_json(evidence.discovery),
+        )
+    except AdapterProtocolError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+    except ValidationError as error:
+        typer.echo("discovery command configuration is invalid", err=True)
+        raise typer.Exit(code=3) from error
+    except (OSError, ValueError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+
+
+@adapter_app.command(
+    "onboard",
+    context_settings={"allow_extra_args": True},
+)
+def adapter_onboard(
+    root: Path = typer.Argument(
+        ...,
+        help="Existing repository root to onboard read-only",
+    ),
+    command: list[str] = typer.Argument(
+        ...,
+        help="Adapter executable and argv after --",
+    ),
+    policy_path: Path = typer.Option(
+        ...,
+        "--policy",
+        help="Strict JSON exclusion policy",
+    ),
+    decisions_path: Path = typer.Option(
+        ...,
+        "--decisions",
+        help="Exact human-authored onboarding DecisionSet",
+    ),
+    output: Path = typer.Option(
+        ...,
+        "--output",
+        help="Canonical onboarding bundle outside the repository root",
+    ),
+    subject_uri: str = typer.Option(
+        ...,
+        "--subject-uri",
+        help="Stable non-file URI identifying the repository",
+    ),
+    page_record_limit: int = typer.Option(
+        256,
+        "--page-record-limit",
+        min=1,
+        max=256,
+        help="Maximum logical records requested per inventory page",
+    ),
+    operation_timeout: float = typer.Option(
+        30.0,
+        "--operation-timeout",
+        help="Positive timeout in seconds for each adapter operation",
+    ),
+) -> None:
+    """Revalidate reviewed candidates and atomically freeze an honest baseline."""
+    import asyncio
+
+    from pydantic import ValidationError
+
+    from ucf.adapter_protocol import AdapterProtocolError
+    from ucf.ir import IRValidationError
+    from ucf.onboarding import (
+        OnboardingValidationError,
+        build_onboarding_bundle,
+        canonical_onboarding_json,
+        collect_onboarding_evidence,
+        parse_decision_set_json,
+        parse_onboarding_bundle_json,
+    )
+
+    try:
+        repository = _resolved_inventory_root(root)
+        destination = _outside_inventory_destination(
+            repository,
+            output,
+            inputs=(policy_path, decisions_path),
+        )
+        _validate_operation_timeout(operation_timeout)
+        try:
+            decisions = parse_decision_set_json(decisions_path.read_bytes())
+        except (IRValidationError, ValidationError, TypeError) as error:
+            raise ValueError("onboarding decision set is invalid") from error
+        request = _inventory_request_from_options(
+            policy_path=policy_path,
+            subject_uri=subject_uri,
+            page_record_limit=page_record_limit,
+        )
+        evidence = asyncio.run(
+            collect_onboarding_evidence(
+                command=tuple(command),
+                cwd=repository,
+                inventory_request=request,
+                operation_timeout=operation_timeout,
+            )
+        )
+        bundle = build_onboarding_bundle(
+            evidence.inventory,
+            evidence.discovery,
+            decisions,
+        )
+        encoded = canonical_onboarding_json(bundle)
+        validated = parse_onboarding_bundle_json(encoded)
+        _atomic_write(destination, canonical_onboarding_json(validated))
+    except AdapterProtocolError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+    except OnboardingValidationError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+    except ValidationError as error:
+        typer.echo("onboarding command configuration is invalid", err=True)
+        raise typer.Exit(code=3) from error
+    except (OSError, ValueError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+
+
+@adapter_app.command(
+    "conformance",
+    context_settings={
+        "allow_extra_args": True,
+        "ignore_unknown_options": True,
+    },
+)
+def adapter_conformance_run(
+    command: list[str] = typer.Argument(
+        ...,
+        help="Adapter executable and argv, conventionally after --",
+    ),
+    cwd: Path = typer.Option(
+        Path("."),
+        "--cwd",
+        help="Existing adapter working directory",
+    ),
+    report_path: Path | None = typer.Option(
+        None,
+        "--report",
+        help="Write the canonical report atomically instead of stdout",
+    ),
+) -> None:
+    """Run the versioned black-box conformance suite."""
+    from ucf.adapter_conformance import (
+        canonical_conformance_json,
+        exit_code_for_report,
+        run_conformance,
+    )
+
+    try:
+        report = run_conformance(command=tuple(command), cwd=cwd)
+        encoded = canonical_conformance_json(report)
+        if report_path is None:
+            typer.echo(encoded.decode("utf-8"), nl=False)
+        else:
+            _atomic_write(report_path, encoded)
+    except (OSError, ValueError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+    raise typer.Exit(code=int(exit_code_for_report(report)))
+
+
+@adapter_app.command(
+    "import-runtime-evidence",
+    context_settings={"allow_extra_args": True},
+)
+def adapter_import_runtime_evidence(
+    command: list[str] = typer.Argument(
+        ...,
+        help="Adapter executable and argv after --",
+    ),
+    recording_path: Path = typer.Option(
+        ...,
+        "--recording",
+        help="Bounded recorded runtime input",
+    ),
+    policy_path: Path = typer.Option(
+        ...,
+        "--policy",
+        help="Exact runtime evidence allowlist policy",
+    ),
+    environment_path: Path = typer.Option(
+        ...,
+        "--environment",
+        help="Exact runtime environment identity document",
+    ),
+    behavior_ir_path: Path = typer.Option(
+        ...,
+        "--behavior-ir",
+        help="Exact Behavior IR document to enrich",
+    ),
+    source_uri: str = typer.Option(
+        ...,
+        "--source-uri",
+        help="Stable opaque URI identifying the recording",
+    ),
+    captured_at: str = typer.Option(
+        ...,
+        "--captured-at",
+        help="UTC capture timestamp",
+    ),
+    sampling_procedure_uri: str = typer.Option(
+        ...,
+        "--sampling-procedure-uri",
+        help="Versioned procedure describing partial sampling",
+    ),
+    adapter_procedure_uri: str = typer.Option(
+        ...,
+        "--adapter-procedure-uri",
+        help="Versioned adapter procedure expected in the result",
+    ),
+    adapter_cwd: Path = typer.Option(
+        ...,
+        "--adapter-cwd",
+        help="Existing adapter working directory",
+    ),
+    output: Path = typer.Option(
+        ...,
+        "--output",
+        help="Canonical authoritative runtime evidence result",
+    ),
+    operation_timeout: float = typer.Option(
+        30.0,
+        "--operation-timeout",
+        help="Positive timeout in seconds for the adapter operation",
+    ),
+) -> None:
+    """Import sanitized recorded evidence without promoting its claim level."""
+    import asyncio
+
+    from ucf.runtime_evidence import (
+        RuntimeEvidenceAcceptedResult,
+        RuntimeEvidenceClientError,
+        RuntimeEvidenceRejectedResult,
+        canonical_runtime_evidence_json,
+        import_runtime_evidence,
+        parse_runtime_evidence_result_json,
+    )
+
+    diagnostic: str | None = None
+    rejection_codes: tuple[str, ...] = ()
+    try:
+        input_paths = (
+            recording_path,
+            policy_path,
+            environment_path,
+            behavior_ir_path,
+        )
+        destination = _file_destination(
+            output,
+            inputs=input_paths,
+            label="runtime evidence output",
+        )
+        _validate_operation_timeout(operation_timeout)
+        cwd = adapter_cwd.resolve(strict=True)
+        if not cwd.is_dir() or not command:
+            raise ValueError("runtime evidence adapter is invalid")
+        request, behavior, environment, snapshots = (
+            _runtime_evidence_request_from_options(
+                recording_path=recording_path,
+                policy_path=policy_path,
+                environment_path=environment_path,
+                behavior_ir_path=behavior_ir_path,
+                source_uri=source_uri,
+                captured_at=captured_at,
+                sampling_procedure_uri=sampling_procedure_uri,
+                adapter_procedure_uri=adapter_procedure_uri,
+            )
+        )
+        result = asyncio.run(
+            import_runtime_evidence(
+                command=tuple(command),
+                cwd=cwd,
+                recording_path=recording_path,
+                request=request,
+                behavior=behavior,
+                environment=environment,
+                operation_timeout=operation_timeout,
+            )
+        )
+        _validate_runtime_input_snapshots(snapshots)
+        destination = _file_destination(
+            output,
+            inputs=input_paths,
+            label="runtime evidence output",
+        )
+        if isinstance(result, RuntimeEvidenceRejectedResult):
+            rejection_codes = tuple(reason.value for reason in result.reason_codes)
+        elif isinstance(result, RuntimeEvidenceAcceptedResult):
+            encoded = canonical_runtime_evidence_json(result)
+            validated = parse_runtime_evidence_result_json(encoded)
+            if not isinstance(validated, RuntimeEvidenceAcceptedResult):
+                raise ValueError("runtime evidence result status changed")
+            _atomic_write(
+                destination,
+                canonical_runtime_evidence_json(validated),
+            )
+        else:
+            raise TypeError("unsupported runtime evidence result")
+    except RuntimeEvidenceClientError as error:
+        diagnostic = f"runtime_evidence/{error.category.value}/{error.code.value}"
+    except (OSError, TypeError, ValueError):
+        diagnostic = "runtime_evidence/invalid_input"
+
+    if diagnostic is not None:
+        typer.echo(diagnostic, err=True)
+        raise typer.Exit(code=3)
+    if rejection_codes:
+        for reason in rejection_codes:
+            typer.echo(
+                f"runtime_evidence/policy_rejected/{reason}",
+                err=True,
+            )
+        raise typer.Exit(code=1)
+
+
+@ratchet_app.command("establish")
+def ratchet_establish(
+    policy_path: Path = typer.Option(
+        ...,
+        "--policy",
+        help="Exact ratchet policy document",
+    ),
+    onboarding_bundle_path: Path = typer.Option(
+        ...,
+        "--onboarding-bundle",
+        help="Exact reconciled onboarding bundle",
+    ),
+    assessment_path: Path = typer.Option(
+        ...,
+        "--assessment",
+        help="Exact complete initial ratchet assessment",
+    ),
+    output: Path = typer.Option(
+        ...,
+        "--output",
+        help="New canonical initial baseline path",
+    ),
+) -> None:
+    """Explicitly establish the first immutable accepted baseline."""
+    from pydantic import ValidationError
+
+    from ucf.ir import IRValidationError
+    from ucf.onboarding import (
+        OnboardingValidationError,
+        parse_onboarding_bundle_json,
+    )
+    from ucf.ratchet import (
+        RatchetValidationError,
+        canonical_ratchet_json,
+        establish_ratchet_baseline,
+        parse_ratchet_assessment_json,
+        parse_ratchet_baseline_json,
+        parse_ratchet_policy_json,
+    )
+
+    try:
+        destination = _file_destination(
+            output,
+            inputs=(
+                policy_path,
+                onboarding_bundle_path,
+                assessment_path,
+            ),
+            label="ratchet output",
+        )
+        policy = parse_ratchet_policy_json(policy_path.read_bytes())
+        bundle = parse_onboarding_bundle_json(onboarding_bundle_path.read_bytes())
+        assessment = parse_ratchet_assessment_json(assessment_path.read_bytes())
+        baseline = establish_ratchet_baseline(
+            policy,
+            bundle,
+            assessment,
+        )
+        encoded = canonical_ratchet_json(baseline)
+        validated = parse_ratchet_baseline_json(encoded)
+        _atomic_write(
+            destination,
+            canonical_ratchet_json(validated),
+        )
+    except (
+        IRValidationError,
+        OnboardingValidationError,
+        RatchetValidationError,
+        ValidationError,
+        OSError,
+        TypeError,
+        ValueError,
+    ) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+
+
+@ratchet_app.command("evaluate")
+def ratchet_evaluate(
+    policy_path: Path = typer.Option(
+        ...,
+        "--policy",
+        help="Exact ratchet policy document",
+    ),
+    onboarding_bundle_path: Path = typer.Option(
+        ...,
+        "--onboarding-bundle",
+        help="Exact current reconciled onboarding bundle",
+    ),
+    baseline_path: Path = typer.Option(
+        ...,
+        "--baseline",
+        help="Exact accepted baseline",
+    ),
+    assessment_path: Path = typer.Option(
+        ...,
+        "--assessment",
+        help="Exact current ratchet assessment",
+    ),
+    output: Path = typer.Option(
+        ...,
+        "--output",
+        help="Canonical evaluation report path",
+    ),
+) -> None:
+    """Evaluate current evidence without changing the accepted baseline."""
+    from pydantic import ValidationError
+
+    from ucf.ir import IRValidationError
+    from ucf.onboarding import (
+        OnboardingValidationError,
+        parse_onboarding_bundle_json,
+    )
+    from ucf.ratchet import (
+        EvaluationOutcome,
+        RatchetValidationError,
+        canonical_ratchet_json,
+        evaluate_ratchet,
+        parse_ratchet_assessment_json,
+        parse_ratchet_baseline_json,
+        parse_ratchet_evaluation_report_json,
+        parse_ratchet_policy_json,
+    )
+
+    try:
+        destination = _file_destination(
+            output,
+            inputs=(
+                policy_path,
+                onboarding_bundle_path,
+                baseline_path,
+                assessment_path,
+            ),
+            label="ratchet output",
+        )
+        policy = parse_ratchet_policy_json(policy_path.read_bytes())
+        bundle = parse_onboarding_bundle_json(onboarding_bundle_path.read_bytes())
+        baseline = parse_ratchet_baseline_json(baseline_path.read_bytes())
+        assessment = parse_ratchet_assessment_json(assessment_path.read_bytes())
+        report = evaluate_ratchet(
+            policy,
+            baseline,
+            bundle,
+            assessment,
+        )
+        encoded = canonical_ratchet_json(report)
+        validated = parse_ratchet_evaluation_report_json(encoded)
+        _atomic_write(
+            destination,
+            canonical_ratchet_json(validated),
+        )
+    except (
+        IRValidationError,
+        OnboardingValidationError,
+        RatchetValidationError,
+        ValidationError,
+        OSError,
+        TypeError,
+        ValueError,
+    ) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+    if report.outcome is not EvaluationOutcome.PASS:
+        raise typer.Exit(code=1)
+
+
+@ratchet_app.command("advance")
+def ratchet_advance(
+    policy_path: Path = typer.Option(
+        ...,
+        "--policy",
+        help="Exact ratchet policy document",
+    ),
+    onboarding_bundle_path: Path = typer.Option(
+        ...,
+        "--onboarding-bundle",
+        help="Exact current reconciled onboarding bundle",
+    ),
+    baseline_path: Path = typer.Option(
+        ...,
+        "--baseline",
+        help="Exact accepted predecessor baseline",
+    ),
+    assessment_path: Path = typer.Option(
+        ...,
+        "--assessment",
+        help="Exact current ratchet assessment",
+    ),
+    evaluation_path: Path = typer.Option(
+        ...,
+        "--evaluation",
+        help="Exact recomputable evaluation report",
+    ),
+    output: Path = typer.Option(
+        ...,
+        "--output",
+        help="New canonical successor baseline path",
+    ),
+) -> None:
+    """Advance only through an exact complete passing evaluation."""
+    from pydantic import ValidationError
+
+    from ucf.ir import IRValidationError
+    from ucf.onboarding import (
+        OnboardingValidationError,
+        parse_onboarding_bundle_json,
+    )
+    from ucf.ratchet import (
+        EvaluationOutcome,
+        RatchetValidationError,
+        advance_ratchet_baseline,
+        canonical_ratchet_json,
+        parse_ratchet_assessment_json,
+        parse_ratchet_baseline_json,
+        parse_ratchet_evaluation_report_json,
+        parse_ratchet_policy_json,
+        validate_ratchet_evaluation_report,
+    )
+
+    try:
+        destination = _file_destination(
+            output,
+            inputs=(
+                policy_path,
+                onboarding_bundle_path,
+                baseline_path,
+                assessment_path,
+                evaluation_path,
+            ),
+            label="ratchet output",
+        )
+        policy = parse_ratchet_policy_json(policy_path.read_bytes())
+        bundle = parse_onboarding_bundle_json(onboarding_bundle_path.read_bytes())
+        baseline = parse_ratchet_baseline_json(baseline_path.read_bytes())
+        assessment = parse_ratchet_assessment_json(assessment_path.read_bytes())
+        report = parse_ratchet_evaluation_report_json(evaluation_path.read_bytes())
+        validate_ratchet_evaluation_report(
+            policy,
+            baseline,
+            bundle,
+            assessment,
+            report,
+        )
+        blocked = report.outcome is not EvaluationOutcome.PASS
+        if not blocked:
+            successor = advance_ratchet_baseline(
+                policy,
+                baseline,
+                bundle,
+                assessment,
+                report,
+            )
+            encoded = canonical_ratchet_json(successor)
+            validated = parse_ratchet_baseline_json(encoded)
+            _atomic_write(
+                destination,
+                canonical_ratchet_json(validated),
+            )
+    except (
+        IRValidationError,
+        OnboardingValidationError,
+        RatchetValidationError,
+        ValidationError,
+        OSError,
+        TypeError,
+        ValueError,
+    ) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+    if blocked:
+        raise typer.Exit(code=1)
+
+
+def _atomic_write(destination: Path, content: bytes) -> None:
+    parent = destination.parent
+    if not parent.is_dir():
+        raise ValueError("output parent must be an existing directory")
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{destination.name}.",
+        suffix=".tmp",
+        dir=parent,
+    )
+    temporary = Path(temporary_name)
+    replaced = False
+    try:
+        with os.fdopen(descriptor, "wb") as stream:
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, destination)
+        replaced = True
+    finally:
+        if not replaced:
+            temporary.unlink(missing_ok=True)
+
+
+def _publish_exact_file(
+    destination: Path,
+    content: bytes,
+    *,
+    before_publish: Callable[[], None] | None = None,
+) -> None:
+    if before_publish is not None:
+        before_publish()
+    if _path_entry_exists(destination):
+        if _read_stable_existing_output(destination) == content:
+            return
+        raise ValueError("existing output differs from canonical content")
+    parent = destination.parent
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{destination.name}.",
+        suffix=".tmp",
+        dir=parent,
+    )
+    temporary = Path(temporary_name)
+    published = False
+    try:
+        with os.fdopen(descriptor, "wb") as stream:
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        if before_publish is not None:
+            before_publish()
+        if _path_entry_exists(destination):
+            raise ValueError("output appeared before publication")
+        try:
+            os.link(temporary, destination, follow_symlinks=False)
+        except FileExistsError as error:
+            if _read_stable_existing_output(destination) == content:
+                return
+            raise ValueError("output appeared before publication") from error
+        temporary.unlink()
+        published = True
+        directory_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+        parent_descriptor = os.open(parent, directory_flags)
+        try:
+            os.fsync(parent_descriptor)
+        finally:
+            os.close(parent_descriptor)
+    finally:
+        if not published:
+            temporary.unlink(missing_ok=True)
+
+
+def _path_entry_exists(path: Path) -> bool:
+    try:
+        path.lstat()
+    except FileNotFoundError:
+        return False
+    return True
+
+
+def _read_stable_existing_output(path: Path) -> bytes:
+    initial = path.lstat()
+    if stat.S_ISLNK(initial.st_mode):
+        raise ValueError("existing output must not be a symbolic link")
+    if not stat.S_ISREG(initial.st_mode):
+        raise ValueError("existing output must be a regular file")
+    if initial.st_nlink != 1:
+        raise ValueError("existing output must have exactly one hard link")
+    with path.open("rb") as stream:
+        opened = os.fstat(stream.fileno())
+        if _publication_identity(opened) != _publication_identity(initial):
+            raise ValueError("existing output changed while opening")
+        payload = stream.read()
+        finished = os.fstat(stream.fileno())
+    if _publication_identity(finished) != _publication_identity(opened):
+        raise ValueError("existing output changed while reading")
+    current = path.lstat()
+    if _publication_identity(current) != _publication_identity(finished):
+        raise ValueError("existing output changed while validating")
+    return payload
+
+
+def _publication_identity(metadata: os.stat_result) -> tuple[int, ...]:
+    return (
+        metadata.st_dev,
+        metadata.st_ino,
+        metadata.st_mode,
+        metadata.st_nlink,
+        metadata.st_size,
+        metadata.st_mtime_ns,
+        metadata.st_ctime_ns,
+    )
+
+
+def _validate_operation_timeout(operation_timeout: float) -> None:
+    import math
+
+    if not math.isfinite(operation_timeout) or operation_timeout <= 0:
+        raise ValueError("operation timeout must be finite and positive")
+
+
+type _RuntimeInputSnapshot = tuple[int, int, int, int, int, str]
+
+
+def _runtime_evidence_request_from_options(
+    *,
+    recording_path: Path,
+    policy_path: Path,
+    environment_path: Path,
+    behavior_ir_path: Path,
+    source_uri: str,
+    captured_at: str,
+    sampling_procedure_uri: str,
+    adapter_procedure_uri: str,
+):
+    import hashlib
+
+    from ucf.adapter_protocol import CapabilitySelection
+    from ucf.ir import canonical_ir_json, parse_ir_json
+    from ucf.ir.models import Digest
+    from ucf.ir.trust_models import BehaviorDocumentRef
+    from ucf.runtime_evidence import (
+        RUNTIME_EVIDENCE_CAPABILITY,
+        RUNTIME_EVIDENCE_ENVIRONMENT_SCHEMA_URI,
+        RUNTIME_EVIDENCE_IMPORT_PROCEDURE_URI,
+        RUNTIME_EVIDENCE_REQUEST_SCHEMA_URI,
+        RUNTIME_EVIDENCE_VERSION,
+        RuntimeEnvironmentRef,
+        RuntimeEvidenceImportRequest,
+        RuntimeSamplingScope,
+        RuntimeSource,
+        canonical_runtime_evidence_digest,
+        parse_runtime_environment_json,
+        parse_runtime_evidence_policy_json,
+        runtime_recording_digest,
+    )
+
+    policy_payload, policy_snapshot = _read_runtime_input(policy_path)
+    environment_payload, environment_snapshot = _read_runtime_input(environment_path)
+    behavior_payload, behavior_snapshot = _read_runtime_input(behavior_ir_path)
+    recording_snapshot = _snapshot_runtime_input(recording_path)
+    recording_revision = runtime_recording_digest(recording_path)
+    if recording_snapshot != _snapshot_runtime_input(recording_path):
+        raise ValueError("runtime recording changed while preparing request")
+
+    policy = parse_runtime_evidence_policy_json(policy_payload)
+    environment = parse_runtime_environment_json(environment_payload)
+    behavior = parse_ir_json(behavior_payload)
+    behavior_digest = Digest(
+        kind="digest",
+        algorithm="sha-256",
+        value=hashlib.sha256(canonical_ir_json(behavior).encode("ascii")).hexdigest(),
+    )
+    request = RuntimeEvidenceImportRequest(
+        kind="runtime_evidence_import_request",
+        runtime_evidence_version=RUNTIME_EVIDENCE_VERSION,
+        schema_uri=RUNTIME_EVIDENCE_REQUEST_SCHEMA_URI,
+        capability=CapabilitySelection(
+            kind="capability",
+            name=RUNTIME_EVIDENCE_CAPABILITY,
+            version=RUNTIME_EVIDENCE_VERSION,
+        ),
+        behavior=BehaviorDocumentRef(
+            kind="behavior_document_ref",
+            document_id=behavior.document_id,
+            ir_version=behavior.ir_version,
+            canonical_digest=behavior_digest,
+        ),
+        source=RuntimeSource(
+            kind="runtime_source",
+            source_uri=source_uri,
+            source_revision=recording_revision,
+            captured_at=captured_at,
+        ),
+        environment=RuntimeEnvironmentRef(
+            kind="runtime_environment_ref",
+            schema_uri=RUNTIME_EVIDENCE_ENVIRONMENT_SCHEMA_URI,
+            schema_version=RUNTIME_EVIDENCE_VERSION,
+            environment_uri=environment.environment_uri,
+            revision=environment.revision,
+            canonical_digest=canonical_runtime_evidence_digest(environment),
+        ),
+        sampling=RuntimeSamplingScope(
+            kind="runtime_sampling_scope",
+            procedure_uri=sampling_procedure_uri,
+            completeness="partial",
+            total_known=False,
+        ),
+        policy=policy,
+        procedure_uri=RUNTIME_EVIDENCE_IMPORT_PROCEDURE_URI,
+        adapter_procedure_uri=adapter_procedure_uri,
+    )
+    snapshots = {
+        recording_path: recording_snapshot,
+        policy_path: policy_snapshot,
+        environment_path: environment_snapshot,
+        behavior_ir_path: behavior_snapshot,
+    }
+    _validate_runtime_input_snapshots(snapshots)
+    return request, behavior, environment, snapshots
+
+
+def _read_runtime_input(
+    path: Path,
+) -> tuple[bytes, _RuntimeInputSnapshot]:
+    content, snapshot = _read_runtime_file(path, retain_content=True)
+    if content is None:
+        raise AssertionError("runtime input content was not retained")
+    return content, snapshot
+
+
+def _snapshot_runtime_input(path: Path) -> _RuntimeInputSnapshot:
+    content, snapshot = _read_runtime_file(path, retain_content=False)
+    if content is not None:
+        raise AssertionError("runtime input content was unexpectedly retained")
+    return snapshot
+
+
+def _read_runtime_file(
+    path: Path,
+    *,
+    retain_content: bool,
+) -> tuple[bytes | None, _RuntimeInputSnapshot]:
+    import hashlib
+    import stat
+
+    from ucf.runtime_evidence import MAX_RUNTIME_RECORDING_BYTES
+
+    before = path.lstat()
+    if not stat.S_ISREG(before.st_mode) or before.st_size > MAX_RUNTIME_RECORDING_BYTES:
+        raise ValueError("runtime evidence input is not a bounded regular file")
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(path, flags)
+    retained = bytearray() if retain_content else None
+    digest = hashlib.sha256()
+    try:
+        opened = os.fstat(descriptor)
+        if not stat.S_ISREG(opened.st_mode) or (opened.st_dev, opened.st_ino) != (
+            before.st_dev,
+            before.st_ino,
+        ):
+            raise ValueError("runtime evidence input identity changed")
+        total = 0
+        while True:
+            chunk = os.read(descriptor, 65_536)
+            if not chunk:
+                break
+            total += len(chunk)
+            if total > MAX_RUNTIME_RECORDING_BYTES:
+                raise ValueError("runtime evidence input exceeds byte limit")
+            digest.update(chunk)
+            if retained is not None:
+                retained.extend(chunk)
+        after = os.fstat(descriptor)
+    finally:
+        os.close(descriptor)
+    opened_coordinates = (
+        opened.st_dev,
+        opened.st_ino,
+        opened.st_size,
+        opened.st_mtime_ns,
+        opened.st_ctime_ns,
+    )
+    after_coordinates = (
+        after.st_dev,
+        after.st_ino,
+        after.st_size,
+        after.st_mtime_ns,
+        after.st_ctime_ns,
+    )
+    if opened_coordinates != after_coordinates:
+        raise ValueError("runtime evidence input changed while reading")
+    snapshot = (*after_coordinates, digest.hexdigest())
+    return (
+        None if retained is None else bytes(retained),
+        snapshot,
+    )
+
+
+def _validate_runtime_input_snapshots(
+    snapshots: dict[Path, _RuntimeInputSnapshot],
+) -> None:
+    for path, expected in snapshots.items():
+        actual = _snapshot_runtime_input(path)
+        if actual != expected:
+            raise ValueError("runtime evidence input changed")
+
+
+def _read_change_governance_context(
+    *,
+    proposal_path: Path,
+    delta_path: Path,
+    base_behavior_path: Path,
+    final_behavior_path: Path,
+):
+    from ucf.change_lifecycle import (
+        parse_behavior_delta_json,
+        parse_change_proposal_json,
+    )
+    from ucf.ir import parse_ir_json
+
+    paths = (
+        proposal_path,
+        delta_path,
+        base_behavior_path,
+        final_behavior_path,
+    )
+    inputs = {path: _read_runtime_input(path) for path in paths}
+    return (
+        inputs,
+        parse_change_proposal_json(inputs[proposal_path][0]),
+        parse_behavior_delta_json(inputs[delta_path][0]),
+        parse_ir_json(inputs[base_behavior_path][0]),
+        parse_ir_json(inputs[final_behavior_path][0]),
+    )
+
+
+def _read_evidence_status_context(
+    *,
+    result_path: Path,
+    mapping_result_path: Path,
+    onboarding_bundle_path: Path,
+    inventory_path: Path,
+    mapping_adapter_name: str,
+    mapping_adapter_version: str,
+    verification_adapter_name: str,
+    verification_adapter_version: str,
+    mapping_capability_version: str,
+    verification_capability_version: str,
+):
+    from ucf.implementation_evidence import (
+        EXECUTION_VERIFICATION_CAPABILITY,
+        IMPLEMENTATION_MAPPING_CAPABILITY,
+        parse_execution_verification_result_json,
+        parse_implementation_mapping_result_json,
+    )
+    from ucf.inventory import parse_inventory_snapshot_json
+    from ucf.ir.models import Producer
+    from ucf.onboarding import parse_onboarding_bundle_json
+
+    paths = (
+        result_path,
+        mapping_result_path,
+        onboarding_bundle_path,
+        inventory_path,
+    )
+    inputs = {path: _read_runtime_input(path) for path in paths}
+    return (
+        {
+            "result": parse_execution_verification_result_json(
+                inputs[result_path][0]
+            ),
+            "mapping_result": parse_implementation_mapping_result_json(
+                inputs[mapping_result_path][0]
+            ),
+            "bundle": parse_onboarding_bundle_json(
+                inputs[onboarding_bundle_path][0]
+            ),
+            "inventory": parse_inventory_snapshot_json(
+                inputs[inventory_path][0]
+            ),
+            "mapping_adapter": Producer(
+                kind="producer",
+                name=mapping_adapter_name,
+                version=mapping_adapter_version,
+            ),
+            "verification_adapter": Producer(
+                kind="producer",
+                name=verification_adapter_name,
+                version=verification_adapter_version,
+            ),
+            "capabilities": {
+                IMPLEMENTATION_MAPPING_CAPABILITY: (
+                    mapping_capability_version
+                ),
+                EXECUTION_VERIFICATION_CAPABILITY: (
+                    verification_capability_version
+                ),
+            },
+        },
+        inputs,
+    )
+
+
+def _read_optional_evidence_status_context(
+    *,
+    result_path: Path | None,
+    mapping_result_path: Path | None,
+    onboarding_bundle_path: Path | None,
+    inventory_path: Path | None,
+    mapping_adapter_name: str | None,
+    mapping_adapter_version: str | None,
+    verification_adapter_name: str | None,
+    verification_adapter_version: str | None,
+    mapping_capability_version: str | None,
+    verification_capability_version: str | None,
+):
+    values = (
+        result_path,
+        mapping_result_path,
+        onboarding_bundle_path,
+        inventory_path,
+        mapping_adapter_name,
+        mapping_adapter_version,
+        verification_adapter_name,
+        verification_adapter_version,
+        mapping_capability_version,
+        verification_capability_version,
+    )
+    if all(value is None for value in values):
+        return None, {}
+    if any(value is None for value in values):
+        raise ValueError(
+            "current evidence context must be supplied completely or omitted"
+        )
+    assert result_path is not None
+    assert mapping_result_path is not None
+    assert onboarding_bundle_path is not None
+    assert inventory_path is not None
+    assert mapping_adapter_name is not None
+    assert mapping_adapter_version is not None
+    assert verification_adapter_name is not None
+    assert verification_adapter_version is not None
+    assert mapping_capability_version is not None
+    assert verification_capability_version is not None
+    return _read_evidence_status_context(
+        result_path=result_path,
+        mapping_result_path=mapping_result_path,
+        onboarding_bundle_path=onboarding_bundle_path,
+        inventory_path=inventory_path,
+        mapping_adapter_name=mapping_adapter_name,
+        mapping_adapter_version=mapping_adapter_version,
+        verification_adapter_name=verification_adapter_name,
+        verification_adapter_version=verification_adapter_version,
+        mapping_capability_version=mapping_capability_version,
+        verification_capability_version=verification_capability_version,
+    )
+
+
+def _read_change_evidence_context(
+    *,
+    result_path: Path,
+    mapping_result_path: Path,
+    onboarding_bundle_path: Path,
+    current_inventory_path: Path,
+    mapping_adapter_name: str,
+    mapping_adapter_version: str,
+    verification_adapter_name: str,
+    verification_adapter_version: str,
+):
+    from ucf.change_lifecycle import ExecutionEvidenceContext
+    from ucf.implementation_evidence import (
+        EXECUTION_VERIFICATION_CAPABILITY,
+        IMPLEMENTATION_EVIDENCE_VERSION,
+        IMPLEMENTATION_MAPPING_CAPABILITY,
+        parse_execution_verification_result_json,
+        parse_implementation_mapping_result_json,
+    )
+    from ucf.inventory import parse_inventory_snapshot_json
+    from ucf.ir.models import Producer
+    from ucf.onboarding import parse_onboarding_bundle_json
+
+    paths = (
+        result_path,
+        mapping_result_path,
+        onboarding_bundle_path,
+        current_inventory_path,
+    )
+    inputs = {path: _read_runtime_input(path) for path in paths}
+    result = parse_execution_verification_result_json(inputs[result_path][0])
+    mapping_result = parse_implementation_mapping_result_json(
+        inputs[mapping_result_path][0]
+    )
+    bundle = parse_onboarding_bundle_json(inputs[onboarding_bundle_path][0])
+    inventory = parse_inventory_snapshot_json(inputs[current_inventory_path][0])
+    return (
+        ExecutionEvidenceContext(
+            result=result,
+            mapping_result=mapping_result,
+            bundle=bundle,
+            current_inventory=inventory,
+            mapping_initialized_adapter=Producer(
+                kind="producer",
+                name=mapping_adapter_name,
+                version=mapping_adapter_version,
+            ),
+            initialized_adapter=Producer(
+                kind="producer",
+                name=verification_adapter_name,
+                version=verification_adapter_version,
+            ),
+            negotiated_capabilities={
+                IMPLEMENTATION_MAPPING_CAPABILITY: (IMPLEMENTATION_EVIDENCE_VERSION),
+                EXECUTION_VERIFICATION_CAPABILITY: (IMPLEMENTATION_EVIDENCE_VERSION),
+            },
+        ),
+        inputs,
+    )
+
+
+def _validate_change_input_snapshots(
+    inputs: dict[Path, tuple[bytes, _RuntimeInputSnapshot]],
+    *,
+    label: str,
+) -> None:
+    for path, (_, expected) in inputs.items():
+        if _snapshot_runtime_input(path) != expected:
+            raise ValueError(f"{label} input changed")
+
+
+def _inventory_request_from_options(
+    *,
+    policy_path: Path,
+    subject_uri: str,
+    page_record_limit: int,
+):
+    from pydantic import ValidationError
+
+    from ucf.inventory import (
+        INVENTORY_REQUEST_SCHEMA_URI,
+        INVENTORY_VERSION,
+        FactKind,
+        InventoryPageRequest,
+        InventoryRequest,
+        parse_ignore_policy_json,
+    )
+    from ucf.ir import IRValidationError
+
+    try:
+        policy = parse_ignore_policy_json(policy_path.read_bytes())
+    except (IRValidationError, ValidationError, TypeError) as error:
+        raise ValueError("inventory policy is invalid") from error
+    return InventoryRequest(
+        kind="inventory_request_profile",
+        inventory_version=INVENTORY_VERSION,
+        schema_uri=INVENTORY_REQUEST_SCHEMA_URI,
+        subject_uri=subject_uri,
+        root_path=".",
+        fact_kinds=tuple(FactKind),
+        ignore_policy=policy,
+        page=InventoryPageRequest(
+            kind="inventory_page_request",
+            record_limit=page_record_limit,
+            cursor=None,
+        ),
+    )
+
+
+def _resolved_inventory_root(root: Path) -> Path:
+    repository = root.resolve(strict=True)
+    if not repository.is_dir():
+        raise ValueError("inventory root must be an existing directory")
+    return repository
+
+
+def _outside_inventory_destination(
+    repository: Path,
+    output: Path,
+    *,
+    inputs: tuple[Path, ...] = (),
+) -> Path:
+    destination = _file_destination(
+        output,
+        inputs=inputs,
+        label="inventory output",
+    )
+    parent = destination.parent
+    if parent == repository or parent.is_relative_to(repository):
+        raise ValueError("inventory output must be outside the inventory root")
+    return destination
+
+
+def _file_destination(
+    output: Path,
+    *,
+    inputs: tuple[Path, ...] = (),
+    label: str = "output",
+) -> Path:
+    if output.name in {"", ".", ".."}:
+        raise ValueError(f"{label} must name a file")
+    parent = output.parent.resolve(strict=True)
+    destination = parent / output.name
+    if destination.is_symlink():
+        raise ValueError(f"{label} must not be a symbolic link")
+    if destination.exists() and not destination.is_file():
+        raise ValueError(f"{label} must be a regular file path")
+    if any(
+        source.resolve(strict=False) == destination
+        or (destination.exists() and source.exists() and source.samefile(destination))
+        for source in inputs
+    ):
+        raise ValueError("output must differ from every input")
+    return destination
+
+
+@ir_app.command("validate")
+def ir_validate(
+    document_path: Path = typer.Argument(
+        ...,
+        help="Path to a UCF behavior IR JSON document",
+        exists=True,
+        dir_okay=False,
+    ),
+) -> None:
+    """Validate strict JSON structure and cross-record IR semantics."""
+    from ucf.ir import IRValidationError, parse_ir_json
+
+    try:
+        document = parse_ir_json(document_path.read_bytes())
+    except IRValidationError as error:
+        console.print(
+            f"[red]{error.code.value}[/red] {error.location}: {error.message}"
+        )
+        raise typer.Exit(code=1) from error
+
+    console.print(
+        f"[green]IR {document.ir_version} valid[/green]: "
+        f"{document.document_id} "
+        f"({len(document.entities)} entities)"
+    )
+
+
+@trust_app.command("validate")
+def trust_validate(
+    document_path: Path = typer.Argument(
+        ...,
+        help="Path to a UCF trust IR JSON document",
+        exists=True,
+        dir_okay=False,
+    ),
+    behavior_ir_path: Path = typer.Option(
+        ...,
+        "--behavior-ir",
+        help="Exact UCF behavior IR document referenced by the trust overlay",
+        exists=True,
+        dir_okay=False,
+    ),
+) -> None:
+    """Validate trust structure, behavior binding, mappings, and claims."""
+    from ucf.ir import (
+        IRValidationError,
+        parse_ir_json,
+        parse_trust_ir_json,
+        validate_trust_against_behavior,
+    )
+
+    try:
+        document = parse_trust_ir_json(document_path.read_bytes())
+        behavior = parse_ir_json(behavior_ir_path.read_bytes())
+        validate_trust_against_behavior(document, behavior)
+    except IRValidationError as error:
+        console.print(
+            f"[red]{error.code.value}[/red] {error.location}: {error.message}"
+        )
+        raise typer.Exit(code=1) from error
+
+    console.print(
+        f"[green]Trust IR {document.trust_ir_version} valid[/green]: "
+        f"{document.document_id} ({len(document.records)} records) "
+        f"against {behavior.document_id}"
+    )
 
 
 def _load_registry(specs_dir: Path):
+    from ucf.models.spec import SpecParseError
     from ucf.parser.loader import SpecLoader
-    from ucf.parser.registry import SpecRegistry
+    from ucf.parser.registry import DuplicateSpecError, SpecRegistry
 
     loader = SpecLoader(specs_dir)
     loaded, errors = loader.load_all_tolerant()
 
     registry = SpecRegistry()
+    registered = []
     for path, spec in loaded:
-        registry.register(spec, path)
+        try:
+            registry.register(spec, path)
+        except DuplicateSpecError as exc:
+            errors.append(SpecParseError(str(exc), path=str(path)))
+        else:
+            registered.append((path, spec))
 
-    return registry, loaded, errors
+    return registry, registered, errors
+
+
+def _print_parse_errors(errors) -> None:
+    console.print(f"[red]Parse errors ({len(errors)}):[/red]")
+    for error in errors:
+        console.print(f"  [red]✗[/red] {error.path}: {error}")
+    console.print()
 
 
 # ── ucf validate ──────────────────────────────────────────────
@@ -51,7 +2986,10 @@ def _load_registry(specs_dir: Path):
 @app.command()
 def validate(
     specs_dir: Path = typer.Argument(
-        ..., help="Path to specs directory", exists=True, file_okay=False,
+        ...,
+        help="Path to specs directory",
+        exists=True,
+        file_okay=False,
     ),
 ) -> None:
     """Parse, load, and validate all specs in a directory."""
@@ -62,10 +3000,7 @@ def validate(
     registry, loaded, load_errors = _load_registry(specs_dir)
 
     if load_errors:
-        console.print(f"[red]Parse errors ({len(load_errors)}):[/red]")
-        for err in load_errors:
-            console.print(f"  [red]✗[/red] {err.path}: {err}")
-        console.print()
+        _print_parse_errors(load_errors)
 
     console.print(f"Loaded [green]{len(loaded)}[/green] specs:")
     counts = registry.counts
@@ -121,33 +3056,64 @@ def validate(
 @app.command()
 def generate(
     specs_dir: Path = typer.Argument(
-        ..., help="Path to specs directory", exists=True, file_okay=False,
+        ...,
+        help="Path to specs directory",
+        exists=True,
+        file_okay=False,
     ),
     output: Path = typer.Option(
-        "tests/generated", "--output", "-o", help="Output directory for generated files",
+        "tests/generated",
+        "--output",
+        "-o",
+        help="Output directory for generated files",
     ),
     usecase: str = typer.Option(
-        None, "--usecase", "-u", help="Generate for a specific use case only",
+        None,
+        "--usecase",
+        "-u",
+        help="Generate for a specific use case only",
     ),
 ) -> None:
     """Generate test code (interface + orchestrator + impl stub) from use case specs."""
-    from ucf.generator.plugin import GeneratorEngine
+    from ucf.generator.plugin import GeneratorEngine, UnsupportedFeatureError
     from ucf.generator.pytest_plugin import PytestPlugin
 
     console.print(f"\n[bold]UCF Generate[/bold]: {specs_dir} → {output}\n")
 
-    registry, loaded, _ = _load_registry(specs_dir)
+    from ucf.validator.core import IssueSeverity, SpecValidator
+
+    registry, _loaded, load_errors = _load_registry(specs_dir)
+    if load_errors:
+        _print_parse_errors(load_errors)
+        raise typer.Exit(code=1)
+
+    validation_errors = [
+        issue
+        for issue in SpecValidator(registry).validate_all()
+        if issue.severity == IssueSeverity.ERROR
+    ]
+    if validation_errors:
+        console.print(f"[red]Validation errors ({len(validation_errors)}):[/red]")
+        for issue in validation_errors:
+            console.print(f"  [red]✗[/red] {issue.spec_name}: {issue.message}")
+        console.print()
+        raise typer.Exit(code=1)
+
     plugin = PytestPlugin()
     engine = GeneratorEngine(registry, plugin, output)
 
-    if usecase:
-        usecases = [uc for uc in registry.usecases() if uc.metadata.name == usecase]
-        if not usecases:
-            console.print(f"[red]Use case '{usecase}' not found[/red]")
-            raise typer.Exit(code=1)
-        results = [engine.generate_usecase(uc) for uc in usecases]
-    else:
-        results = engine.generate_all()
+    try:
+        if usecase:
+            usecases = [uc for uc in registry.usecases() if uc.metadata.name == usecase]
+            if not usecases:
+                console.print(f"[red]Use case '{usecase}' not found[/red]")
+                raise typer.Exit(code=1)
+            results = [engine.generate_usecase(uc) for uc in usecases]
+        else:
+            results = engine.generate_all()
+    except UnsupportedFeatureError as exc:
+        console.print(f"[red]Unsupported generation capability:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
 
     for result in results:
         console.print(f"  [bold]{result.usecase_name}[/bold]")
@@ -171,10 +3137,16 @@ def generate(
 @app.command()
 def trace(
     specs_dir: Path = typer.Argument(
-        ..., help="Path to specs directory", exists=True, file_okay=False,
+        ...,
+        help="Path to specs directory",
+        exists=True,
+        file_okay=False,
     ),
     usecase: str = typer.Option(
-        None, "--usecase", "-u", help="Trace a specific use case by name",
+        None,
+        "--usecase",
+        "-u",
+        help="Trace a specific use case by name",
     ),
 ) -> None:
     """Trace data flow through use cases (Context Tracer)."""
@@ -275,7 +3247,10 @@ app.add_typer(graph_app, name="graph")
 @graph_app.command("show")
 def graph_show(
     specs_dir: Path = typer.Argument(
-        ..., help="Path to specs directory", exists=True, file_okay=False,
+        ...,
+        help="Path to specs directory",
+        exists=True,
+        file_okay=False,
     ),
 ) -> None:
     """Show the dependency graph overview."""
@@ -284,7 +3259,7 @@ def graph_show(
     registry, _, _ = _load_registry(specs_dir)
     graph = DependencyGraph(registry)
 
-    console.print(f"\n[bold]UCF Dependency Graph[/bold]\n")
+    console.print("\n[bold]UCF Dependency Graph[/bold]\n")
     console.print(
         f"  Nodes: [green]{graph.g.number_of_nodes()}[/green] · "
         f"Edges: [green]{graph.g.number_of_edges()}[/green]\n"
@@ -306,10 +3281,16 @@ def graph_show(
 @graph_app.command("impact")
 def graph_impact(
     specs_dir: Path = typer.Argument(
-        ..., help="Path to specs directory", exists=True, file_okay=False,
+        ...,
+        help="Path to specs directory",
+        exists=True,
+        file_okay=False,
     ),
     target: str = typer.Option(
-        ..., "--target", "-t", help="Spec to analyze (e.g. action/add-to-cart)",
+        ...,
+        "--target",
+        "-t",
+        help="Spec to analyze (e.g. action/add-to-cart)",
     ),
 ) -> None:
     """Analyze impact of changing a spec."""
@@ -352,7 +3333,10 @@ def graph_impact(
 @graph_app.command("conflicts")
 def graph_conflicts(
     specs_dir: Path = typer.Argument(
-        ..., help="Path to specs directory", exists=True, file_okay=False,
+        ...,
+        help="Path to specs directory",
+        exists=True,
+        file_okay=False,
     ),
 ) -> None:
     """Detect write-write conflicts between specs."""
@@ -362,7 +3346,7 @@ def graph_conflicts(
     graph = DependencyGraph(registry)
     conflicts = graph.find_write_conflicts()
 
-    console.print(f"\n[bold]UCF Conflict Map[/bold]\n")
+    console.print("\n[bold]UCF Conflict Map[/bold]\n")
 
     if not conflicts:
         console.print("  [green]No write-write conflicts detected.[/green]\n")
@@ -384,7 +3368,10 @@ def graph_conflicts(
 @graph_app.command("coverage")
 def graph_coverage(
     specs_dir: Path = typer.Argument(
-        ..., help="Path to specs directory", exists=True, file_okay=False,
+        ...,
+        help="Path to specs directory",
+        exists=True,
+        file_okay=False,
     ),
 ) -> None:
     """Show spec coverage report."""
@@ -394,7 +3381,7 @@ def graph_coverage(
     graph = DependencyGraph(registry)
     report = graph.coverage()
 
-    console.print(f"\n[bold]UCF Spec Coverage[/bold]\n")
+    console.print("\n[bold]UCF Spec Coverage[/bold]\n")
 
     for kind, (connected, total) in sorted(report.counts.items()):
         pct = (connected / total * 100) if total > 0 else 0
@@ -413,7 +3400,10 @@ def graph_coverage(
 @graph_app.command("mermaid")
 def graph_mermaid(
     specs_dir: Path = typer.Argument(
-        ..., help="Path to specs directory", exists=True, file_okay=False,
+        ...,
+        help="Path to specs directory",
+        exists=True,
+        file_okay=False,
     ),
 ) -> None:
     """Generate Mermaid dependency diagram."""
@@ -430,13 +3420,22 @@ def graph_mermaid(
 @app.command()
 def drift(
     specs_dir: Path = typer.Argument(
-        ..., help="Path to specs directory", exists=True, file_okay=False,
+        ...,
+        help="Path to specs directory",
+        exists=True,
+        file_okay=False,
     ),
     source_dir: Path = typer.Option(
-        "src", "--source", "-s", help="Root directory of source code to scan",
+        "src",
+        "--source",
+        "-s",
+        help="Root directory of source code to scan",
     ),
     pattern: list[str] = typer.Option(
-        ["**/*.py"], "--pattern", "-p", help="Glob patterns for source files",
+        ["**/*.py"],
+        "--pattern",
+        "-p",
+        help="Glob patterns for source files",
     ),
 ) -> None:
     """Detect spec↔code drift: unimplemented specs, orphan code, stale mappings."""
@@ -444,7 +3443,9 @@ def drift(
     from ucf.drift.mapper import SpecCodeMapper
     from ucf.drift.scanner import SourceScanner
 
-    console.print(f"\n[bold]UCF Drift Detect[/bold]: specs={specs_dir}  source={source_dir}\n")
+    console.print(
+        f"\n[bold]UCF Drift Detect[/bold]: specs={specs_dir}  source={source_dir}\n"
+    )
 
     registry, loaded, _ = _load_registry(specs_dir)
 
@@ -474,7 +3475,9 @@ def drift(
         console.print()
 
     if drift_result.orphan_code:
-        table = Table(title="Orphan Code (markers pointing to missing specs)", show_lines=True)
+        table = Table(
+            title="Orphan Code (markers pointing to missing specs)", show_lines=True
+        )
         table.add_column("File")
         table.add_column("Detail")
 
@@ -496,7 +3499,10 @@ def drift(
         console.print()
 
     if drift_result.drift_count == 0:
-        console.print("  [green]No drift detected — all specs are mapped to implementations.[/green]\n")
+        console.print(
+            "  [green]No drift detected — all specs are mapped to "
+            "implementations.[/green]\n"
+        )
 
     console.print(
         f"[bold]Summary:[/bold] "
@@ -516,18 +3522,27 @@ def drift(
 @app.command()
 def scaffold(
     source_dir: Path = typer.Argument(
-        ..., help="Path to Python source directory", exists=True, file_okay=False,
+        ...,
+        help="Path to Python source directory",
+        exists=True,
+        file_okay=False,
     ),
     output: Path = typer.Option(
-        "specs", "--output", "-o", help="Output directory for generated spec stubs",
+        "specs",
+        "--output",
+        "-o",
+        help="Output directory for generated spec stubs",
     ),
     patterns: list[str] = typer.Option(
-        ["**/*.py"], "--pattern", "-p", help="Glob patterns for source files",
+        ["**/*.py"],
+        "--pattern",
+        "-p",
+        help="Glob patterns for source files",
     ),
 ) -> None:
     """Generate skeleton UCF specs from existing Python code (brownfield adoption)."""
-    from ucf.scaffold.scanner import ASTScanner
     from ucf.scaffold.generator import SkeletonSpecGenerator
+    from ucf.scaffold.scanner import ASTScanner
 
     console.print(f"\n[bold]UCF Scaffold[/bold]: {source_dir} → {output}\n")
 
@@ -573,7 +3588,10 @@ def scaffold(
 @app.command()
 def info(
     specs_dir: Path = typer.Argument(
-        ..., help="Path to specs directory", exists=True, file_okay=False,
+        ...,
+        help="Path to specs directory",
+        exists=True,
+        file_okay=False,
     ),
 ) -> None:
     """Show summary info about all loaded specs."""
@@ -611,7 +3629,10 @@ def info(
 @app.command()
 def completeness(
     specs_dir: Path = typer.Argument(
-        ..., help="Path to specs directory", exists=True, file_okay=False,
+        ...,
+        help="Path to specs directory",
+        exists=True,
+        file_okay=False,
     ),
 ) -> None:
     """Analyze spec completeness — find behavioral gaps in use case coverage."""
@@ -629,9 +3650,7 @@ def completeness(
         console.print("[bold]A. Error Reachability[/bold]")
         for ec in report.error_coverages:
             status = "[green]✓[/green]" if ec.is_covered else "[red]✗[/red]"
-            console.print(
-                f"  {status} actions/{ec.action_name} error {ec.error_code}"
-            )
+            console.print(f"  {status} actions/{ec.action_name} error {ec.error_code}")
             if ec.is_covered:
                 for src in ec.covered_by:
                     console.print(f"      → covered by {src}")
@@ -642,7 +3661,8 @@ def completeness(
     if report.partition_coverages:
         console.print("[bold]B. Input Partition Coverage[/bold]")
         console.print(
-            f"  {report.partitions_covered}/{report.partitions_total} partitions covered"
+            f"  {report.partitions_covered}/{report.partitions_total} "
+            "partitions covered"
         )
         for pc in uncovered_parts[:10]:
             console.print(
@@ -661,12 +3681,15 @@ def completeness(
             f"{len(report.state_graph.transitions)} transitions"
         )
         state_findings = [
-            f for f in report.findings
+            f
+            for f in report.findings
             if f.category.value in ("unreachable_state", "dead_end_state")
         ]
         for sf in state_findings:
             sev_style = "yellow" if sf.severity == FindingSeverity.WARNING else "blue"
-            console.print(f"  [{sev_style}]{sf.severity.value}[/{sev_style}] {sf.message}")
+            console.print(
+                f"  [{sev_style}]{sf.severity.value}[/{sev_style}] {sf.message}"
+            )
         if not state_findings:
             console.print("  [green]All states are reachable[/green]")
         console.print()
@@ -679,9 +3702,7 @@ def completeness(
         )
         uncovered_scenarios = [s for s in report.platform_scenarios if not s.is_covered]
         for ps in uncovered_scenarios[:10]:
-            console.print(
-                f"  [red]✗[/red] {ps.action_name} scenario '{ps.scenario}'"
-            )
+            console.print(f"  [red]✗[/red] {ps.action_name} scenario '{ps.scenario}'")
         if len(uncovered_scenarios) > 10:
             console.print(f"  ... and {len(uncovered_scenarios) - 10} more")
         console.print()
@@ -690,7 +3711,8 @@ def completeness(
     if report.invariant_coverages:
         console.print("[bold]E. Invariant Necessity[/bold]")
         console.print(
-            f"  {report.invariants_testable}/{report.invariants_total} invariants testable"
+            f"  {report.invariants_testable}/{report.invariants_total} "
+            "invariants testable"
         )
         untestable = [i for i in report.invariant_coverages if not i.is_testable]
         for ic in untestable:
@@ -703,10 +3725,11 @@ def completeness(
     if report.resource_conflicts:
         console.print("[bold]F. Resource Conflict Coverage[/bold]")
         for rc in report.resource_conflicts:
-            status = "[green]guarded[/green]" if rc.is_guarded else "[red]unguarded[/red]"
+            status = (
+                "[green]guarded[/green]" if rc.is_guarded else "[red]unguarded[/red]"
+            )
             console.print(
-                f"  {status} resource '{rc.resource}' "
-                f"writers: {', '.join(rc.writers)}"
+                f"  {status} resource '{rc.resource}' writers: {', '.join(rc.writers)}"
             )
         console.print()
 
@@ -725,12 +3748,17 @@ def completeness(
 @app.command()
 def web(
     specs_dir: Path = typer.Argument(
-        "specs", help="Path to specs directory", exists=True, file_okay=False,
+        "specs",
+        help="Path to specs directory",
+        exists=True,
+        file_okay=False,
     ),
     host: str = typer.Option("127.0.0.1", help="Host to bind to"),
     port: int = typer.Option(8000, help="Port to serve on"),
     static_dir: Path | None = typer.Option(
-        None, "--static", help="Path to frontend build (web/dist)",
+        None,
+        "--static",
+        help="Path to frontend build (web/dist)",
     ),
 ) -> None:
     """Launch the UCF web dashboard."""

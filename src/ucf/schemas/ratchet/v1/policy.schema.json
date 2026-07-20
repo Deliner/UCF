@@ -1,0 +1,183 @@
+{
+  "$comment": "Generated deterministically from UCF ratchet profile 1.0.0 models; do not edit by hand. Content identities, canonical order, resolved references, exact source projections, predecessor lineage, and recomputed summaries remain runtime semantics.",
+  "$defs": {
+    "CapabilitySelection": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "capability",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/QualifiedName"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "version"
+      ],
+      "title": "CapabilitySelection",
+      "type": "object"
+    },
+    "Identifier": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "type": "string"
+    },
+    "NormalizedVersion": {
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "type": "string"
+    },
+    "PolicyId": {
+      "pattern": "^policy\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "Producer": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "producer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/QualifiedName"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "version"
+      ],
+      "title": "Producer",
+      "type": "object"
+    },
+    "QualifiedName": {
+      "maxLength": 255,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*)+$",
+      "type": "string"
+    },
+    "RatchetRule": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "ratchet_rule",
+          "title": "Kind",
+          "type": "string"
+        },
+        "procedure_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "summary": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "version",
+        "procedure_uri",
+        "producer",
+        "summary"
+      ],
+      "title": "RatchetRule",
+      "type": "object"
+    },
+    "URI": {
+      "maxLength": 2048,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9+.-]*:[^\\s]+$",
+      "type": "string"
+    }
+  },
+  "$id": "urn:ucf:ratchet:policy:1.0.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "evaluator": {
+      "$ref": "#/$defs/CapabilitySelection"
+    },
+    "id": {
+      "$ref": "#/$defs/PolicyId"
+    },
+    "kind": {
+      "const": "ratchet_policy",
+      "title": "Kind",
+      "type": "string"
+    },
+    "ratchet_version": {
+      "const": "1.0.0",
+      "title": "Ratchet Version",
+      "type": "string"
+    },
+    "rules": {
+      "items": {
+        "$ref": "#/$defs/RatchetRule"
+      },
+      "maxItems": 256,
+      "minItems": 1,
+      "title": "Rules",
+      "type": "array"
+    },
+    "schema_uri": {
+      "const": "urn:ucf:ratchet:policy:1.0.0",
+      "title": "Schema Uri",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "ratchet_version",
+    "schema_uri",
+    "id",
+    "evaluator",
+    "rules"
+  ],
+  "title": "UCF ratchet policy profile 1.0.0",
+  "type": "object",
+  "x-ucf-document-kind": "ratchet_policy",
+  "x-ucf-normative-algorithms": [
+    "urn:ucf:ratchet:fingerprint:observed-subject:1.0.0",
+    "urn:ucf:ratchet:evaluate:1.0.0",
+    "urn:ucf:ratchet:fingerprint:behavior-subject:1.0.0"
+  ],
+  "x-ucf-ratchet-version": "1.0.0",
+  "x-ucf-runtime-semantic-checks": [
+    "strict UTF-8 and duplicate-member JSON decoding",
+    "maximum JSON nesting depth 128",
+    "content-derived policy, subject, violation, assessment, baseline, and report identities",
+    "exact policy, onboarding bundle, assessment, baseline, predecessor, and report references",
+    "canonical unique rule, subject, violation, classification, allowance, and protection order",
+    "resolved non-provenance behavior subject projection",
+    "resolved rename-neutral observed evidence projection",
+    "complete subject and rule coverage before baseline creation or advance",
+    "recomputed unchanged, touched, regression, resolution, and unknown classifications",
+    "immutable predecessor-bound tightening with retained protected resolutions",
+    "explicit review delta without implicit baseline weakening",
+    "maximum 256 policy rules",
+    "maximum 256 current subjects",
+    "maximum 65536 violation identities"
+  ]
+}

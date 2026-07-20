@@ -9,33 +9,39 @@ from typing import Any
 
 import pytest
 
-from .interface import TestConditionalFlowInterface, StepAResult
+from .interface import StepAResult, TestConditionalFlowInterface
 
 
 class TestConditionalFlowImpl(TestConditionalFlowInterface):
+    def __init__(self) -> None:
+        self._step_value: int | None = None
+        self._executed_steps: set[str] = set()
 
     # ── State Setup ──
 
     # ── Actions ──
 
     def action_step_a(self, threshold: Any) -> StepAResult:
-        """Return value = threshold. For dogfooding: threshold=11 triggers step-b, skips step-c."""
-        t = threshold if threshold is not None else 11
-        return StepAResult(value=int(t))
+        """Return the explicit threshold used by the conditional expressions."""
+        self._step_value = int(threshold)
+        return StepAResult(value=self._step_value)
 
     def action_step_b(self, value: Any) -> None:
         """Executed when step_a.value > 10."""
-        pass
+        assert int(value) > 10
+        self._executed_steps.add("step-b")
 
     def action_step_c(self, value: Any) -> None:
         """Executed when step_a.value <= 10 (skip_if when > 10)."""
-        pass
+        assert int(value) <= 10
+        self._executed_steps.add("step-c")
 
     # ── Verifications ──
 
     def verify_conditional_execution_works(self) -> None:
-        """Verify conditional execution completed."""
-        pass
+        assert self._step_value is not None
+        expected = {"step-b"} if self._step_value > 10 else {"step-c"}
+        assert self._executed_steps == expected
 
 
 @pytest.fixture

@@ -57,6 +57,7 @@ class ContextTracer:
         if uc.extends is None:
             return uc
         from ucf.composition import resolve_extends
+
         flattened, _chain, _parent_ids = resolve_extends(uc, self.registry)
         return flattened
 
@@ -142,31 +143,51 @@ class ContextTracer:
                 ContextTracer._collect_reads(item, reads)
 
     def _execute_step(
-        self, ctx: ContextSnapshot, step_id: str, effect: ActionEffect,
-        *, record: bool = True,
+        self,
+        ctx: ContextSnapshot,
+        step_id: str,
+        effect: ActionEffect,
+        *,
+        record: bool = True,
     ) -> ContextSnapshot:
         for read in effect.reads:
             if not ctx.has(read.field):
                 if record:
-                    self.findings.append(Finding(
-                        severity=FindingSeverity.ERROR,
-                        category=FindingCategory.DATA_GAP,
-                        step_id=step_id,
-                        message=f"Step reads '{read.field}' but it does not exist in context",
-                        suggestion=f"Add a preceding step that produces '{read.field}' or include it in components",
-                    ))
+                    self.findings.append(
+                        Finding(
+                            severity=FindingSeverity.ERROR,
+                            category=FindingCategory.DATA_GAP,
+                            step_id=step_id,
+                            message=(
+                                f"Step reads '{read.field}' but it does not "
+                                "exist in context"
+                            ),
+                            suggestion=(
+                                "Add a preceding step that produces "
+                                f"'{read.field}' or include it in components"
+                            ),
+                        )
+                    )
                 continue
 
             actual_type = ctx.get_type(read.field)
             if read.expected_type and actual_type and actual_type != read.expected_type:
                 if record:
-                    self.findings.append(Finding(
-                        severity=FindingSeverity.ERROR,
-                        category=FindingCategory.TYPE_MISMATCH,
-                        step_id=step_id,
-                        message=f"Step expects '{read.field}' as {read.expected_type} but context has {actual_type}",
-                        suggestion=f"Align types between producer and consumer of '{read.field}'",
-                    ))
+                    self.findings.append(
+                        Finding(
+                            severity=FindingSeverity.ERROR,
+                            category=FindingCategory.TYPE_MISMATCH,
+                            step_id=step_id,
+                            message=(
+                                f"Step expects '{read.field}' as "
+                                f"{read.expected_type} but context has {actual_type}"
+                            ),
+                            suggestion=(
+                                "Align types between producer and consumer of "
+                                f"'{read.field}'"
+                            ),
+                        )
+                    )
 
             if read.field in ctx.slots:
                 ctx.slots[read.field].read_by.append(step_id)
@@ -175,13 +196,21 @@ class ContextTracer:
             if ctx.has(write.field):
                 existing = ctx.slots[write.field]
                 if record:
-                    self.findings.append(Finding(
-                        severity=FindingSeverity.WARNING,
-                        category=FindingCategory.OVERWRITE_WARNING,
-                        step_id=step_id,
-                        message=f"Step overwrites '{write.field}' previously set by '{existing.source_step}'",
-                        suggestion="Verify this overwrite is intentional; consider using a mutation instead",
-                    ))
+                    self.findings.append(
+                        Finding(
+                            severity=FindingSeverity.WARNING,
+                            category=FindingCategory.OVERWRITE_WARNING,
+                            step_id=step_id,
+                            message=(
+                                f"Step overwrites '{write.field}' previously "
+                                f"set by '{existing.source_step}'"
+                            ),
+                            suggestion=(
+                                "Verify this overwrite is intentional; "
+                                "consider using a mutation instead"
+                            ),
+                        )
+                    )
 
             ctx.slots[write.field] = ContextSlot(
                 name=write.field,
@@ -202,16 +231,24 @@ class ContextTracer:
         # Postconditions are free-text; we check that at least
         # the steps produced some outputs to verify against.
         if uc.postconditions and not ctx.slots:
-            self.findings.append(Finding(
-                severity=FindingSeverity.WARNING,
-                category=FindingCategory.MISSING_POSTCONDITION,
-                step_id="postcondition",
-                message="Use case has postconditions but no data was produced by steps",
-                suggestion="Ensure steps produce outputs that can be verified",
-            ))
+            self.findings.append(
+                Finding(
+                    severity=FindingSeverity.WARNING,
+                    category=FindingCategory.MISSING_POSTCONDITION,
+                    step_id="postcondition",
+                    message=(
+                        "Use case has postconditions but no data was produced "
+                        "by steps"
+                    ),
+                    suggestion="Ensure steps produce outputs that can be verified",
+                )
+            )
 
     def _trace_alternative_flow(
-        self, main_ctx: ContextSnapshot, uc: UseCaseSpec, alt_flow,
+        self,
+        main_ctx: ContextSnapshot,
+        uc: UseCaseSpec,
+        alt_flow,
         alt_reads: set[str] | None = None,
     ) -> None:
         branch_ctx = ContextSnapshot(step_id="init")
@@ -239,38 +276,51 @@ class ContextTracer:
         alt_flow_name: str,
     ) -> None:
         main_fields = {
-            k for k, v in main_ctx.slots.items()
-            if v.state != SlotState.INVALIDATED
+            k for k, v in main_ctx.slots.items() if v.state != SlotState.INVALIDATED
         }
         alt_fields = {
-            k for k, v in alt_ctx.slots.items()
-            if v.state != SlotState.INVALIDATED
+            k for k, v in alt_ctx.slots.items() if v.state != SlotState.INVALIDATED
         }
 
         for field_name in main_fields - alt_fields:
-            self.findings.append(Finding(
-                severity=FindingSeverity.WARNING,
-                category=FindingCategory.BRANCH_DIVERGENCE,
-                step_id=f"alt:{alt_flow_name}",
-                message=f"Field '{field_name}' exists in happy path but not in alt flow '{alt_flow_name}'",
-                suggestion=f"Ensure downstream consumers handle absence of '{field_name}' in the alt flow",
-            ))
+            self.findings.append(
+                Finding(
+                    severity=FindingSeverity.WARNING,
+                    category=FindingCategory.BRANCH_DIVERGENCE,
+                    step_id=f"alt:{alt_flow_name}",
+                    message=(
+                        f"Field '{field_name}' exists in happy path but not in "
+                        f"alt flow '{alt_flow_name}'"
+                    ),
+                    suggestion=(
+                        "Ensure downstream consumers handle absence of "
+                        f"'{field_name}' in the alt flow"
+                    ),
+                )
+            )
 
         for field_name in main_fields & alt_fields:
             main_c = main_ctx.slots[field_name].constraint
             alt_c = alt_ctx.slots[field_name].constraint
             if main_c != alt_c and (main_c is not None or alt_c is not None):
-                self.findings.append(Finding(
-                    severity=FindingSeverity.WARNING,
-                    category=FindingCategory.BRANCH_STATE_DIFFERENCE,
-                    step_id=f"alt:{alt_flow_name}",
-                    message=f"Field '{field_name}' has different constraints: "
-                            f"'{main_c}' (happy) vs '{alt_c}' (alt flow)",
-                    suggestion="Verify both constraint values are valid for downstream steps",
-                ))
+                self.findings.append(
+                    Finding(
+                        severity=FindingSeverity.WARNING,
+                        category=FindingCategory.BRANCH_STATE_DIFFERENCE,
+                        step_id=f"alt:{alt_flow_name}",
+                        message=f"Field '{field_name}' has different constraints: "
+                        f"'{main_c}' (happy) vs '{alt_c}' (alt flow)",
+                        suggestion=(
+                            "Verify both constraint values are valid for "
+                            "downstream steps"
+                        ),
+                    )
+                )
 
     def _detect_dead_data(
-        self, ctx: ContextSnapshot, uc: UseCaseSpec,
+        self,
+        ctx: ContextSnapshot,
+        uc: UseCaseSpec,
         alt_reads: set[str] | None = None,
     ) -> None:
         for name, slot in ctx.slots.items():
@@ -279,13 +329,21 @@ class ContextTracer:
             if alt_reads and name in alt_reads:
                 continue
             if not slot.read_by:
-                self.findings.append(Finding(
-                    severity=FindingSeverity.INFO,
-                    category=FindingCategory.DEAD_DATA,
-                    step_id=slot.source_step,
-                    message=f"Step produces '{name}' but no subsequent step reads it",
-                    suggestion=f"Remove '{name}' from step output or add a consumer",
-                ))
+                self.findings.append(
+                    Finding(
+                        severity=FindingSeverity.INFO,
+                        category=FindingCategory.DEAD_DATA,
+                        step_id=slot.source_step,
+                        message=(
+                            f"Step produces '{name}' but no subsequent step "
+                            "reads it"
+                        ),
+                        suggestion=(
+                            f"Remove '{name}' from step output or add a "
+                            "consumer"
+                        ),
+                    )
+                )
 
 
 class CrossUseCaseAnalyzer:
@@ -316,13 +374,19 @@ class CrossUseCaseAnalyzer:
             constraints = {r[2] for r in records}
             if len(constraints) > 1:
                 sources = ", ".join(f"{r[0]}:{r[1]}" for r in records)
-                findings.append(Finding(
-                    severity=FindingSeverity.WARNING,
-                    category=FindingCategory.CROSS_UC_MUTATION_CONFLICT,
-                    step_id="cross-uc",
-                    message=f"Field '{field_name}' written with different constraints by: {sources}",
-                    suggestion=f"Verify that concurrent mutations to '{field_name}' don't conflict at runtime",
-                ))
+                findings.append(
+                    Finding(
+                        severity=FindingSeverity.WARNING,
+                        category=FindingCategory.CROSS_UC_MUTATION_CONFLICT,
+                        step_id="cross-uc",
+                        message=(
+                            f"Field '{field_name}' written with different "
+                            f"constraints by: {sources}"
+                        ),
+                        suggestion=(
+                            "Verify that concurrent mutations to "
+                            f"'{field_name}' don't conflict at runtime"
+                        ),
+                    )
+                )
         return findings
-
-

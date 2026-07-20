@@ -7,7 +7,7 @@ from typing import Any
 
 class FrameworkActions:
     """Base class providing framework actions to all use case implementations.
-    
+
     These actions are available without needing to implement them:
     - render_error_response: Render error to CLI or HTTP
     - render_cli_output: Render data to CLI
@@ -21,12 +21,12 @@ class FrameworkActions:
         context: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Render an error response.
-        
+
         Args:
             error_code: Error code (e.g., INVALID_URL_FORMAT)
             message: Human-readable error message
             context: Additional error context
-            
+
         Returns:
             Dict with 'rendered' key
         """
@@ -36,7 +36,7 @@ class FrameworkActions:
 
     def render_cli_output(self, data: Any, format: str = "json") -> None:
         """Render data to CLI output.
-        
+
         Args:
             data: Data to render
             format: Output format (json, table, yaml)
@@ -51,12 +51,12 @@ class FrameworkActions:
         headers: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         """Render HTTP response.
-        
+
         Args:
             data: Response body
             status: HTTP status code
             headers: HTTP headers
-            
+
         Returns:
             Dict with 'rendered' key
         """

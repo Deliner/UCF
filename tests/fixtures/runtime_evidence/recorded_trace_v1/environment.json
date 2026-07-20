@@ -1,0 +1,11 @@
+{
+  "environment_uri": "urn:ucf:fixture-environment:runtime-import:1.0.0",
+  "kind": "runtime_environment",
+  "revision": {
+    "algorithm": "sha-256",
+    "kind": "digest",
+    "value": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "runtime_evidence_version": "1.0.0",
+  "schema_uri": "urn:ucf:runtime-evidence:environment:1.0.0"
+}

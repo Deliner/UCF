@@ -7,40 +7,45 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    VisitShortLinkInterface,
-    RedirectToDestinationResult,
+from .impl import (
+    visit_short_link_impl as visit_short_link_impl,
 )
-from .impl import visit_short_link_impl  # noqa: F401
+from .interface import VisitShortLinkInterface
 
 
 @pytest.fixture
-def uc(visit_short_link_impl: VisitShortLinkInterface) -> VisitShortLinkInterface:
-    return visit_short_link_impl
+def uc(request: pytest.FixtureRequest) -> VisitShortLinkInterface:
+    return request.getfixturevalue("visit_short_link_impl")
 
 
 class TestHappyPath:
 
     def test_visit_short_link_completes_successfully(
         self, uc: VisitShortLinkInterface,
+        inputs: dict[str, object],
     ) -> None:
 
-        redirect_to_destination = uc.action_redirect_to_destination(short_code=inputs.get('short_code'))
+        uc.action_redirect_to_destination(
+            short_code=inputs['short_code'],
+        )
 
 
-        uc.verify_visitor_is_redirected_to_original_page()
-        uc.verify_visit_is_recorded_for_analytics()
-        uc.verify_redirect_happens_in_200ms()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_visitor_is_redirected_to_original_page()
+        _ = uc.verify_visit_is_recorded_for_analytics()
+        _ = uc.verify_redirect_happens_in_200ms()
+        _ = uc.verify_required_inputs_validated()
 
 
 class TestAltLinkNotFound:
 
     def test_link_not_found(
         self, uc: VisitShortLinkInterface,
+        inputs: dict[str, object],
     ) -> None:
 
-        show_404 = uc.action_show_404(short_code=inputs.get('short_code'))
+        uc.action_show_404(
+            short_code=inputs['short_code'],
+        )
 
 
 

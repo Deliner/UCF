@@ -1,14 +1,14 @@
-"""Input Partition Coverage analyzer — every input equivalence class should be exercised.
-
-@implements("actions/analyze-input-partitions")
-"""
+(
+    "Input Partition Coverage analyzer — every input equivalence class should "
+    'be exercised.\n\n@implements("actions/analyze-input-partitions")\n'
+)
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 
 from ucf.models.base import FieldDef
-from ucf.models.usecase import UseCaseSpec
+from ucf.models.usecase import UseCaseSpec, invariant_reference
 from ucf.parser.registry import SpecRegistry
 from ucf.tracer.context import Finding, FindingCategory, FindingSeverity
 
@@ -35,63 +35,83 @@ def derive_partitions(field_name: str, field_def: FieldDef) -> list[InputPartiti
     """Derive equivalence partitions from a FieldDef's type and constraints."""
     partitions: list[InputPartition] = []
 
-    partitions.append(InputPartition(
-        name="valid_present",
-        description=f"{field_name} provided with a valid value",
-    ))
+    partitions.append(
+        InputPartition(
+            name="valid_present",
+            description=f"{field_name} provided with a valid value",
+        )
+    )
 
     if not field_def.required:
-        partitions.append(InputPartition(
-            name="absent",
-            description=f"{field_name} not provided (null/missing)",
-        ))
+        partitions.append(
+            InputPartition(
+                name="absent",
+                description=f"{field_name} not provided (null/missing)",
+            )
+        )
 
     ftype = field_def.type.value if field_def.type else "string"
 
     if ftype == "string":
-        partitions.append(InputPartition(
-            name="empty_string",
-            description=f"{field_name} is an empty string",
-        ))
+        partitions.append(
+            InputPartition(
+                name="empty_string",
+                description=f"{field_name} is an empty string",
+            )
+        )
 
     if ftype in ("integer", "number"):
         if field_def.min is not None:
-            partitions.append(InputPartition(
-                name="below_min",
-                description=f"{field_name} < {field_def.min}",
-            ))
+            partitions.append(
+                InputPartition(
+                    name="below_min",
+                    description=f"{field_name} < {field_def.min}",
+                )
+            )
         if field_def.max is not None:
-            partitions.append(InputPartition(
-                name="above_max",
-                description=f"{field_name} > {field_def.max}",
-            ))
+            partitions.append(
+                InputPartition(
+                    name="above_max",
+                    description=f"{field_name} > {field_def.max}",
+                )
+            )
 
     if field_def.enum:
         for val in field_def.enum:
-            partitions.append(InputPartition(
-                name=f"enum_{val}",
-                description=f"{field_name} == {val!r}",
-            ))
-        partitions.append(InputPartition(
-            name="invalid_enum",
-            description=f"{field_name} is not one of {field_def.enum}",
-        ))
+            partitions.append(
+                InputPartition(
+                    name=f"enum_{val}",
+                    description=f"{field_name} == {val!r}",
+                )
+            )
+        partitions.append(
+            InputPartition(
+                name="invalid_enum",
+                description=f"{field_name} is not one of {field_def.enum}",
+            )
+        )
 
     if ftype == "array":
-        partitions.append(InputPartition(
-            name="empty_array",
-            description=f"{field_name} is an empty array",
-        ))
+        partitions.append(
+            InputPartition(
+                name="empty_array",
+                description=f"{field_name} is an empty array",
+            )
+        )
 
     if ftype == "boolean":
-        partitions.append(InputPartition(
-            name="true",
-            description=f"{field_name} == true",
-        ))
-        partitions.append(InputPartition(
-            name="false",
-            description=f"{field_name} == false",
-        ))
+        partitions.append(
+            InputPartition(
+                name="true",
+                description=f"{field_name} == true",
+            )
+        )
+        partitions.append(
+            InputPartition(
+                name="false",
+                description=f"{field_name} == false",
+            )
+        )
 
     return partitions
 
@@ -134,19 +154,23 @@ class InputPartitionAnalyzer:
                     coverages.append(cov)
 
                     if not cov.is_covered:
-                        findings.append(Finding(
-                            severity=FindingSeverity.INFO,
-                            category=FindingCategory.UNCOVERED_INPUT_PARTITION,
-                            step_id=f"actions/{action.metadata.name}",
-                            message=(
-                                f"Input '{fname}' partition '{part.name}' ({part.description}) "
-                                f"is not covered by any use case"
-                            ),
-                            suggestion=(
-                                f"Add an alternative_flow or test case that exercises "
-                                f"'{fname}' in the '{part.name}' partition"
-                            ),
-                        ))
+                        findings.append(
+                            Finding(
+                                severity=FindingSeverity.INFO,
+                                category=FindingCategory.UNCOVERED_INPUT_PARTITION,
+                                step_id=f"actions/{action.metadata.name}",
+                                message=(
+                                    f"Input '{fname}' partition '{part.name}' "
+                                    f"({part.description}) "
+                                    f"is not covered by any use case"
+                                ),
+                                suggestion=(
+                                    "Add an alternative_flow or test case that "
+                                    "exercises "
+                                    f"'{fname}' in the '{part.name}' partition"
+                                ),
+                            )
+                        )
 
         return coverages, findings
 
@@ -169,7 +193,11 @@ class InputPartitionAnalyzer:
         return result
 
     def _partition_covered(
-        self, uc: UseCaseSpec, action_ref: str, field_name: str, partition: InputPartition,
+        self,
+        uc: UseCaseSpec,
+        action_ref: str,
+        field_name: str,
+        partition: InputPartition,
     ) -> bool:
         """Check if a UC exercises a given partition through its steps or alt flows."""
         uses_action = self._uc_uses_action(uc, action_ref)
@@ -202,22 +230,36 @@ class InputPartitionAnalyzer:
             field_lower = field_name.lower().replace("_", " ")
 
             if partition.name == "empty_string":
-                if "empty" in trigger_lower and (field_lower in trigger_lower or field_name in trigger_lower):
+                if "empty" in trigger_lower and (
+                    field_lower in trigger_lower or field_name in trigger_lower
+                ):
                     return True
                 if alt.handles_error and "empty" in alt.handles_error.lower():
                     return True
                 if alt.handles_error and alt.handles_error == "VALIDATION_ERROR":
                     return True
             if partition.name == "empty_array":
-                if ("empty" in trigger_lower or "no " in trigger_lower) and (field_lower in trigger_lower or field_name in trigger_lower):
+                if ("empty" in trigger_lower or "no " in trigger_lower) and (
+                    field_lower in trigger_lower or field_name in trigger_lower
+                ):
                     return True
                 if alt.handles_error and alt.handles_error == "VALIDATION_ERROR":
                     return True
-            if partition.name == "below_min" and ("below" in trigger_lower or "minimum" in trigger_lower or "negative" in trigger_lower):
+            if partition.name == "below_min" and (
+                "below" in trigger_lower
+                or "minimum" in trigger_lower
+                or "negative" in trigger_lower
+            ):
                 return True
-            if partition.name == "above_max" and ("above" in trigger_lower or "maximum" in trigger_lower or "exceeds" in trigger_lower):
+            if partition.name == "above_max" and (
+                "above" in trigger_lower
+                or "maximum" in trigger_lower
+                or "exceeds" in trigger_lower
+            ):
                 return True
-            if partition.name == "invalid_enum" and ("invalid" in trigger_lower or "unrecognized" in trigger_lower):
+            if partition.name == "invalid_enum" and (
+                "invalid" in trigger_lower or "unrecognized" in trigger_lower
+            ):
                 return True
             if partition.name.startswith("enum_"):
                 val = partition.name[5:]
@@ -233,17 +275,19 @@ class InputPartitionAnalyzer:
 
         return False
 
-    def _uc_has_input_validation_invariant(self, uc: UseCaseSpec, action_ref: str) -> bool:
-        """Check if this UC references the required-inputs-validated invariant that covers this action."""
+    def _uc_has_input_validation_invariant(
+        self, uc: UseCaseSpec, action_ref: str
+    ) -> bool:
+        (
+            "Check if this UC references the required-inputs-validated invariant "
+            "that covers this action."
+        )
         for inv_item in uc.invariants:
-            if isinstance(inv_item, dict):
-                name = inv_item.get("metadata", {}).get("name", "")
-                ref = inv_item.get("$ref", "")
-            else:
-                name = ""
-                ref = inv_item.ref
-            if name == "required-inputs-validated" or ref == "invariants/required-inputs-validated":
-                inv_spec = self.registry.resolve_ref("invariants/required-inputs-validated")
+            ref = invariant_reference(inv_item)
+            if ref == "invariants/required-inputs-validated":
+                inv_spec = self.registry.resolve_ref(
+                    "invariants/required-inputs-validated"
+                )
                 if inv_spec and hasattr(inv_spec, "applies_to"):
                     for binding in inv_spec.applies_to:
                         a_ref = binding.action or ""

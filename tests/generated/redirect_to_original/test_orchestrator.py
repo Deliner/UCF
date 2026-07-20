@@ -7,52 +7,68 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    RedirectToOriginalInterface,
-    LookupUrlResult,
-    AcquireClickLockResult,
-    IncrementClicksResult,
-    ReleaseClickLockResult,
-    RedirectResult,
+from .impl import (
+    redirect_to_original_impl as redirect_to_original_impl,
 )
-from .impl import redirect_to_original_impl  # noqa: F401
+from .interface import RedirectToOriginalInterface
 
 
 @pytest.fixture
-def uc(redirect_to_original_impl: RedirectToOriginalInterface) -> RedirectToOriginalInterface:
-    return redirect_to_original_impl
+def uc(request: pytest.FixtureRequest) -> RedirectToOriginalInterface:
+    return request.getfixturevalue("redirect_to_original_impl")
 
 
 class TestHappyPath:
 
     def test_redirect_to_original_completes_successfully(
         self, uc: RedirectToOriginalInterface,
+        inputs: dict[str, object],
     ) -> None:
 
-        lookup_url = uc.action_lookup_url(slug=inputs.get('slug'))
+        lookup_url = uc.action_lookup_url(
+            slug=inputs['slug'],
+        )
 
-        acquire_click_lock = uc.action_acquire_click_lock(resource='short_urls', key=inputs.get('slug'), timeout=5000)
+        acquire_click_lock = uc.action_acquire_click_lock(
+            resource='short_urls',
+            key=inputs['slug'],
+            timeout=5000,
+        )
 
-        increment_clicks = uc.action_increment_clicks(slug=inputs.get('slug'))
+        uc.action_increment_clicks(
+            slug=inputs['slug'],
+        )
 
-        release_click_lock = uc.action_release_click_lock(lock_id=acquire_click_lock.lock_id)
+        uc.action_release_click_lock(
+            lock_id=acquire_click_lock.lock_id,
+        )
 
-        redirect = uc.action_redirect(target_url=lookup_url.url_record.original_url, status_code=302)
+        uc.action_redirect(
+            target_url=lookup_url.url_record.original_url,
+            status_code=302,
+        )
 
 
-        uc.verify_visitor_is_redirected_to_original_url()
-        uc.verify_click_count_is_incremented_by_1()
-        uc.verify_redirect_uses_302_found_status()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_visitor_is_redirected_to_original_url()
+        _ = uc.verify_click_count_is_incremented_by_1()
+        _ = uc.verify_redirect_uses_302_found_status()
+        _ = uc.verify_required_inputs_validated()
 
 
 class TestAltSlugNotFound:
 
     def test_slug_not_found(
         self, uc: RedirectToOriginalInterface,
+        inputs: dict[str, object],
     ) -> None:
 
-        return_404 = uc.action_return_404(data={'error': 'slug not found', 'slug': inputs.get('slug')}, format='json')
+        uc.action_return_404(
+            data={
+                'error': 'slug not found',
+                'slug': inputs['slug'],
+            },
+            format='json',
+        )
 
 
 

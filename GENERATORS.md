@@ -1,43 +1,49 @@
 # Generator Engine
 
-## Architecture: Interface + Orchestrator + Implementation
+> **Current status — experimental Python contract skeleton.** The canonical
+> support and evidence boundary is
+> [docs/CAPABILITIES.md](docs/CAPABILITIES.md). UCF does not currently ship
+> JavaScript, Go, UI, mock-server, or transport-specific generators, and
+> generated verification methods are user-owned obligations rather than formal
+> verification. The separate exact external-adapter generation path is
+> documented in [docs/GENERATION.md](docs/GENERATION.md); it does not change
+> the legacy in-process generator described below.
 
-From one use case spec, the framework generates **three** artifacts:
+## Current Ownership Boundary
 
-| Artifact | Generated? | Editable? | Purpose |
+For a supported use-case subset, the current Python generator emits three
+files:
+
+| File | Write policy | Ownership | Current purpose |
 |---|---|---|---|
-| **Interface** (abstract class + dataclasses) | Yes, deterministic | DO NOT EDIT | Defines the contract |
-| **Orchestrator** (test file) | Yes, deterministic | DO NOT EDIT | Calls interface methods in correct order |
-| **Implementation** (concrete class) | No — written by AI or developer | Yes | Fills in real logic |
+| `interface.py` | Regenerated | Generated-owned | Python abstract contract for selected declarations |
+| `test_orchestrator.py` | Regenerated | Generated-owned | Pytest sequencing for selected declarations |
+| `impl.py` | Created only when absent | User-owned | Stub whose methods and fixtures the user completes |
 
-This separation solves LLM non-determinism: structure is always identical regardless of who generates it or when. Only the implementation varies, and it is constrained by the interface.
+This boundary protects an existing `impl.py` from regeneration. It does not by
+itself make the output executable: the user must implement the methods and
+provide any required inputs or fixtures. CAP-211 proves a different,
+generated-only transaction for one external Python/pytest action-function
+profile; it does not make this legacy multi-file writer transactional.
 
-```
+```text
 purchase-product.yaml
         │
-        ▼
-┌─────────────────────┐
-│   ucf generate      │
-├─────────────────────┤
-│                     │
-│  ┌───────────────┐  │    DO NOT EDIT
-│  │  interface.py │──┼──▶ Abstract class + dataclasses
-│  └───────────────┘  │
-│                     │
-│  ┌───────────────┐  │    DO NOT EDIT
-│  │  test_orch.py │──┼──▶ Pytest orchestrator calling interface
-│  └───────────────┘  │
-│                     │
-└─────────────────────┘
-                          HUMAN / AI
-   ┌───────────────┐
-   │   impl.py     │────▶ Concrete class filling abstract methods
-   └───────────────┘
+        ▼  ucf generate
+generated/purchase_product/
+        ├── interface.py          generated-owned
+        ├── test_orchestrator.py  generated-owned
+        └── impl.py               user-owned after first creation
 ```
 
 ## Generated Interface
 
-The interface is a pure-Python abstract class with typed dataclasses. Every field in the spec maps to a method or a dataclass.
+The current plugin derives a Python abstract class and selected dataclasses
+from the supported portion of a resolved use case. It does not map every source
+field, execute platform bindings, or enforce declared business rules.
+
+The following code is an illustrative contract shape, not a golden output
+fixture:
 
 ```python
 from __future__ import annotations
@@ -130,11 +136,20 @@ class PurchaseProductInterface(ABC):
         ...
 ```
 
-Every method has a single responsibility. Naming follows a strict convention: `setup_*`, `action_*`, `verify_*`. The generator derives these names from the YAML spec fields `requires`, `steps`, `postconditions`, and `invariants`.
+For shapes the plugin currently consumes, generated method names use
+`setup_*`, `action_*`, and `verify_*` conventions. A `verify_*` signature says
+that user-owned code must perform a check; its presence is not verification
+evidence.
 
 ## Generated Orchestrator (Test)
 
-The orchestrator is a pytest module that imports the interface and calls its methods in the order dictated by the spec. It contains zero business logic — only sequencing.
+The current orchestrator is a pytest module that calls generated interface
+methods for the supported subset. Business behavior and assertions live in the
+user-owned implementation. Conditional and alternative-flow source fields are
+only supported where executable tests name that behavior.
+
+The following is an illustrative target-shaped test, not a promise that every
+shown declaration is currently translated:
 
 ```python
 from __future__ import annotations
@@ -212,11 +227,16 @@ class TestPaymentTimeout:
         )
 ```
 
-The test file is entirely mechanical. Alternative flows map to additional test classes, each derived from the `alternative_flows` section of the spec.
+Supported alternative-flow shapes can produce additional test classes. Retry
+semantics are rejected before generation, and other declarations without an
+encoded consumer remain intent only.
 
-## Implementation (AI-Written)
+## User-Owned Implementation
 
-The implementation is the only file humans or AI write. It inherits the interface and fills each method body.
+The generator creates `impl.py` only when it is absent, then leaves it
+untouched. A developer may fill its method bodies directly or with an AI
+assistant. The HTTP implementation below is illustrative user code; UCF does
+not generate it and it is not evidence of an HTTP executor.
 
 ```python
 from __future__ import annotations
@@ -314,111 +334,88 @@ class PurchaseProductImpl(PurchaseProductInterface):
         assert payment.amount == cart.total
 ```
 
-Each method is small, focused, and independently reviewable. The AI fills only function bodies — it cannot change the method signatures, the call order, or the verification logic.
+The generated interface constrains the expected method signatures, but the
+repository does not prevent a user from editing files. Regeneration overwrites
+generated-owned files; assertions and integration behavior remain the user's
+responsibility in `impl.py`.
 
-## Plugin Architecture
+## Internal Generator Seam
 
-Generators are pluggable. Each plugin implements the `GeneratorPlugin` protocol:
+The Python package contains an in-process `GeneratorPlugin` protocol. This is
+an internal extension seam, not the planned stable out-of-process adapter
+protocol, and the CLI currently instantiates only `PytestPlugin`.
 
 ```python
-from __future__ import annotations
-
-from dataclasses import dataclass
-from typing import Protocol, runtime_checkable
-
-
-@dataclass(frozen=True)
-class GeneratedFile:
-    path: str
-    content: str
-    overwrite: bool
-
-
-@runtime_checkable
 class GeneratorPlugin(Protocol):
     name: str
-    platform: str
     language: str
 
-    def generate_happy_path(self, spec: UseCaseSpec) -> GeneratedFile: ...
-    def generate_alternative_flow(
-        self, spec: UseCaseSpec, flow_name: str,
+    def generate_interface(
+        self, spec: UseCaseSpec, registry: SpecRegistry
     ) -> GeneratedFile: ...
-    def generate_invariant_test(
-        self, spec: UseCaseSpec, invariant: InvariantSpec,
+
+    def generate_orchestrator(
+        self, spec: UseCaseSpec, registry: SpecRegistry
     ) -> GeneratedFile: ...
-    def generate_conflict_test(
-        self, spec: UseCaseSpec, conflict: ConflictSpec,
+
+    def generate_impl_stub(
+        self, spec: UseCaseSpec, registry: SpecRegistry
     ) -> GeneratedFile: ...
-    def generate_mock(self, spec: UseCaseSpec) -> GeneratedFile: ...
 ```
 
-The engine loads plugins, matches them to the spec's `platform` field, and delegates file generation.
+Plugins may additionally implement `validate_spec(...)` for support preflight.
+There is currently no CLI plugin discovery, platform-based selection, or
+cross-language conformance contract.
 
-## Built-in Plugins
+## Current Generator
 
-| Plugin | Platform | Language | Generates |
+| CLI-selected implementation | Language | Status | Output |
 |---|---|---|---|
-| `pytest-http` | HTTP REST | Python | pytest tests with `httpx` |
-| `jest-http` | HTTP REST | TypeScript | Jest tests with `fetch` |
-| `playwright` | Web UI | TypeScript | Playwright E2E tests |
-| `go-test-http` | HTTP REST | Go | `testing` + `net/http` tests |
-| `mock-server` | HTTP REST | Python | WireMock / `responses` stubs |
-| `mermaid` | — | — | Mermaid sequence diagrams |
-| `openapi-sync` | HTTP REST | YAML | OpenAPI spec drift detection |
+| `PytestPlugin` | Python | Experimental | Interface, pytest orchestrator, non-overwriting implementation stub |
+
+Other language, platform, mock, documentation, and synchronization generators
+are not shipped. Their delivery dependencies are tracked in
+[docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 
 ## Generated Artifacts
 
-From a single spec file, the engine produces 5–7 files:
+For one accepted use case, the current engine creates this package shape:
 
-```
+```text
 specs/purchase-product.yaml
     │
     ▼  ucf generate
     │
+    ├── generated/purchase_product/__init__.py
     ├── generated/purchase_product/interface.py
-    ├── generated/purchase_product/test_happy_path.py
-    ├── generated/purchase_product/test_alt_payment_declined.py
-    ├── generated/purchase_product/test_alt_payment_timeout.py
-    ├── generated/purchase_product/test_invariant_stock.py
-    ├── generated/purchase_product/test_invariant_money.py
-    └── generated/purchase_product/mock_server.py
+    ├── generated/purchase_product/test_orchestrator.py
+    └── generated/purchase_product/impl.py
 ```
 
-All files except `impl.py` are re-generated on every `ucf generate` run. The implementation file is never overwritten.
+`interface.py` and `test_orchestrator.py` are regenerated. `__init__.py` and
+`impl.py` are created only when absent. The current engine is not a
+project-wide transactional generator across multiple use cases.
 
 ## Developer Workflow
 
-```
-1. Human writes/edits YAML spec
-2. ucf generate → framework generates interface.py + test_orchestrator.py
-3. IDE highlights: "3 unimplemented abstract methods"
-4. AI fills implementation.py
-5. pytest test_orchestrator.py
-6. Green? → Commit. Red? → AI fixes implementation.py
+```text
+1. Write and validate source declarations.
+2. Run: ucf generate specs --output tests/generated
+3. Implement the generated-once impl.py stub and required inputs/fixtures.
+4. Run pytest against the generated test_orchestrator.py.
+5. Treat a pass only as evidence for assertions that actually executed.
 ```
 
-Step 3 is where the IDE becomes a feedback loop. Because the interface is a standard Python abstract class, any LSP-capable editor shows unimplemented methods as errors. The developer (or AI agent) sees exactly what needs to be written — no guessing, no prompt engineering.
-
-The feedback cycle is tight:
-
-```
-spec change → generate → type error → implement → test → pass
-     │                                                   │
-     └───────────────────────────────────────────────────┘
-```
+Fresh simple generated output can collect and run once explicit user fixtures
+and implementations are present. No IDE integration or automated fix loop is
+part of the current support claim.
 
 ## Spec Change Handling
 
-When a spec changes, the generator re-runs and overwrites the interface and orchestrator. The implementation is **never touched**.
+On regeneration, UCF overwrites `interface.py` and `test_orchestrator.py` but
+does not overwrite an existing `impl.py`. The developer must reconcile that
+user-owned implementation with changed signatures and sequencing.
 
-| What changed in spec | Effect on interface | Effect on orchestrator | Effect on implementation |
-|---|---|---|---|
-| New step added | New `action_*` method appears | New call inserted in test | IDE shows unimplemented method |
-| Step removed | `action_*` method removed | Call removed from test | IDE shows unused import (safe) |
-| New postcondition | New `verify_*` method appears | New assertion added | IDE shows unimplemented method |
-| New invariant | New `verify_*` method appears | New test class generated | IDE shows unimplemented method |
-| New alternative flow | No change | New test class generated | May need new error handling |
-| Dataclass field added | Dataclass updated | Orchestrator passes new field | Existing code may break at type level |
-
-The blast radius is minimal: only the implementation methods that correspond to changed spec fields need updating. Everything else remains stable.
+A source change can be translated, explicitly rejected (retry is the current
+example), or retained without executable behavior. Consult the capability
+matrix and focused generator tests before treating a field as supported.

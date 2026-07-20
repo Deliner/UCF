@@ -14,22 +14,22 @@ from ucf.parser.registry import SpecRegistry
 from .interface import (
     AnalyzeDependencyImpactInterface,
     BuildGraphResult,
-    ImpactResult as ImpactResultDC,
     LoaderContext,
 )
-
-SPECS_DIR = Path(__file__).resolve().parents[3] / "specs"
+from .interface import (
+    ImpactResult as ImpactResultDC,
+)
 
 
 class AnalyzeDependencyImpactImpl(AnalyzeDependencyImpactInterface):
-
     def __init__(self) -> None:
         self._registry: SpecRegistry | None = None
         self._graph: DependencyGraph | None = None
         self._impact: ImpactResult | None = None
+        self._rendered_impact: tuple[Any, Any] | None = None
 
-    def setup_loader(self) -> LoaderContext:
-        loader = SpecLoader(SPECS_DIR)
+    def setup_loader(self, specs_dir: Any) -> LoaderContext:
+        loader = SpecLoader(Path(specs_dir))
         loaded, errors = loader.load_all_tolerant()
 
         self._registry = SpecRegistry()
@@ -52,24 +52,25 @@ class AnalyzeDependencyImpactImpl(AnalyzeDependencyImpactInterface):
         )
 
     def action_impact(self, graph: Any, target: Any) -> ImpactResultDC:
-        assert self._graph is not None
-        first_action = self._registry.actions()[0] if self._registry else None
-        target_ref = f"action/{first_action.metadata.name}" if first_action else ""
-        self._impact = self._graph.impact(target_ref)
+        assert isinstance(graph, DependencyGraph)
+        self._graph = graph
+        self._impact = graph.impact(str(target))
         total = (
             len(self._impact.direct_dependents)
             + len(self._impact.transitive_dependents)
             + len(self._impact.invariants)
+            + len(self._impact.conflicts)
         )
         return ImpactResultDC(
             direct_dependents=self._impact.direct_dependents,
             transitive_dependents=self._impact.transitive_dependents,
             invariants=self._impact.invariants,
+            conflicts=self._impact.conflicts,
             total_impact=total,
         )
 
     def action_render_impact(self, data: Any, format: Any) -> None:
-        pass
+        self._rendered_impact = (data, format)
 
     def verify_all_direct_and_transitive_dependents_of_target_are_listed(self) -> None:
         assert self._impact is not None
@@ -80,25 +81,44 @@ class AnalyzeDependencyImpactImpl(AnalyzeDependencyImpactInterface):
         assert self._impact is not None
         assert isinstance(self._impact.invariants, list)
 
+    def verify_resource_conflicts_are_listed(self) -> None:
+        assert self._impact is not None
+        assert isinstance(self._impact.conflicts, list)
+
     def verify_total_impact_count_is_reported(self) -> None:
         assert self._impact is not None
         direct = set(self._impact.direct_dependents)
         transitive = set(self._impact.transitive_dependents)
-        # Direct and transitive sets must be disjoint (transitive are non-direct ancestors)
+        # Transitive dependents are non-direct ancestors.
         overlap = direct & transitive
         assert not overlap, f"Nodes appear in both direct and transitive: {overlap}"
         assert self._impact.target, "impact result must have a target spec name"
+
+    def verify_graph_node_count_and_edge_count_reflect_the_full_registry(
+        self,
+    ) -> None:
+        assert self._graph is not None
+        assert self._registry is not None
+        assert self._graph.g.number_of_nodes() == len(self._registry.all_specs())
+        assert self._graph.g.number_of_edges() >= 0
 
     def verify_graph_acyclic(self) -> None:
         import networkx as nx
 
         assert self._graph is not None
-        assert nx.is_directed_acyclic_graph(self._graph.g)
+        dependency_edges = [
+            (source, target)
+            for source, target, data in self._graph.g.edges(data=True)
+            if data.get("type") == "depends_on"
+        ]
+        assert nx.is_directed_acyclic_graph(nx.DiGraph(dependency_edges))
 
     def verify_required_inputs_validated(self) -> None:
         from pydantic import ValidationError
+
         from ucf.models.action import ActionSpec
-        # Framework enforces required inputs via Pydantic: ActionSpec without metadata must fail
+
+        # Pydantic rejects an ActionSpec without required metadata.
         with pytest.raises(ValidationError):
             ActionSpec.model_validate({})
 

@@ -17,18 +17,18 @@ from .interface import (
     LoaderContext,
 )
 
-SPECS_DIR = Path(__file__).resolve().parents[3] / "specs"
-
 
 class ExploreDependencyGraphImpl(ExploreDependencyGraphInterface):
+    def __init__(self) -> None:
+        self._rendered: list[tuple[Any, Any]] = []
 
-    def setup_loader(self) -> LoaderContext:
-        self._app = create_app(SPECS_DIR)
+    def setup_loader(self, specs_dir: Any) -> LoaderContext:
+        self._app = create_app(Path(specs_dir))
         transport = ASGITransport(app=self._app)
         self._client = AsyncClient(transport=transport, base_url="http://test")
         return LoaderContext(registry=self._app, loaded_count=1, load_errors=[])
 
-    def setup_graph_builder(self) -> Graph_builderContext:
+    def setup_graph_builder(self, registry: Any) -> Graph_builderContext:
         return Graph_builderContext(graph=None, node_count=0, edge_count=0)
 
     def action_build_json(self, registry: Any, graph: Any) -> BuildJsonResult:
@@ -49,7 +49,23 @@ class ExploreDependencyGraphImpl(ExploreDependencyGraphInterface):
         )
 
     def action_render_graph(self, data: Any, format: Any) -> None:
-        pass
+        self._rendered.append((data, format))
+
+    def action_render_mermaid(self, data: Any, format: Any) -> None:
+        assert format == "mermaid"
+        self.action_render_graph(data, format)
+
+    def action_render_json(self, data: Any, format: Any) -> None:
+        assert format == "json"
+        self.action_render_graph(data, format)
+
+    def action_render_empty(self, data: Any, format: Any) -> None:
+        assert data == {"message": "no dependency edges found"}
+        self.action_render_graph(data, format)
+
+    def action_render_error(self, data: Any, format: Any) -> None:
+        assert data == {"error": "registry not loaded"}
+        self.action_render_graph(data, format)
 
     def verify_developer_sees_all_specs_as_graph_nodes(self) -> None:
         assert self._graph_data["node_count"] > 0
@@ -62,7 +78,14 @@ class ExploreDependencyGraphImpl(ExploreDependencyGraphInterface):
         for node in self._graph_data["nodes"]:
             assert "kind" in node
             assert "name" in node
-            assert node["kind"] in ("action", "usecase", "component", "event", "protocol", "invariant")
+            assert node["kind"] in (
+                "action",
+                "usecase",
+                "component",
+                "event",
+                "protocol",
+                "invariant",
+            )
 
     def verify_links_reference_valid_node_identifiers(self) -> None:
         node_ids = {n["id"] for n in self._graph_data["nodes"]}
@@ -77,13 +100,16 @@ class ExploreDependencyGraphImpl(ExploreDependencyGraphInterface):
         node_ids = {n["id"] for n in self._graph_data["nodes"]}
         g.add_nodes_from(node_ids)
         for link in self._graph_data["links"]:
-            g.add_edge(link["source"], link["target"])
-        assert nx.is_directed_acyclic_graph(g), "Dependency graph must be acyclic"
+            if link["edge_type"] == "depends_on":
+                g.add_edge(link["source"], link["target"])
+        assert nx.is_directed_acyclic_graph(g), "Dependency edges must be acyclic"
 
     def verify_required_inputs_validated(self) -> None:
         from pydantic import ValidationError
+
         from ucf.models.action import ActionSpec
-        # Framework enforces required inputs via Pydantic: ActionSpec without metadata must fail
+
+        # Pydantic rejects ActionSpec without required metadata.
         with pytest.raises(ValidationError):
             ActionSpec.model_validate({})
 

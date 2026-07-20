@@ -1,0 +1,72 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.instance.id",
+            "value": {
+              "stringValue": "fixture-instance-not-selected"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "fixture.instrumentation",
+            "version": "0.0.1"
+          },
+          "spans": [
+            {
+              "traceId": "00112233445566778899aabbccddeeff",
+              "spanId": "0011223344556677",
+              "name": "fixture operation",
+              "kind": 2,
+              "startTimeUnixNano": "1784459400000000000",
+              "endTimeUnixNano": "1784459400001000000",
+              "attributes": [
+                {
+                  "key": "ucf.observation.reservation.status",
+                  "value": {
+                    "stringValue": "created"
+                  }
+                },
+                {
+                  "key": "fixture.secret",
+                  "value": {
+                    "stringValue": "UCF_SYNTHETIC_SECRET_7f2b3c9d"
+                  }
+                },
+                {
+                  "key": "fixture.personal",
+                  "value": {
+                    "stringValue": "UCF_SYNTHETIC_PERSONAL_4a8e1d6c"
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "name": "fixture event not selected",
+                  "timeUnixNano": "1784459400000500000",
+                  "attributes": []
+                }
+              ],
+              "links": [
+                {
+                  "traceId": "ffeeddccbbaa99887766554433221100",
+                  "spanId": "7766554433221100",
+                  "attributes": []
+                }
+              ],
+              "status": {
+                "code": 1,
+                "message": "fixture status description not selected"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

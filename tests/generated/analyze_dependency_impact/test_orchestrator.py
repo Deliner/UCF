@@ -7,40 +7,55 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    AnalyzeDependencyImpactInterface,
-    LoaderContext,
-    BuildGraphResult,
-    ImpactResult,
+from .impl import (
+    analyze_dependency_impact_impl as analyze_dependency_impact_impl,
 )
-from .impl import analyze_dependency_impact_impl  # noqa: F401
+from .interface import AnalyzeDependencyImpactInterface
 
 
 @pytest.fixture
-def uc(analyze_dependency_impact_impl: AnalyzeDependencyImpactInterface) -> AnalyzeDependencyImpactInterface:
-    return analyze_dependency_impact_impl
+def uc(request: pytest.FixtureRequest) -> AnalyzeDependencyImpactInterface:
+    return request.getfixturevalue("analyze_dependency_impact_impl")
 
 
 class TestHappyPath:
 
     def test_analyze_dependency_impact_completes_successfully(
         self, uc: AnalyzeDependencyImpactInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        build_graph = uc.action_build_graph(registry=loader.registry)
+        build_graph = uc.action_build_graph(
+            registry=loader.registry,
+        )
 
-        impact = uc.action_impact(graph=build_graph.graph, target=inputs.get('target'))
+        impact = uc.action_impact(
+            graph=build_graph.graph,
+            target=inputs['target'],
+        )
 
-        render_impact = uc.action_render_impact(data={'target': inputs.get('target'), 'direct': impact.direct_dependents, 'transitive': impact.transitive_dependents, 'invariants': impact.invariants, 'conflicts': impact.conflicts, 'total': impact.total_impact}, format='tree')
+        uc.action_render_impact(
+            data={
+                'target': inputs['target'],
+                'direct': impact.direct_dependents,
+                'transitive': impact.transitive_dependents,
+                'invariants': impact.invariants,
+                'conflicts': impact.conflicts,
+                'total': impact.total_impact,
+            },
+            format='tree',
+        )
 
 
-        uc.verify_all_direct_and_transitive_dependents_of_target_are_listed()
-        uc.verify_constraining_invariants_are_listed()
-        uc.verify_resource_conflicts_are_listed()
-        uc.verify_total_impact_count_is_reported()
-        uc.verify_graph_node_count_and_edge_count_reflect_the_full_registry()
-        uc.verify_graph_acyclic()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_all_direct_and_transitive_dependents_of_target_are_listed()
+        _ = uc.verify_constraining_invariants_are_listed()
+        _ = uc.verify_resource_conflicts_are_listed()
+        _ = uc.verify_total_impact_count_is_reported()
+        _ = uc.verify_graph_node_count_and_edge_count_reflect_the_full_registry()
+        _ = uc.verify_graph_acyclic()
+        _ = uc.verify_required_inputs_validated()
 
 

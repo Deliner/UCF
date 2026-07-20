@@ -66,61 +66,106 @@ class CheckSpecCompletenessInterface(ABC, FrameworkActions):
     # ── State Setup (from requires) ──
 
     @abstractmethod
-    def setup_registry(self) -> RegistryContext:
+    def setup_registry(
+        self,
+    ) -> RegistryContext:
         ...
 
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_analyze_errors(self, registry: Any) -> AnalyzeErrorsResult:
+    def action_analyze_errors(
+        self,
+        registry: Any,
+    ) -> AnalyzeErrorsResult:
         ...
 
     @abstractmethod
-    def action_analyze_partitions(self, registry: Any) -> AnalyzePartitionsResult:
+    def action_analyze_partitions(
+        self,
+        registry: Any,
+    ) -> AnalyzePartitionsResult:
         ...
 
     @abstractmethod
-    def action_analyze_states(self, registry: Any) -> AnalyzeStatesResult:
+    def action_analyze_states(
+        self,
+        registry: Any,
+    ) -> AnalyzeStatesResult:
         ...
 
     @abstractmethod
-    def action_analyze_platform(self, registry: Any) -> AnalyzePlatformResult:
+    def action_analyze_platform(
+        self,
+        registry: Any,
+    ) -> AnalyzePlatformResult:
         ...
 
     @abstractmethod
-    def action_analyze_invariants(self, registry: Any) -> AnalyzeInvariantsResult:
+    def action_analyze_invariants(
+        self,
+        registry: Any,
+    ) -> AnalyzeInvariantsResult:
         ...
 
     @abstractmethod
-    def action_analyze_resources(self, registry: Any) -> AnalyzeResourcesResult:
+    def action_analyze_resources(
+        self,
+        registry: Any,
+    ) -> AnalyzeResourcesResult:
         ...
 
     @abstractmethod
-    def action_aggregate(self, registry: Any) -> AggregateResult:
+    def action_aggregate(
+        self,
+        registry: Any,
+    ) -> AggregateResult:
         ...
 
     @abstractmethod
-    def action_render_report(self, data: Any, format: Any) -> None:
+    def action_render_report(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_empty(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_developer_sees_a_completeness_report_identifying_behavioral(self) -> None:
+    def verify_developer_sees_a_completeness_report_identifying_behavioral(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_every_uncovered_error_partition_state_or_platform_scenario(self) -> None:
+    def verify_every_uncovered_error_partition_state_or_platform_scenario(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_every_error_has_alt_flow(self) -> None:
+    def verify_every_error_has_alt_flow(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_every_input_partition_covered(self) -> None:
+    def verify_every_input_partition_covered(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

@@ -1,0 +1,1031 @@
+{
+  "$comment": "Generated deterministically from UCF change-lifecycle profile 1.0.0 models; do not edit by hand. The x-ucf-runtime-semantic-checks annotation names only the additional runtime checks for this document kind.",
+  "$defs": {
+    "BehaviorDocumentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "document_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "ir_version": {
+          "const": "1.0.0",
+          "title": "Ir Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "behavior_document_ref",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "document_id",
+        "ir_version",
+        "canonical_digest"
+      ],
+      "title": "BehaviorDocumentRef",
+      "type": "object"
+    },
+    "BehaviorEntityRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "document_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "ir_version": {
+          "const": "1.0.0",
+          "title": "Ir Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "behavior_entity_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/EntityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "document_id",
+        "ir_version",
+        "canonical_digest",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "BehaviorEntityRef",
+      "type": "object"
+    },
+    "BooleanValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "boolean",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "BooleanValue",
+      "type": "object"
+    },
+    "CanonicalDecimal": {
+      "pattern": "^(?:0|[1-9][0-9]*|-[1-9][0-9]*|-?(?:0|[1-9][0-9]*)\\.[0-9]*[1-9])$",
+      "type": "string"
+    },
+    "CapabilitySelection": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "capability",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/QualifiedName"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "version"
+      ],
+      "title": "CapabilitySelection",
+      "type": "object"
+    },
+    "Check": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "check",
+          "title": "Kind",
+          "type": "string"
+        },
+        "procedure_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "version",
+        "procedure_uri"
+      ],
+      "title": "Check",
+      "type": "object"
+    },
+    "DecimalValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "decimal",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/CanonicalDecimal"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "DecimalValue",
+      "type": "object"
+    },
+    "DeltaSubjectRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "delta_subject_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "operation": {
+          "enum": [
+            "added",
+            "modified",
+            "removed"
+          ],
+          "title": "Operation",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/EntityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "operation",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "DeltaSubjectRef",
+      "type": "object"
+    },
+    "Digest": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "sha-256",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "kind": {
+          "const": "digest",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/DigestValue"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm",
+        "value"
+      ],
+      "title": "Digest",
+      "type": "object"
+    },
+    "DigestValue": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "EntityKind": {
+      "enum": [
+        "action",
+        "use_case",
+        "step",
+        "binding",
+        "effect",
+        "observation",
+        "invariant",
+        "provenance",
+        "verification_evidence",
+        "capability_requirement"
+      ],
+      "title": "EntityKind",
+      "type": "string"
+    },
+    "EntityRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "entity_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/EntityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "EntityRef",
+      "type": "object"
+    },
+    "EvidenceContextValidationReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "assurance": {
+          "const": "context_validated_import",
+          "title": "Assurance",
+          "type": "string"
+        },
+        "current_inventory_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "evidence_context_validation_receipt",
+          "title": "Kind",
+          "type": "string"
+        },
+        "mapping_initialized_adapter": {
+          "$ref": "#/$defs/Producer"
+        },
+        "mapping_result_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "negotiated_capabilities": {
+          "items": {
+            "$ref": "#/$defs/CapabilitySelection"
+          },
+          "maxItems": 256,
+          "minItems": 2,
+          "title": "Negotiated Capabilities",
+          "type": "array"
+        },
+        "onboarding_bundle_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "procedure_uri": {
+          "const": "urn:ucf:change-lifecycle:evidence-context-validation:1.0.0",
+          "title": "Procedure Uri",
+          "type": "string"
+        },
+        "result_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "verification_initialized_adapter": {
+          "$ref": "#/$defs/Producer"
+        }
+      },
+      "required": [
+        "kind",
+        "assurance",
+        "procedure_uri",
+        "result_digest",
+        "mapping_result_digest",
+        "onboarding_bundle_digest",
+        "current_inventory_digest",
+        "mapping_initialized_adapter",
+        "verification_initialized_adapter",
+        "negotiated_capabilities"
+      ],
+      "title": "EvidenceContextValidationReceipt",
+      "type": "object"
+    },
+    "ExecutionEnvironment": {
+      "additionalProperties": false,
+      "properties": {
+        "identity_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "kind": {
+          "const": "execution_environment",
+          "title": "Kind",
+          "type": "string"
+        },
+        "revision": {
+          "$ref": "#/$defs/Digest"
+        }
+      },
+      "required": [
+        "kind",
+        "identity_uri",
+        "revision"
+      ],
+      "title": "ExecutionEnvironment",
+      "type": "object"
+    },
+    "ExecutionPortValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "execution_port_value",
+          "title": "Kind",
+          "type": "string"
+        },
+        "port": {
+          "$ref": "#/$defs/PortRef"
+        },
+        "value": {
+          "$ref": "#/$defs/IRValue"
+        }
+      },
+      "required": [
+        "kind",
+        "port",
+        "value"
+      ],
+      "title": "ExecutionPortValue",
+      "type": "object"
+    },
+    "ExecutionVerificationRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter_procedure_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "base_behavior": {
+          "$ref": "#/$defs/BehaviorDocumentRef"
+        },
+        "capability": {
+          "$ref": "#/$defs/CapabilitySelection"
+        },
+        "check": {
+          "$ref": "#/$defs/Check"
+        },
+        "environment": {
+          "$ref": "#/$defs/ExecutionEnvironment"
+        },
+        "expected_outputs": {
+          "items": {
+            "$ref": "#/$defs/ExecutionPortValue"
+          },
+          "maxItems": 256,
+          "title": "Expected Outputs",
+          "type": "array"
+        },
+        "implementation_evidence_version": {
+          "const": "1.0.0",
+          "title": "Implementation Evidence Version",
+          "type": "string"
+        },
+        "inputs": {
+          "items": {
+            "$ref": "#/$defs/ExecutionPortValue"
+          },
+          "maxItems": 256,
+          "title": "Inputs",
+          "type": "array"
+        },
+        "kind": {
+          "const": "execution_verification_request",
+          "title": "Kind",
+          "type": "string"
+        },
+        "mapping": {
+          "$ref": "#/$defs/ImplementationMappingResultRef"
+        },
+        "profile_procedure_uri": {
+          "const": "urn:ucf:implementation-evidence:verify:1.0.0",
+          "title": "Profile Procedure Uri",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:adapter:execution-verification-request:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/ImplementationSource"
+        },
+        "subject": {
+          "$ref": "#/$defs/BehaviorEntityRef"
+        }
+      },
+      "required": [
+        "kind",
+        "implementation_evidence_version",
+        "schema_uri",
+        "capability",
+        "profile_procedure_uri",
+        "adapter_procedure_uri",
+        "mapping",
+        "base_behavior",
+        "subject",
+        "inputs",
+        "expected_outputs",
+        "source",
+        "environment",
+        "check"
+      ],
+      "title": "ExecutionVerificationRequest",
+      "type": "object"
+    },
+    "ExecutionVerificationResult": {
+      "additionalProperties": false,
+      "properties": {
+        "capability": {
+          "$ref": "#/$defs/CapabilitySelection"
+        },
+        "executed_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "id": {
+          "$ref": "#/$defs/ExecutionVerificationResultId"
+        },
+        "implementation_evidence_version": {
+          "const": "1.0.0",
+          "title": "Implementation Evidence Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "execution_verification_result",
+          "title": "Kind",
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "passed",
+            "failed",
+            "error"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "procedure_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "request": {
+          "$ref": "#/$defs/ExecutionVerificationRequest"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:adapter:execution-verification-result:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "status": {
+          "const": "completed",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "implementation_evidence_version",
+        "schema_uri",
+        "id",
+        "status",
+        "request",
+        "outcome",
+        "executed_at",
+        "producer",
+        "capability",
+        "procedure_uri"
+      ],
+      "title": "ExecutionVerificationResult",
+      "type": "object"
+    },
+    "ExecutionVerificationResultId": {
+      "pattern": "^result\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "IRValue": {
+      "discriminator": {
+        "mapping": {
+          "boolean": "#/$defs/BooleanValue",
+          "decimal": "#/$defs/DecimalValue",
+          "integer": "#/$defs/IntegerValue",
+          "list": "#/$defs/ListValue",
+          "null": "#/$defs/NullValue",
+          "record": "#/$defs/RecordValue",
+          "string": "#/$defs/StringValue",
+          "timestamp": "#/$defs/TimestampValue"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/NullValue"
+        },
+        {
+          "$ref": "#/$defs/BooleanValue"
+        },
+        {
+          "$ref": "#/$defs/StringValue"
+        },
+        {
+          "$ref": "#/$defs/IntegerValue"
+        },
+        {
+          "$ref": "#/$defs/DecimalValue"
+        },
+        {
+          "$ref": "#/$defs/TimestampValue"
+        },
+        {
+          "$ref": "#/$defs/ListValue"
+        },
+        {
+          "$ref": "#/$defs/RecordValue"
+        }
+      ]
+    },
+    "Identifier": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "type": "string"
+    },
+    "ImplementationEvidenceBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "implementation_evidence_binding",
+          "title": "Kind",
+          "type": "string"
+        },
+        "result": {
+          "$ref": "#/$defs/ExecutionVerificationResult"
+        },
+        "subject": {
+          "$ref": "#/$defs/DeltaSubjectRef"
+        },
+        "validation": {
+          "$ref": "#/$defs/EvidenceContextValidationReceipt"
+        }
+      },
+      "required": [
+        "kind",
+        "subject",
+        "result",
+        "validation"
+      ],
+      "title": "ImplementationEvidenceBinding",
+      "type": "object"
+    },
+    "ImplementationMappingResultId": {
+      "pattern": "^mapping\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "ImplementationMappingResultRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "implementation_mapping_result_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:adapter:implementation-mapping-result:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/ImplementationMappingResultId"
+        }
+      },
+      "required": [
+        "kind",
+        "schema_uri",
+        "schema_version",
+        "target_id",
+        "canonical_digest"
+      ],
+      "title": "ImplementationMappingResultRef",
+      "type": "object"
+    },
+    "ImplementationSource": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "implementation_source",
+          "title": "Kind",
+          "type": "string"
+        },
+        "records": {
+          "items": {
+            "$ref": "#/$defs/InventoryRecordRef"
+          },
+          "maxItems": 256,
+          "minItems": 1,
+          "title": "Records",
+          "type": "array"
+        },
+        "source_revision": {
+          "$ref": "#/$defs/Digest"
+        },
+        "subject_uri": {
+          "$ref": "#/$defs/URI"
+        }
+      },
+      "required": [
+        "kind",
+        "subject_uri",
+        "source_revision",
+        "records"
+      ],
+      "title": "ImplementationSource",
+      "type": "object"
+    },
+    "IntegerValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "integer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/SafeInteger"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "IntegerValue",
+      "type": "object"
+    },
+    "InventoryRecordId": {
+      "pattern": "^(?:api|diagnostic|entry|ignore|interface|manifest|provenance|test)\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "InventoryRecordKind": {
+      "enum": [
+        "api_description",
+        "build_manifest",
+        "inventory_diagnostic",
+        "inventory_ignore_match",
+        "inventory_provenance",
+        "public_interface",
+        "repository_entry",
+        "test_asset"
+      ],
+      "title": "InventoryRecordKind",
+      "type": "string"
+    },
+    "InventoryRecordRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "inventory_record_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/InventoryRecordId"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/InventoryRecordKind"
+        }
+      },
+      "required": [
+        "kind",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "InventoryRecordRef",
+      "type": "object"
+    },
+    "ListValue": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/IRValue"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "kind": {
+          "const": "list",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "items"
+      ],
+      "title": "ListValue",
+      "type": "object"
+    },
+    "NormalizedVersion": {
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "type": "string"
+    },
+    "NullValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "null",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "NullValue",
+      "type": "object"
+    },
+    "OpenSpecChangeId": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "type": "string"
+    },
+    "PortRef": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "enum": [
+            "input",
+            "output"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "kind": {
+          "const": "port_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "owner": {
+          "$ref": "#/$defs/EntityRef"
+        }
+      },
+      "required": [
+        "kind",
+        "owner",
+        "direction",
+        "name"
+      ],
+      "title": "PortRef",
+      "type": "object"
+    },
+    "Producer": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "producer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/QualifiedName"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "version"
+      ],
+      "title": "Producer",
+      "type": "object"
+    },
+    "QualifiedName": {
+      "maxLength": 255,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*)+$",
+      "type": "string"
+    },
+    "RecordEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "record_entry",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "value": {
+          "$ref": "#/$defs/IRValue"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "value"
+      ],
+      "title": "RecordEntry",
+      "type": "object"
+    },
+    "RecordValue": {
+      "additionalProperties": false,
+      "properties": {
+        "entries": {
+          "items": {
+            "$ref": "#/$defs/RecordEntry"
+          },
+          "title": "Entries",
+          "type": "array"
+        },
+        "kind": {
+          "const": "record",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "entries"
+      ],
+      "title": "RecordValue",
+      "type": "object"
+    },
+    "SafeInteger": {
+      "maximum": 9007199254740991,
+      "minimum": -9007199254740991,
+      "type": "integer"
+    },
+    "StringValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "string",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "StringValue",
+      "type": "object"
+    },
+    "TaskGraphRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "change_id": {
+          "$ref": "#/$defs/OpenSpecChangeId"
+        },
+        "change_lifecycle_version": {
+          "const": "1.0.0",
+          "title": "Change Lifecycle Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "task_graph_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:change-lifecycle:task-graph:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "change_lifecycle_version",
+        "schema_uri",
+        "change_id",
+        "canonical_digest"
+      ],
+      "title": "TaskGraphRef",
+      "type": "object"
+    },
+    "Timestamp": {
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+      "type": "string"
+    },
+    "TimestampValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "timestamp",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/Timestamp"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "TimestampValue",
+      "type": "object"
+    },
+    "URI": {
+      "maxLength": 2048,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9+.-]*:[^\\s]+$",
+      "type": "string"
+    }
+  },
+  "$id": "urn:ucf:change-lifecycle:implementation-record:1.0.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "bindings": {
+      "items": {
+        "$ref": "#/$defs/ImplementationEvidenceBinding"
+      },
+      "maxItems": 256,
+      "minItems": 1,
+      "title": "Bindings",
+      "type": "array"
+    },
+    "change_id": {
+      "$ref": "#/$defs/OpenSpecChangeId"
+    },
+    "change_lifecycle_version": {
+      "const": "1.0.0",
+      "title": "Change Lifecycle Version",
+      "type": "string"
+    },
+    "kind": {
+      "const": "implementation_record",
+      "title": "Kind",
+      "type": "string"
+    },
+    "schema_uri": {
+      "const": "urn:ucf:change-lifecycle:implementation-record:1.0.0",
+      "title": "Schema Uri",
+      "type": "string"
+    },
+    "tasks": {
+      "$ref": "#/$defs/TaskGraphRef"
+    }
+  },
+  "required": [
+    "kind",
+    "change_lifecycle_version",
+    "schema_uri",
+    "change_id",
+    "tasks",
+    "bindings"
+  ],
+  "title": "UCF change implementation record profile 1.0.0",
+  "type": "object",
+  "x-ucf-change-lifecycle-version": "1.0.0",
+  "x-ucf-document-kind": "implementation_record",
+  "x-ucf-runtime-semantic-checks": [
+    "strict UTF-8 and duplicate-member JSON decoding",
+    "maximum JSON nesting depth 128",
+    "exact task graph, behavior delta, and proposal context",
+    "completed tasks before implementation evidence",
+    "one context-validated imported evidence result and durable validation receipt per supported delta subject",
+    "removed behavior requires a separate final-state absence-evidence profile"
+  ]
+}

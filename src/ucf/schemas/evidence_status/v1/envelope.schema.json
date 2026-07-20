@@ -1,0 +1,611 @@
+{
+  "$comment": "Generated deterministically from UCF evidence-status profile 1.0.0 models; do not edit by hand.",
+  "$defs": {
+    "BehaviorDocumentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "document_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "ir_version": {
+          "const": "1.0.0",
+          "title": "Ir Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "behavior_document_ref",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "document_id",
+        "ir_version",
+        "canonical_digest"
+      ],
+      "title": "BehaviorDocumentRef",
+      "type": "object"
+    },
+    "BehaviorEvidenceProjection": {
+      "additionalProperties": false,
+      "properties": {
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "behavior_evidence_projection",
+          "title": "Kind",
+          "type": "string"
+        },
+        "members": {
+          "items": {
+            "$ref": "#/$defs/EvidenceProjectionMember"
+          },
+          "maxItems": 4096,
+          "minItems": 1,
+          "title": "Members",
+          "type": "array"
+        },
+        "procedure_uri": {
+          "const": "urn:ucf:evidence-status:project-behavior:1.0.0",
+          "title": "Procedure Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "members",
+        "digest",
+        "kind",
+        "procedure_uri"
+      ],
+      "title": "BehaviorEvidenceProjection",
+      "type": "object"
+    },
+    "BehaviorSubjectKey": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "behavior_subject_key",
+          "title": "Kind",
+          "type": "string"
+        },
+        "subject_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/EntityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "subject_uri",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "BehaviorSubjectKey",
+      "type": "object"
+    },
+    "Digest": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "sha-256",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "kind": {
+          "const": "digest",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/DigestValue"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm",
+        "value"
+      ],
+      "title": "Digest",
+      "type": "object"
+    },
+    "DigestValue": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "EntityKind": {
+      "enum": [
+        "action",
+        "use_case",
+        "step",
+        "binding",
+        "effect",
+        "observation",
+        "invariant",
+        "provenance",
+        "verification_evidence",
+        "capability_requirement"
+      ],
+      "title": "EntityKind",
+      "type": "string"
+    },
+    "EvidenceProjectionMember": {
+      "additionalProperties": false,
+      "properties": {
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "evidence_projection_member",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/SemanticToken"
+        }
+      },
+      "required": [
+        "kind",
+        "target_kind",
+        "target_id",
+        "digest"
+      ],
+      "title": "EvidenceProjectionMember",
+      "type": "object"
+    },
+    "EvidenceTraceCoordinates": {
+      "additionalProperties": false,
+      "properties": {
+        "behavior": {
+          "$ref": "#/$defs/BehaviorDocumentRef"
+        },
+        "inventory": {
+          "$ref": "#/$defs/InventorySnapshotRef"
+        },
+        "kind": {
+          "const": "evidence_trace_coordinates",
+          "title": "Kind",
+          "type": "string"
+        },
+        "mapping": {
+          "$ref": "#/$defs/ImplementationMappingResultRef"
+        },
+        "onboarding": {
+          "$ref": "#/$defs/OnboardingBundleRef"
+        }
+      },
+      "required": [
+        "kind",
+        "behavior",
+        "onboarding",
+        "inventory",
+        "mapping"
+      ],
+      "title": "EvidenceTraceCoordinates",
+      "type": "object"
+    },
+    "ExecutionEvidenceProjection": {
+      "additionalProperties": false,
+      "properties": {
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "execution_evidence_projection",
+          "title": "Kind",
+          "type": "string"
+        },
+        "members": {
+          "items": {
+            "$ref": "#/$defs/EvidenceProjectionMember"
+          },
+          "maxItems": 4096,
+          "minItems": 1,
+          "title": "Members",
+          "type": "array"
+        },
+        "procedure_uri": {
+          "const": "urn:ucf:evidence-status:project-execution:1.0.0",
+          "title": "Procedure Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "members",
+        "digest",
+        "kind",
+        "procedure_uri"
+      ],
+      "title": "ExecutionEvidenceProjection",
+      "type": "object"
+    },
+    "ExecutionVerificationResultId": {
+      "pattern": "^result\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "ExecutionVerificationResultRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "execution_verification_result_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:adapter:execution-verification-result:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/ExecutionVerificationResultId"
+        }
+      },
+      "required": [
+        "kind",
+        "schema_uri",
+        "schema_version",
+        "target_id",
+        "canonical_digest"
+      ],
+      "title": "ExecutionVerificationResultRef",
+      "type": "object"
+    },
+    "Identifier": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "type": "string"
+    },
+    "ImplementationMappingResultId": {
+      "pattern": "^mapping\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "ImplementationMappingResultRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "implementation_mapping_result_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:adapter:implementation-mapping-result:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/ImplementationMappingResultId"
+        }
+      },
+      "required": [
+        "kind",
+        "schema_uri",
+        "schema_version",
+        "target_id",
+        "canonical_digest"
+      ],
+      "title": "ImplementationMappingResultRef",
+      "type": "object"
+    },
+    "InventorySnapshotRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "inventory_snapshot_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:schema:inventory:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_revision": {
+          "$ref": "#/$defs/Digest"
+        },
+        "subject_uri": {
+          "$ref": "#/$defs/URI"
+        }
+      },
+      "required": [
+        "kind",
+        "schema_uri",
+        "schema_version",
+        "subject_uri",
+        "source_revision",
+        "canonical_digest"
+      ],
+      "title": "InventorySnapshotRef",
+      "type": "object"
+    },
+    "MappingEvidenceProjection": {
+      "additionalProperties": false,
+      "properties": {
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "mapping_evidence_projection",
+          "title": "Kind",
+          "type": "string"
+        },
+        "members": {
+          "items": {
+            "$ref": "#/$defs/EvidenceProjectionMember"
+          },
+          "maxItems": 4096,
+          "minItems": 1,
+          "title": "Members",
+          "type": "array"
+        },
+        "procedure_uri": {
+          "const": "urn:ucf:evidence-status:project-mapping:1.0.0",
+          "title": "Procedure Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "members",
+        "digest",
+        "kind",
+        "procedure_uri"
+      ],
+      "title": "MappingEvidenceProjection",
+      "type": "object"
+    },
+    "OnboardingBundleRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "onboarding_bundle_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:onboarding:bundle:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "schema_uri",
+        "schema_version",
+        "canonical_digest"
+      ],
+      "title": "OnboardingBundleRef",
+      "type": "object"
+    },
+    "RecordedEvidenceCoordinates": {
+      "additionalProperties": false,
+      "properties": {
+        "behavior": {
+          "$ref": "#/$defs/BehaviorEvidenceProjection"
+        },
+        "execution": {
+          "$ref": "#/$defs/ExecutionEvidenceProjection"
+        },
+        "kind": {
+          "const": "recorded_evidence_coordinates",
+          "title": "Kind",
+          "type": "string"
+        },
+        "mapping": {
+          "$ref": "#/$defs/MappingEvidenceProjection"
+        },
+        "source": {
+          "$ref": "#/$defs/SourceEvidenceProjection"
+        }
+      },
+      "required": [
+        "kind",
+        "behavior",
+        "source",
+        "mapping",
+        "execution"
+      ],
+      "title": "RecordedEvidenceCoordinates",
+      "type": "object"
+    },
+    "SemanticToken": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "type": "string"
+    },
+    "SourceEvidenceProjection": {
+      "additionalProperties": false,
+      "properties": {
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "source_evidence_projection",
+          "title": "Kind",
+          "type": "string"
+        },
+        "members": {
+          "items": {
+            "$ref": "#/$defs/EvidenceProjectionMember"
+          },
+          "maxItems": 4096,
+          "minItems": 1,
+          "title": "Members",
+          "type": "array"
+        },
+        "procedure_uri": {
+          "const": "urn:ucf:evidence-status:project-source:1.0.0",
+          "title": "Procedure Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "members",
+        "digest",
+        "kind",
+        "procedure_uri"
+      ],
+      "title": "SourceEvidenceProjection",
+      "type": "object"
+    },
+    "TestedClaimId": {
+      "pattern": "^claim\\.tested\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "TrustClaimRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "document_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "trust_claim_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/TestedClaimId"
+        },
+        "trust_ir_version": {
+          "const": "1.0.0",
+          "title": "Trust Ir Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "trust_ir_version",
+        "document_id",
+        "canonical_digest",
+        "target_id"
+      ],
+      "title": "TrustClaimRef",
+      "type": "object"
+    },
+    "URI": {
+      "maxLength": 2048,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9+.-]*:[^\\s]+$",
+      "type": "string"
+    },
+    "VerificationEvidenceEnvelopeId": {
+      "pattern": "^envelope\\.[0-9a-f]{64}$",
+      "type": "string"
+    }
+  },
+  "$id": "urn:ucf:evidence-status:envelope:1.0.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "claim": {
+      "$ref": "#/$defs/TrustClaimRef"
+    },
+    "evidence_status_version": {
+      "const": "1.0.0",
+      "title": "Evidence Status Version",
+      "type": "string"
+    },
+    "id": {
+      "$ref": "#/$defs/VerificationEvidenceEnvelopeId"
+    },
+    "kind": {
+      "const": "verification_evidence_envelope",
+      "title": "Kind",
+      "type": "string"
+    },
+    "procedure_uri": {
+      "const": "urn:ucf:evidence-status:record:1.0.0",
+      "title": "Procedure Uri",
+      "type": "string"
+    },
+    "recorded": {
+      "$ref": "#/$defs/RecordedEvidenceCoordinates"
+    },
+    "schema_uri": {
+      "const": "urn:ucf:evidence-status:envelope:1.0.0",
+      "title": "Schema Uri",
+      "type": "string"
+    },
+    "subject": {
+      "$ref": "#/$defs/BehaviorSubjectKey"
+    },
+    "trace": {
+      "$ref": "#/$defs/EvidenceTraceCoordinates"
+    },
+    "verification_result": {
+      "$ref": "#/$defs/ExecutionVerificationResultRef"
+    }
+  },
+  "required": [
+    "kind",
+    "evidence_status_version",
+    "schema_uri",
+    "id",
+    "procedure_uri",
+    "verification_result",
+    "claim",
+    "subject",
+    "recorded",
+    "trace"
+  ],
+  "title": "UCF verification evidence envelope 1.0.0",
+  "type": "object",
+  "x-ucf-document-kind": "verification_evidence_envelope",
+  "x-ucf-evidence-status-semantic-checks": [
+    "strict UTF-8 and duplicate-member JSON decoding",
+    "maximum JSON nesting depth 128",
+    "content-derived envelope identity and exact typed references",
+    "canonical unique projection members",
+    "reviewed behavior and transitive source dependency projection",
+    "exact adapter, capability, procedure, environment, and check coordinates",
+    "trace coordinates are not standalone stale predicates",
+    "tested-only historical claim binding without verified promotion"
+  ],
+  "x-ucf-evidence-status-version": "1.0.0"
+}

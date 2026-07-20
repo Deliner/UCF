@@ -49,32 +49,32 @@ class EcommerceService:
         # 1. Validate cart
         if cart_id not in self._carts:
             raise ValueError("INVALID_CART")
-        
+
         cart = self._carts[cart_id]
-        
+
         # 2. Check inventory
         for item in cart["items"]:
             product_id = item["product_id"]
             quantity = item["quantity"]
             if self._inventory.get(product_id, 0) < quantity:
                 raise ValueError("ITEM_OUT_OF_STOCK")
-        
+
         # 3. Calculate total (tax + shipping hidden here!)
         subtotal = sum(item["price"] * item["quantity"] for item in cart["items"])
         tax = subtotal * 0.08  # 8% tax
         shipping = 9.99
         total = subtotal + tax + shipping
-        
+
         # 4. Reserve inventory
         for item in cart["items"]:
             product_id = item["product_id"]
             quantity = item["quantity"]
             self._inventory[product_id] -= quantity
-        
+
         # 5. Charge payment (simulated)
         if payment_method_id == "declined-card":
             raise ValueError("PAYMENT_DECLINED")
-        
+
         # 6. Create order
         order_id = f"ORD-{len(self._orders) + 1}"
         self._orders[order_id] = {
@@ -87,7 +87,7 @@ class EcommerceService:
             "payment_method_id": payment_method_id,
             "shipping_address_id": shipping_address_id,
         }
-        
+
         return {
             "id": order_id,
             "total": total,
@@ -110,6 +110,8 @@ class CompletePurchaseImpl(CompletePurchaseInterface):
         self._order_id = None
         self._total = None
         self._email_sent = False
+        self._initial_inventory = dict(self.service._inventory)
+        self._notifications: list[dict[str, Any]] = []
 
     # ── Actions ──
 
@@ -121,14 +123,14 @@ class CompletePurchaseImpl(CompletePurchaseInterface):
     ) -> FinalizeOrderResult:
         """Finalize order (hides: validate, calculate, reserve, charge)."""
         result = self.service.finalize_order(
-            cart_id or "test-cart",
-            payment_method_id or "test-card",
-            shipping_address_id or "test-address",
+            cart_id,
+            payment_method_id,
+            shipping_address_id,
         )
-        
+
         self._order_id = result["id"]
         self._total = result["total"]
-        
+
         return FinalizeOrderResult(
             order_id=result["id"],
             total_amount=result["total"],
@@ -145,23 +147,40 @@ class CompletePurchaseImpl(CompletePurchaseInterface):
 
     def action_notify_payment_failure(self, cart_id: Any, reason: Any) -> None:
         """Notify customer of payment failure."""
-        pass
+        self._notifications.append(
+            {
+                "kind": "payment-failure",
+                "cart_id": cart_id,
+                "reason": reason,
+            }
+        )
 
     def action_notify_stock_issue(self, cart_id: Any) -> None:
         """Notify customer of stock issue."""
-        pass
+        self._notifications.append({"kind": "stock-issue", "cart_id": cart_id})
 
     def action_notify_timeout(self, cart_id: Any) -> None:
         """Notify customer of timeout."""
-        pass
+        self._notifications.append({"kind": "timeout", "cart_id": cart_id})
 
     def action_notify_cart_issue(self, cart_id: Any, reason: Any) -> None:
         """Notify customer of cart issue."""
-        pass
+        self._notifications.append(
+            {
+                "kind": "cart-issue",
+                "cart_id": cart_id,
+                "reason": reason,
+            }
+        )
 
     def action_notify_address_issue(self, shipping_address_id: Any) -> None:
         """Notify customer of address issue."""
-        pass
+        self._notifications.append(
+            {
+                "kind": "address-issue",
+                "shipping_address_id": shipping_address_id,
+            }
+        )
 
     # ── Verifications ──
 
@@ -174,7 +193,9 @@ class CompletePurchaseImpl(CompletePurchaseInterface):
         """Verify payment went through."""
         assert self._order_id in self.service._orders, "Order not found"
         order = self.service._orders[self._order_id]
-        assert order["status"] == "charged", f"Expected 'charged', got {order['status']}"
+        assert order["status"] == "charged", (
+            f"Expected 'charged', got {order['status']}"
+        )
 
     def verify_customer_receives_order_confirmation_email(self) -> None:
         """Verify email was sent."""
@@ -182,9 +203,12 @@ class CompletePurchaseImpl(CompletePurchaseInterface):
 
     def verify_inventory_is_reserved_for_order_items(self) -> None:
         """Verify inventory was decremented."""
-        # Check that inventory changed
-        # In real impl would check specific product quantities
-        assert len(self.service._inventory) > 0, "Inventory check failed"
+        assert self._order_id is not None
+        for item in self.service._orders[self._order_id]["items"]:
+            product_id = item["product_id"]
+            assert self.service._inventory[product_id] == (
+                self._initial_inventory[product_id] - item["quantity"]
+            )
 
     def verify_customer_can_view_order_in_order_history(self) -> None:
         """Verify order is queryable."""
@@ -206,7 +230,7 @@ class CompletePurchaseImpl(CompletePurchaseInterface):
 @pytest.fixture
 def complete_purchase_impl() -> CompletePurchaseImpl:
     impl = CompletePurchaseImpl()
-    
+
     # Pre-populate test cart
     impl.service.create_cart(
         cart_id="test-cart",
@@ -215,5 +239,5 @@ def complete_purchase_impl() -> CompletePurchaseImpl:
             {"product_id": "product-2", "price": 15.50, "quantity": 1},
         ],
     )
-    
+
     return impl

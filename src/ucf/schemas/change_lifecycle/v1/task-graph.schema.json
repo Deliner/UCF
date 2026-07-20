@@ -1,0 +1,298 @@
+{
+  "$comment": "Generated deterministically from UCF change-lifecycle profile 1.0.0 models; do not edit by hand. The x-ucf-runtime-semantic-checks annotation names only the additional runtime checks for this document kind.",
+  "$defs": {
+    "BehaviorDeltaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "change_id": {
+          "$ref": "#/$defs/OpenSpecChangeId"
+        },
+        "change_lifecycle_version": {
+          "const": "1.0.0",
+          "title": "Change Lifecycle Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "behavior_delta_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:change-lifecycle:behavior-delta:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "change_lifecycle_version",
+        "schema_uri",
+        "change_id",
+        "canonical_digest"
+      ],
+      "title": "BehaviorDeltaRef",
+      "type": "object"
+    },
+    "ChangeTask": {
+      "additionalProperties": false,
+      "properties": {
+        "depends_on": {
+          "items": {
+            "$ref": "#/$defs/TaskRef"
+          },
+          "title": "Depends On",
+          "type": "array"
+        },
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "change_task",
+          "title": "Kind",
+          "type": "string"
+        },
+        "order": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "Order",
+          "type": "integer"
+        },
+        "source": {
+          "$ref": "#/$defs/TaskSource"
+        },
+        "status": {
+          "$ref": "#/$defs/TaskStatus"
+        },
+        "subjects": {
+          "items": {
+            "$ref": "#/$defs/DeltaSubjectRef"
+          },
+          "minItems": 1,
+          "title": "Subjects",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "order",
+        "depends_on",
+        "subjects",
+        "status",
+        "source"
+      ],
+      "title": "ChangeTask",
+      "type": "object"
+    },
+    "DeltaSubjectRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "delta_subject_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "operation": {
+          "enum": [
+            "added",
+            "modified",
+            "removed"
+          ],
+          "title": "Operation",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/EntityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "operation",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "DeltaSubjectRef",
+      "type": "object"
+    },
+    "Digest": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "sha-256",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "kind": {
+          "const": "digest",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/DigestValue"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm",
+        "value"
+      ],
+      "title": "Digest",
+      "type": "object"
+    },
+    "DigestValue": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "EntityKind": {
+      "enum": [
+        "action",
+        "use_case",
+        "step",
+        "binding",
+        "effect",
+        "observation",
+        "invariant",
+        "provenance",
+        "verification_evidence",
+        "capability_requirement"
+      ],
+      "title": "EntityKind",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "type": "string"
+    },
+    "OpenSpecChangeId": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "type": "string"
+    },
+    "RelativeArtifactPath": {
+      "maxLength": 1024,
+      "minLength": 1,
+      "type": "string"
+    },
+    "TaskRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "task_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "kind",
+        "target_id"
+      ],
+      "title": "TaskRef",
+      "type": "object"
+    },
+    "TaskSource": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "artifact_path": {
+          "$ref": "#/$defs/RelativeArtifactPath"
+        },
+        "kind": {
+          "const": "task_source",
+          "title": "Kind",
+          "type": "string"
+        },
+        "line": {
+          "maximum": 9007199254740991,
+          "minimum": 1,
+          "title": "Line",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "artifact_path",
+        "artifact_digest",
+        "line"
+      ],
+      "title": "TaskSource",
+      "type": "object"
+    },
+    "TaskStatus": {
+      "enum": [
+        "pending",
+        "completed"
+      ],
+      "title": "TaskStatus",
+      "type": "string"
+    }
+  },
+  "$id": "urn:ucf:change-lifecycle:task-graph:1.0.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "change_id": {
+      "$ref": "#/$defs/OpenSpecChangeId"
+    },
+    "change_lifecycle_version": {
+      "const": "1.0.0",
+      "title": "Change Lifecycle Version",
+      "type": "string"
+    },
+    "delta": {
+      "$ref": "#/$defs/BehaviorDeltaRef"
+    },
+    "kind": {
+      "const": "task_graph",
+      "title": "Kind",
+      "type": "string"
+    },
+    "schema_uri": {
+      "const": "urn:ucf:change-lifecycle:task-graph:1.0.0",
+      "title": "Schema Uri",
+      "type": "string"
+    },
+    "tasks": {
+      "items": {
+        "$ref": "#/$defs/ChangeTask"
+      },
+      "maxItems": 1024,
+      "minItems": 1,
+      "title": "Tasks",
+      "type": "array"
+    }
+  },
+  "required": [
+    "kind",
+    "change_lifecycle_version",
+    "schema_uri",
+    "change_id",
+    "delta",
+    "tasks"
+  ],
+  "title": "UCF change task graph profile 1.0.0",
+  "type": "object",
+  "x-ucf-change-lifecycle-version": "1.0.0",
+  "x-ucf-document-kind": "task_graph",
+  "x-ucf-runtime-semantic-checks": [
+    "strict UTF-8 and duplicate-member JSON decoding",
+    "maximum JSON nesting depth 128",
+    "exact behavior delta and proposal context",
+    "resolved acyclic canonically ordered task dependency graph",
+    "exact task-to-delta subject coverage",
+    "exact task source artifact and OpenSpec checkbox coordinates"
+  ]
+}

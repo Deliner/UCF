@@ -15,6 +15,7 @@ from .interface import (
     CheckExistsResult,
     CreateShortUrlInterface,
     GenerateSlugResult,
+    RetryGenerateResult,
     StoreUrlResult,
     ValidateUrlResult,
 )
@@ -50,6 +51,15 @@ class CreateShortUrlImpl(CreateShortUrlInterface):
         full_url = self.service.get_full_short_url(slug)
         return StoreUrlResult(url_id=record.id, short_url=full_url)
 
+    def action_return_error(self, data: Any, format: Any) -> None:
+        self._rendered_error = data
+        self.render_cli_output(data, str(format))
+
+    def action_retry_generate(self, length: Any) -> RetryGenerateResult:
+        retry_slug = self.service.generate_slug(length)
+        self._retry_slug = retry_slug
+        return RetryGenerateResult(retry_slug=retry_slug)
+
     # ── Verifications ──
 
     def verify_short_url_is_created_and_stored(self) -> None:
@@ -64,7 +74,7 @@ class CreateShortUrlImpl(CreateShortUrlInterface):
             self.service.store_url(
                 self._stored_url.slug,
                 "http://duplicate.com",
-                None,
+                "duplicate-check",
             )
 
     def verify_click_count_is_initialized_to_0(self) -> None:
@@ -84,34 +94,4 @@ class CreateShortUrlImpl(CreateShortUrlInterface):
 
 @pytest.fixture
 def create_short_url_impl() -> CreateShortUrlImpl:
-    impl = CreateShortUrlImpl()
-    
-    # Monkey-patch to use real URL when None passed
-    original_validate = impl.action_validate_url
-    
-    def validate_with_default(url):
-        return original_validate(url if url is not None else "https://github.com/test/repo")
-    
-    impl.action_validate_url = validate_with_default
-    
-    original_store = impl.action_store_url
-    
-    def store_with_default(slug, original_url, created_by):
-        return original_store(
-            slug,
-            original_url if original_url is not None else "https://github.com/test/repo",
-            created_by if created_by is not None else "test_user",
-        )
-    
-    impl.action_store_url = store_with_default
-    
-    # No need for action_return_error stub!
-    # Alt flow can now call self.render_cli_output() directly (inherited from FrameworkActions)
-    
-    # Add missing action_retry_generate for alt flow
-    def action_retry_generate(length):
-        return impl.action_generate_slug(length)
-    
-    impl.action_retry_generate = action_retry_generate
-    
-    return impl
+    return CreateShortUrlImpl()

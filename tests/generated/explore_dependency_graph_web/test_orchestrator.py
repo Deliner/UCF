@@ -7,61 +7,92 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    ExploreDependencyGraphWebInterface,
-    LoaderContext,
-    Graph_builderContext,
-    BuildJsonResult,
-    ClickNodeResult,
-    ToggleViewResult,
+from .impl import (
+    explore_dependency_graph_web_impl as explore_dependency_graph_web_impl,
 )
-from .impl import explore_dependency_graph_web_impl  # noqa: F401
+from .interface import ExploreDependencyGraphWebInterface
 
 
 @pytest.fixture
-def uc(explore_dependency_graph_web_impl: ExploreDependencyGraphWebInterface) -> ExploreDependencyGraphWebInterface:
-    return explore_dependency_graph_web_impl
+def uc(request: pytest.FixtureRequest) -> ExploreDependencyGraphWebInterface:
+    return request.getfixturevalue("explore_dependency_graph_web_impl")
 
 
 class TestHappyPath:
 
     def test_explore_dependency_graph_web_completes_successfully(
         self, uc: ExploreDependencyGraphWebInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
-        graph_builder = uc.setup_graph_builder()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
+        graph_builder = uc.setup_graph_builder(
+            registry=loader.registry,
+        )
 
-        build_json = uc.action_build_json(registry=loader.registry, graph=graph_builder.graph)
+        build_json = uc.action_build_json(
+            registry=loader.registry,
+            graph=graph_builder.graph,
+        )
 
-        render_graph = uc.action_render_graph(data={'nodes': build_json.nodes, 'links': build_json.links, 'node_count': build_json.node_count, 'edge_count': build_json.edge_count, 'graph_node_count': graph_builder.node_count, 'graph_edge_count': graph_builder.edge_count}, format='tree')
+        uc.action_render_graph(
+            data={
+                'nodes': build_json.nodes,
+                'links': build_json.links,
+                'node_count': build_json.node_count,
+                'edge_count': build_json.edge_count,
+                'graph_node_count': graph_builder.node_count,
+                'graph_edge_count': graph_builder.edge_count,
+            },
+            format='tree',
+        )
 
-        click_node = uc.action_click_node(node_id=inputs.get('target_node_id'))
+        uc.action_click_node(
+            node_id=inputs['target_node_id'],
+        )
 
-        toggle_view = uc.action_toggle_view(target_view=inputs.get('target_view'))
+        uc.action_toggle_view(
+            target_view=inputs['target_view'],
+        )
 
 
-        uc.verify_developer_sees_all_specs_as_graph_nodes()
-        uc.verify_developer_sees_all_dependency_edges_as_links()
-        uc.verify_nodes_carry_kind_and_name_metadata()
-        uc.verify_links_reference_valid_node_identifiers()
-        uc.verify_clicking_a_node_highlights_its_connections()
-        uc.verify_tooltip_shows_node_kind_and_name()
-        uc.verify_toggling_view_switches_between_d3_interactive_and_mermaid()
-        uc.verify_graph_acyclic()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_developer_sees_all_specs_as_graph_nodes()
+        _ = uc.verify_developer_sees_all_dependency_edges_as_links()
+        _ = uc.verify_nodes_carry_kind_and_name_metadata()
+        _ = uc.verify_links_reference_valid_node_identifiers()
+        _ = uc.verify_clicking_a_node_highlights_its_connections()
+        _ = uc.verify_tooltip_shows_node_kind_and_name()
+        _ = uc.verify_toggling_view_switches_between_d3_interactive_and_mermaid()
+        _ = uc.verify_graph_acyclic()
+        _ = uc.verify_required_inputs_validated()
 
 
 class TestAltMermaidOutput:
 
     def test_mermaid_output(
         self, uc: ExploreDependencyGraphWebInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
-        graph_builder = uc.setup_graph_builder()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
+        graph_builder = uc.setup_graph_builder(
+            registry=loader.registry,
+        )
 
-        build_json = uc.action_build_json(registry=loader.registry, graph=graph_builder.graph)
+        build_json = uc.action_build_json(
+            registry=loader.registry,
+            graph=graph_builder.graph,
+        )
 
-        render_mermaid = uc.action_render_graph(data={'nodes': build_json.nodes, 'links': build_json.links}, format='mermaid')
+        uc.action_render_mermaid(
+            data={
+                'nodes': build_json.nodes,
+                'links': build_json.links,
+            },
+            format='mermaid',
+        )
 
 
 
@@ -69,13 +100,27 @@ class TestAltJsonOutput:
 
     def test_json_output(
         self, uc: ExploreDependencyGraphWebInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
-        graph_builder = uc.setup_graph_builder()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
+        graph_builder = uc.setup_graph_builder(
+            registry=loader.registry,
+        )
 
-        build_json = uc.action_build_json(registry=loader.registry, graph=graph_builder.graph)
+        build_json = uc.action_build_json(
+            registry=loader.registry,
+            graph=graph_builder.graph,
+        )
 
-        render_json = uc.action_render_graph(data={'nodes': build_json.nodes, 'links': build_json.links}, format='json')
+        uc.action_render_json(
+            data={
+                'nodes': build_json.nodes,
+                'links': build_json.links,
+            },
+            format='json',
+        )
 
 
 
@@ -83,11 +128,21 @@ class TestAltEmptyGraph:
 
     def test_empty_graph(
         self, uc: ExploreDependencyGraphWebInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
-        graph_builder = uc.setup_graph_builder()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
+        uc.setup_graph_builder(
+            registry=loader.registry,
+        )
 
-        render_empty = uc.action_render_graph(data={'message': 'no dependency edges found'}, format='table')
+        uc.action_render_empty(
+            data={
+                'message': 'no dependency edges found',
+            },
+            format='table',
+        )
 
 
 
@@ -95,11 +150,21 @@ class TestAltRegistryNotLoaded:
 
     def test_registry_not_loaded(
         self, uc: ExploreDependencyGraphWebInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
-        graph_builder = uc.setup_graph_builder()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
+        uc.setup_graph_builder(
+            registry=loader.registry,
+        )
 
-        render_error = uc.action_render_graph(data={'error': 'registry not loaded'}, format='table')
+        uc.action_render_error(
+            data={
+                'error': 'registry not loaded',
+            },
+            format='table',
+        )
 
 
 

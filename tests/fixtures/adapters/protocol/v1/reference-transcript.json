@@ -1,0 +1,349 @@
+{
+  "fixture_version": 1,
+  "frames": [
+    {
+      "direction": "core_to_adapter",
+      "message": {
+        "id": "request-1",
+        "jsonrpc": "2.0",
+        "method": "ucf.initialize",
+        "params": {
+          "capabilities": [
+            {
+              "kind": "capability_request",
+              "minimum_version": "1.0.0",
+              "name": "org.ucf.adapter.discovery",
+              "required": true
+            },
+            {
+              "kind": "capability_request",
+              "minimum_version": "1.0.0",
+              "name": "org.ucf.adapter.generation",
+              "required": true
+            },
+            {
+              "kind": "capability_request",
+              "minimum_version": "1.0.0",
+              "name": "org.ucf.adapter.inventory",
+              "required": true
+            },
+            {
+              "kind": "capability_request",
+              "minimum_version": "1.0.0",
+              "name": "org.ucf.adapter.mapping",
+              "required": true
+            },
+            {
+              "kind": "capability_request",
+              "minimum_version": "1.0.0",
+              "name": "org.ucf.adapter.verification",
+              "required": true
+            }
+          ],
+          "client": {
+            "kind": "producer",
+            "name": "org.ucf.core",
+            "version": "0.1.0"
+          },
+          "kind": "initialize_request",
+          "protocol_version": "1.0.0"
+        }
+      }
+    },
+    {
+      "direction": "adapter_to_core",
+      "message": {
+        "id": "request-1",
+        "jsonrpc": "2.0",
+        "result": {
+          "adapter": {
+            "kind": "producer",
+            "name": "org.ucf.reference-adapter",
+            "version": "1.0.0"
+          },
+          "capabilities": [
+            {
+              "kind": "capability",
+              "name": "org.ucf.adapter.discovery",
+              "version": "1.0.0"
+            },
+            {
+              "kind": "capability",
+              "name": "org.ucf.adapter.generation",
+              "version": "1.0.0"
+            },
+            {
+              "kind": "capability",
+              "name": "org.ucf.adapter.inventory",
+              "version": "1.0.0"
+            },
+            {
+              "kind": "capability",
+              "name": "org.ucf.adapter.mapping",
+              "version": "1.0.0"
+            },
+            {
+              "kind": "capability",
+              "name": "org.ucf.adapter.verification",
+              "version": "1.0.0"
+            }
+          ],
+          "kind": "initialize_result",
+          "protocol_version": "1.0.0"
+        }
+      }
+    },
+    {
+      "direction": "core_to_adapter",
+      "message": {
+        "id": "request-2",
+        "jsonrpc": "2.0",
+        "method": "ucf.inventory",
+        "params": {
+          "kind": "inventory_request",
+          "payload": {
+            "kind": "adapter_payload",
+            "schema_uri": "urn:ucf:adapter:reference",
+            "schema_version": "1.0.0",
+            "value": {
+              "kind": "null"
+            }
+          }
+        }
+      }
+    },
+    {
+      "direction": "adapter_to_core",
+      "message": {
+        "id": "request-2",
+        "jsonrpc": "2.0",
+        "result": {
+          "kind": "inventory_result",
+          "payload": {
+            "kind": "adapter_payload",
+            "schema_uri": "urn:ucf:adapter:reference",
+            "schema_version": "1.0.0",
+            "value": {
+              "kind": "null"
+            }
+          }
+        }
+      }
+    },
+    {
+      "direction": "core_to_adapter",
+      "message": {
+        "id": "request-3",
+        "jsonrpc": "2.0",
+        "method": "ucf.discover",
+        "params": {
+          "kind": "discover_request",
+          "payload": {
+            "kind": "adapter_payload",
+            "schema_uri": "urn:ucf:adapter:reference",
+            "schema_version": "1.0.0",
+            "value": {
+              "kind": "null"
+            }
+          }
+        }
+      }
+    },
+    {
+      "direction": "adapter_to_core",
+      "message": {
+        "id": "request-3",
+        "jsonrpc": "2.0",
+        "result": {
+          "kind": "discover_result",
+          "payload": {
+            "kind": "adapter_payload",
+            "schema_uri": "urn:ucf:adapter:reference",
+            "schema_version": "1.0.0",
+            "value": {
+              "kind": "null"
+            }
+          }
+        }
+      }
+    },
+    {
+      "direction": "core_to_adapter",
+      "message": {
+        "id": "request-4",
+        "jsonrpc": "2.0",
+        "method": "ucf.map",
+        "params": {
+          "kind": "map_request",
+          "payload": {
+            "kind": "adapter_payload",
+            "schema_uri": "urn:ucf:adapter:reference",
+            "schema_version": "1.0.0",
+            "value": {
+              "kind": "null"
+            }
+          }
+        }
+      }
+    },
+    {
+      "direction": "adapter_to_core",
+      "message": {
+        "id": "request-4",
+        "jsonrpc": "2.0",
+        "result": {
+          "kind": "map_result",
+          "payload": {
+            "kind": "adapter_payload",
+            "schema_uri": "urn:ucf:adapter:reference",
+            "schema_version": "1.0.0",
+            "value": {
+              "kind": "null"
+            }
+          }
+        }
+      }
+    },
+    {
+      "direction": "core_to_adapter",
+      "message": {
+        "id": "request-5",
+        "jsonrpc": "2.0",
+        "method": "ucf.generate",
+        "params": {
+          "kind": "generate_request",
+          "payload": {
+            "kind": "adapter_payload",
+            "schema_uri": "urn:ucf:adapter:reference",
+            "schema_version": "1.0.0",
+            "value": {
+              "kind": "null"
+            }
+          }
+        }
+      }
+    },
+    {
+      "direction": "adapter_to_core",
+      "message": {
+        "id": "request-5",
+        "jsonrpc": "2.0",
+        "result": {
+          "kind": "generate_result",
+          "payload": {
+            "kind": "adapter_payload",
+            "schema_uri": "urn:ucf:adapter:reference",
+            "schema_version": "1.0.0",
+            "value": {
+              "kind": "null"
+            }
+          }
+        }
+      }
+    },
+    {
+      "direction": "core_to_adapter",
+      "message": {
+        "id": "request-6",
+        "jsonrpc": "2.0",
+        "method": "ucf.verify",
+        "params": {
+          "kind": "verify_request",
+          "payload": {
+            "kind": "adapter_payload",
+            "schema_uri": "urn:ucf:adapter:reference",
+            "schema_version": "1.0.0",
+            "value": {
+              "kind": "null"
+            }
+          }
+        }
+      }
+    },
+    {
+      "direction": "adapter_to_core",
+      "message": {
+        "id": "request-6",
+        "jsonrpc": "2.0",
+        "result": {
+          "kind": "verify_result",
+          "payload": {
+            "kind": "adapter_payload",
+            "schema_uri": "urn:ucf:adapter:reference",
+            "schema_version": "1.0.0",
+            "value": {
+              "kind": "null"
+            }
+          }
+        }
+      }
+    },
+    {
+      "direction": "core_to_adapter",
+      "message": {
+        "id": "request-7",
+        "jsonrpc": "2.0",
+        "method": "ucf.inventory",
+        "params": {
+          "kind": "inventory_request",
+          "payload": {
+            "kind": "adapter_payload",
+            "schema_uri": "urn:ucf:adapter:reference:block",
+            "schema_version": "1.0.0",
+            "value": {
+              "kind": "null"
+            }
+          }
+        }
+      }
+    },
+    {
+      "direction": "core_to_adapter",
+      "message": {
+        "jsonrpc": "2.0",
+        "method": "ucf.cancel",
+        "params": {
+          "kind": "cancel_request",
+          "request_id": "request-7"
+        }
+      }
+    },
+    {
+      "direction": "adapter_to_core",
+      "message": {
+        "error": {
+          "code": -32000,
+          "data": {
+            "category": "cancelled",
+            "ucf_code": "request_cancelled"
+          },
+          "message": "adapter request was cancelled"
+        },
+        "id": "request-7",
+        "jsonrpc": "2.0"
+      }
+    },
+    {
+      "direction": "core_to_adapter",
+      "message": {
+        "id": "request-8",
+        "jsonrpc": "2.0",
+        "method": "ucf.shutdown",
+        "params": {
+          "kind": "shutdown_request"
+        }
+      }
+    },
+    {
+      "direction": "adapter_to_core",
+      "message": {
+        "id": "request-8",
+        "jsonrpc": "2.0",
+        "result": {
+          "kind": "shutdown_result"
+        }
+      }
+    }
+  ],
+  "protocol_version": "1.0.0"
+}

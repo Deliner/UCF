@@ -1,0 +1,17 @@
+{
+  "description": "Run UCF's canonical quality profile when a Codex turn stops.",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/stop_quality.py\"",
+            "timeout": 1200,
+            "statusMessage": "Running UCF quality gates"
+          }
+        ]
+      }
+    ]
+  }
+}

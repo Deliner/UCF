@@ -7,37 +7,39 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    TestConditionalFlowInterface,
-    StepAResult,
+from .impl import (
+    test_conditional_flow_impl as test_conditional_flow_impl,
 )
-from .impl import test_conditional_flow_impl  # noqa: F401
+from .interface import TestConditionalFlowInterface
 
 
 @pytest.fixture
-def uc(test_conditional_flow_impl: TestConditionalFlowInterface) -> TestConditionalFlowInterface:
-    return test_conditional_flow_impl
+def uc(request: pytest.FixtureRequest) -> TestConditionalFlowInterface:
+    return request.getfixturevalue("test_conditional_flow_impl")
 
 
 class TestHappyPath:
 
     def test_test_conditional_flow_completes_successfully(
         self, uc: TestConditionalFlowInterface,
+        inputs: dict[str, object],
     ) -> None:
 
-        step_a = uc.action_step_a(threshold=inputs.get('threshold'))
+        step_a = uc.action_step_a(
+            threshold=inputs['threshold'],
+        )
 
         if step_a.value > 10:
-            step_b = uc.action_step_b(value=step_a.value)
-        else:
-            step_b = None
+            uc.action_step_b(
+                value=step_a.value,
+            )
 
         if not (step_a.value > 10):
-            step_c = uc.action_step_c(value=step_a.value)
-        else:
-            step_c = None
+            uc.action_step_c(
+                value=step_a.value,
+            )
 
 
-        uc.verify_conditional_execution_works()
+        _ = uc.verify_conditional_execution_works()
 
 

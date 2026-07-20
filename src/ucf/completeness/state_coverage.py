@@ -74,7 +74,9 @@ class StateCoverageAnalyzer:
             non_assumed_pre = frozenset(uc.preconditions) - assumed
             post = frozenset(uc.postconditions)
 
-            from_state = self._state_name_for(non_assumed_pre) if non_assumed_pre else "initial"
+            from_state = (
+                self._state_name_for(non_assumed_pre) if non_assumed_pre else "initial"
+            )
             to_state = self._state_name_for(post) if post else from_state
 
             if from_state not in graph.states:
@@ -97,11 +99,13 @@ class StateCoverageAnalyzer:
                 if uc.terminal:
                     graph.states[to_state].terminal = True
 
-            graph.transitions.append(StateTransition(
-                from_state=from_state,
-                to_state=to_state,
-                via_uc=uc.metadata.name,
-            ))
+            graph.transitions.append(
+                StateTransition(
+                    from_state=from_state,
+                    to_state=to_state,
+                    via_uc=uc.metadata.name,
+                )
+            )
 
         return graph
 
@@ -114,19 +118,25 @@ class StateCoverageAnalyzer:
             if name == "initial":
                 continue
             if name not in reachable:
-                findings.append(Finding(
-                    severity=FindingSeverity.WARNING,
-                    category=FindingCategory.UNREACHABLE_STATE,
-                    step_id=f"state:{name}",
-                    message=(
-                        f"State '{name}' is not reachable from the initial state. "
-                        f"Preconditions: {sorted(state.preconditions) if state.preconditions else 'none'}"
-                    ),
-                    suggestion=(
-                        "Add a use case whose postconditions establish the preconditions "
-                        "needed to reach this state"
-                    ),
-                ))
+                precondition_summary = (
+                    sorted(state.preconditions) if state.preconditions else "none"
+                )
+                findings.append(
+                    Finding(
+                        severity=FindingSeverity.WARNING,
+                        category=FindingCategory.UNREACHABLE_STATE,
+                        step_id=f"state:{name}",
+                        message=(
+                            f"State '{name}' is not reachable from the initial state. "
+                            f"Preconditions: {precondition_summary}"
+                        ),
+                        suggestion=(
+                            "Add a use case whose postconditions establish the "
+                            "preconditions "
+                            "needed to reach this state"
+                        ),
+                    )
+                )
 
         for name in reachable:
             if name == "initial":
@@ -134,19 +144,22 @@ class StateCoverageAnalyzer:
             state = graph.states[name]
             outgoing = graph.outgoing(name)
             if not outgoing and not state.terminal:
-                findings.append(Finding(
-                    severity=FindingSeverity.INFO,
-                    category=FindingCategory.DEAD_END_STATE,
-                    step_id=f"state:{name}",
-                    message=(
-                        f"State '{name}' has no outgoing use cases (dead end). "
-                        f"Source UCs: {state.source_ucs}"
-                    ),
-                    suggestion=(
-                        "Mark the use case as terminal: true if this is an expected "
-                        "leaf state, or add use cases that continue from this state"
-                    ),
-                ))
+                findings.append(
+                    Finding(
+                        severity=FindingSeverity.INFO,
+                        category=FindingCategory.DEAD_END_STATE,
+                        step_id=f"state:{name}",
+                        message=(
+                            f"State '{name}' has no outgoing use cases (dead end). "
+                            f"Source UCs: {state.source_ucs}"
+                        ),
+                        suggestion=(
+                            "Mark the use case as terminal: true if this is an "
+                            "expected "
+                            "leaf state, or add use cases that continue from this state"
+                        ),
+                    )
+                )
 
         used_preconditions: set[str] = set()
         assumed: set[str] = set()
@@ -158,19 +171,22 @@ class StateCoverageAnalyzer:
 
         orphan_preconditions = used_preconditions - produced_postconditions - assumed
         for pre in orphan_preconditions:
-            findings.append(Finding(
-                severity=FindingSeverity.WARNING,
-                category=FindingCategory.UNREACHABLE_STATE,
-                step_id="precondition",
-                message=(
-                    f"Precondition '{pre}' is required by a UC but never "
-                    f"established as a postcondition by any other UC"
-                ),
-                suggestion=(
-                    "Add a use case whose postconditions include this precondition, "
-                    "or mark it as an external/assumed precondition"
-                ),
-            ))
+            findings.append(
+                Finding(
+                    severity=FindingSeverity.WARNING,
+                    category=FindingCategory.UNREACHABLE_STATE,
+                    step_id="precondition",
+                    message=(
+                        f"Precondition '{pre}' is required by a UC but never "
+                        f"established as a postcondition by any other UC"
+                    ),
+                    suggestion=(
+                        "Add a use case whose postconditions include this "
+                        "precondition, "
+                        "or mark it as an external/assumed precondition"
+                    ),
+                )
+            )
 
         return findings
 

@@ -7,34 +7,37 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    ExpireOldUrlsInterface,
-    FindExpiredResult,
-    DeleteBatchResult,
+from .impl import (
+    expire_old_urls_impl as expire_old_urls_impl,
 )
-from .impl import expire_old_urls_impl  # noqa: F401
+from .interface import ExpireOldUrlsInterface
 
 
 @pytest.fixture
-def uc(expire_old_urls_impl: ExpireOldUrlsInterface) -> ExpireOldUrlsInterface:
-    return expire_old_urls_impl
+def uc(request: pytest.FixtureRequest) -> ExpireOldUrlsInterface:
+    return request.getfixturevalue("expire_old_urls_impl")
 
 
 class TestHappyPath:
 
     def test_expire_old_urls_completes_successfully(
         self, uc: ExpireOldUrlsInterface,
+        inputs: dict[str, object],
     ) -> None:
 
-        find_expired = uc.action_find_expired(days_threshold=inputs.get('days_threshold'))
+        find_expired = uc.action_find_expired(
+            days_threshold=inputs['days_threshold'],
+        )
 
-        delete_batch = uc.action_delete_batch(slugs=find_expired.expired_slugs)
+        uc.action_delete_batch(
+            slugs=find_expired.expired_slugs,
+        )
 
 
-        uc.verify_all_expired_urls_are_deleted_from_database()
-        uc.verify_deletion_count_matches_number_of_found_expired_urls()
-        uc.verify_failed_slugs_is_empty_if_all_deletions_successful()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_all_expired_urls_are_deleted_from_database()
+        _ = uc.verify_deletion_count_matches_number_of_found_expired_urls()
+        _ = uc.verify_failed_slugs_is_empty_if_all_deletions_successful()
+        _ = uc.verify_required_inputs_validated()
 
 
 class TestAltNoExpiredUrls:
@@ -43,7 +46,12 @@ class TestAltNoExpiredUrls:
         self, uc: ExpireOldUrlsInterface,
     ) -> None:
 
-        log_empty = uc.action_log_empty(data={'message': 'no expired URLs found'}, format='json')
+        uc.action_log_empty(
+            data={
+                'message': 'no expired URLs found',
+            },
+            format='json',
+        )
 
 
 

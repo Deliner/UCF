@@ -3,8 +3,7 @@
 import pytest
 
 
-@pytest.fixture(autouse=True)
-def _inject_inputs():
-    """Inject inputs into test module so generated orchestrator can use inputs.get()."""
-    from . import test_orchestrator
-    test_orchestrator.inputs = {"threshold": 11}
+@pytest.fixture
+def inputs() -> dict[str, object]:
+    """Select the branch where step-b runs and step-c is skipped."""
+    return {"threshold": 11}

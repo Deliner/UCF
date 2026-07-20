@@ -26,23 +26,41 @@ class VisitShortLinkInterface(ABC, FrameworkActions):
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_redirect_to_destination(self, short_code: Any) -> RedirectToDestinationResult:
+    def action_redirect_to_destination(
+        self,
+        short_code: Any,
+    ) -> RedirectToDestinationResult:
+        ...
+
+    @abstractmethod
+    def action_show_404(
+        self,
+        short_code: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_visitor_is_redirected_to_original_page(self) -> None:
+    def verify_visitor_is_redirected_to_original_page(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_visit_is_recorded_for_analytics(self) -> None:
+    def verify_visit_is_recorded_for_analytics(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_redirect_happens_in_200ms(self) -> None:
+    def verify_redirect_happens_in_200ms(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

@@ -95,13 +95,3 @@ platform:
   http:
     method: POST
     path: /api/orders/finalize
-    request:
-      body:
-        cart_id: $input.cart_id
-        payment_method_id: $input.payment_method_id
-        shipping_address_id: $input.shipping_address_id
-    response:
-      status: 201
-      body:
-        order_id: $output.id
-        total: $output.total

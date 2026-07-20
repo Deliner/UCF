@@ -32,35 +32,93 @@ class CompletePurchaseInterface(ABC, FrameworkActions):
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_finalize_order(self, cart_id: Any, payment_method_id: Any, shipping_address_id: Any) -> FinalizeOrderResult:
+    def action_finalize_order(
+        self,
+        cart_id: Any,
+        payment_method_id: Any,
+        shipping_address_id: Any,
+    ) -> FinalizeOrderResult:
         ...
 
     @abstractmethod
-    def action_confirm_to_customer(self, order_id: Any, total_amount: Any) -> ConfirmToCustomerResult:
+    def action_confirm_to_customer(
+        self,
+        order_id: Any,
+        total_amount: Any,
+    ) -> ConfirmToCustomerResult:
+        ...
+
+    @abstractmethod
+    def action_notify_payment_failure(
+        self,
+        cart_id: Any,
+        reason: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_notify_stock_issue(
+        self,
+        cart_id: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_notify_timeout(
+        self,
+        cart_id: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_notify_cart_issue(
+        self,
+        cart_id: Any,
+        reason: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_notify_address_issue(
+        self,
+        shipping_address_id: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_order_is_placed_and_confirmed(self) -> None:
+    def verify_order_is_placed_and_confirmed(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_payment_is_processed_successfully(self) -> None:
+    def verify_payment_is_processed_successfully(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_customer_receives_order_confirmation_email(self) -> None:
+    def verify_customer_receives_order_confirmation_email(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_inventory_is_reserved_for_order_items(self) -> None:
+    def verify_inventory_is_reserved_for_order_items(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_customer_can_view_order_in_order_history(self) -> None:
+    def verify_customer_can_view_order_in_order_history(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

@@ -30,25 +30,35 @@ def test_step_def_supports_skip_if():
 
 
 def test_step_def_mutually_exclusive_conditions():
-    with pytest.raises(ValidationError, match="Cannot specify both 'when' and 'skip_if'"):
+    with pytest.raises(
+        ValidationError, match="Cannot specify both 'when' and 'skip_if'"
+    ):
         StepDef(id="test", use="mock", when="True", skip_if="False")
 
 
 def test_step_def_rejects_empty_when():
-    with pytest.raises(ValidationError, match="Expression cannot be empty or whitespace-only"):
+    with pytest.raises(
+        ValidationError, match="Expression cannot be empty or whitespace-only"
+    ):
         StepDef(id="test", use="mock", when="")
 
 
 def test_step_def_rejects_whitespace_only_when():
-    with pytest.raises(ValidationError, match="Expression cannot be empty or whitespace-only"):
+    with pytest.raises(
+        ValidationError, match="Expression cannot be empty or whitespace-only"
+    ):
         StepDef(id="test", use="mock", when="   \t  ")
 
 
 def test_step_def_rejects_empty_skip_if():
-    with pytest.raises(ValidationError, match="Expression cannot be empty or whitespace-only"):
+    with pytest.raises(
+        ValidationError, match="Expression cannot be empty or whitespace-only"
+    ):
         StepDef(id="test", use="mock", skip_if="")
 
 
 def test_step_def_rejects_whitespace_only_skip_if():
-    with pytest.raises(ValidationError, match="Expression cannot be empty or whitespace-only"):
+    with pytest.raises(
+        ValidationError, match="Expression cannot be empty or whitespace-only"
+    ):
         StepDef(id="test", use="mock", skip_if="  ")

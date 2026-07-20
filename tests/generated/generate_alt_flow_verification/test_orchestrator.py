@@ -7,37 +7,43 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    GenerateAltFlowVerificationInterface,
-    ExtractErrorCodeResult,
-    FindTriggerActionResult,
-    GenerateAssertionResult,
+from .impl import (
+    generate_alt_flow_verification_impl as generate_alt_flow_verification_impl,
 )
-from .impl import generate_alt_flow_verification_impl  # noqa: F401
+from .interface import GenerateAltFlowVerificationInterface
 
 
 @pytest.fixture
-def uc(generate_alt_flow_verification_impl: GenerateAltFlowVerificationInterface) -> GenerateAltFlowVerificationInterface:
-    return generate_alt_flow_verification_impl
+def uc(request: pytest.FixtureRequest) -> GenerateAltFlowVerificationInterface:
+    return request.getfixturevalue("generate_alt_flow_verification_impl")
 
 
 class TestHappyPath:
 
     def test_generate_alt_flow_verification_completes_successfully(
         self, uc: GenerateAltFlowVerificationInterface,
+        inputs: dict[str, object],
     ) -> None:
 
-        extract_error_code = uc.action_extract_error_code(alt_flow=inputs.get('alt_flow'))
+        extract_error_code = uc.action_extract_error_code(
+            alt_flow=inputs['alt_flow'],
+        )
 
-        find_trigger_action = uc.action_find_trigger_action(usecase_spec=inputs.get('usecase_spec'), error_code=extract_error_code.error_code)
+        find_trigger_action = uc.action_find_trigger_action(
+            usecase_spec=inputs['usecase_spec'],
+            error_code=extract_error_code.error_code,
+        )
 
-        generate_assertion = uc.action_generate_assertion(action_ref=find_trigger_action.action_ref, error_code=extract_error_code.error_code)
+        uc.action_generate_assertion(
+            action_ref=find_trigger_action.action_ref,
+            error_code=extract_error_code.error_code,
+        )
 
 
-        uc.verify_assertion_code_verifies_error_was_raised_by_correct_action()
-        uc.verify_assertion_is_inserted_into_generated_test()
-        uc.verify_test_fails_if_trigger_action_not_called()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_assertion_code_verifies_error_was_raised_by_correct_action()
+        _ = uc.verify_assertion_is_inserted_into_generated_test()
+        _ = uc.verify_test_fails_if_trigger_action_not_called()
+        _ = uc.verify_required_inputs_validated()
 
 
 class TestAltNoErrorHandler:
@@ -46,7 +52,9 @@ class TestAltNoErrorHandler:
         self, uc: GenerateAltFlowVerificationInterface,
     ) -> None:
 
-        skip_verification = uc.action_skip_verification(message='alternative flow has no error handler')
+        uc.action_skip_verification(
+            message='alternative flow has no error handler',
+        )
 
 
 

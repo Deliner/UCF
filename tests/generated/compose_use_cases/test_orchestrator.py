@@ -7,46 +7,59 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    ComposeUseCasesInterface,
-    LoaderContext,
-    ResolveResult,
+from .impl import (
+    compose_use_cases_impl as compose_use_cases_impl,
 )
-from .impl import compose_use_cases_impl  # noqa: F401
+from .interface import ComposeUseCasesInterface
 
 
 @pytest.fixture
-def uc(compose_use_cases_impl: ComposeUseCasesInterface) -> ComposeUseCasesInterface:
-    return compose_use_cases_impl
+def uc(request: pytest.FixtureRequest) -> ComposeUseCasesInterface:
+    return request.getfixturevalue("compose_use_cases_impl")
 
 
 class TestHappyPath:
 
     def test_compose_use_cases_completes_successfully(
         self, uc: ComposeUseCasesInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        resolve = uc.action_resolve(usecase=inputs.get('usecase'), registry=loader.registry)
+        uc.action_resolve(
+            usecase=inputs['usecase'],
+            registry=loader.registry,
+        )
 
 
-        uc.verify_flattened_uc_has_parent_steps_followed_by_child_steps()
-        uc.verify_parent_postconditions_are_preserved_in_the_result()
-        uc.verify_extends_chain_is_acyclic()
-        uc.verify_no_step_id_appears_in_both_parent_and_child()
-        uc.verify_no_circular_extends()
-        uc.verify_extends_no_step_id_clash()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_flattened_uc_has_parent_steps_followed_by_child_steps()
+        _ = uc.verify_parent_postconditions_are_preserved_in_the_result()
+        _ = uc.verify_extends_chain_is_acyclic()
+        _ = uc.verify_no_step_id_appears_in_both_parent_and_child()
+        _ = uc.verify_no_circular_extends()
+        _ = uc.verify_extends_no_step_id_clash()
+        _ = uc.verify_required_inputs_validated()
 
 
 class TestAltParentNotFound:
 
     def test_parent_not_found(
         self, uc: ComposeUseCasesInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        render_parent_error = uc.action_render_parent_error(data={'message': 'parent use case not found', 'usecase': inputs.get('usecase')}, format='tree')
+        uc.action_render_parent_error(
+            data={
+                'message': 'parent use case not found',
+                'usecase': inputs['usecase'],
+            },
+            format='tree',
+        )
 
 
 
@@ -54,10 +67,19 @@ class TestAltCircularExtends:
 
     def test_circular_extends(
         self, uc: ComposeUseCasesInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        render_cycle_error = uc.action_render_cycle_error(data={'message': 'circular extends chain detected', 'usecase': inputs.get('usecase')}, format='tree')
+        uc.action_render_cycle_error(
+            data={
+                'message': 'circular extends chain detected',
+                'usecase': inputs['usecase'],
+            },
+            format='tree',
+        )
 
 
 
@@ -65,10 +87,19 @@ class TestAltStepIdClash:
 
     def test_step_id_clash(
         self, uc: ComposeUseCasesInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        render_clash_error = uc.action_render_clash_error(data={'message': 'step ID conflict between parent and child', 'usecase': inputs.get('usecase')}, format='tree')
+        uc.action_render_clash_error(
+            data={
+                'message': 'step ID conflict between parent and child',
+                'usecase': inputs['usecase'],
+            },
+            format='tree',
+        )
 
 
 

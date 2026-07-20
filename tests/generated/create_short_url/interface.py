@@ -34,6 +34,11 @@ class StoreUrlResult:
     short_url: str
 
 
+@dataclass(frozen=True)
+class RetryGenerateResult:
+    retry_slug: str
+
+
 class CreateShortUrlInterface(ABC, FrameworkActions):
     """Interface with framework-provided actions inherited from FrameworkActions."""
 
@@ -42,35 +47,72 @@ class CreateShortUrlInterface(ABC, FrameworkActions):
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_validate_url(self, url: Any) -> ValidateUrlResult:
+    def action_validate_url(
+        self,
+        url: Any,
+    ) -> ValidateUrlResult:
         ...
 
     @abstractmethod
-    def action_generate_slug(self, length: Any) -> GenerateSlugResult:
+    def action_generate_slug(
+        self,
+        length: Any,
+    ) -> GenerateSlugResult:
         ...
 
     @abstractmethod
-    def action_check_exists(self, slug: Any) -> CheckExistsResult:
+    def action_check_exists(
+        self,
+        slug: Any,
+    ) -> CheckExistsResult:
         ...
 
     @abstractmethod
-    def action_store_url(self, slug: Any, original_url: Any, created_by: Any) -> StoreUrlResult:
+    def action_store_url(
+        self,
+        slug: Any,
+        original_url: Any,
+        created_by: Any,
+    ) -> StoreUrlResult:
+        ...
+
+    @abstractmethod
+    def action_return_error(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_retry_generate(
+        self,
+        length: Any,
+    ) -> RetryGenerateResult:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_short_url_is_created_and_stored(self) -> None:
+    def verify_short_url_is_created_and_stored(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_slug_is_unique_in_database(self) -> None:
+    def verify_slug_is_unique_in_database(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_click_count_is_initialized_to_0(self) -> None:
+    def verify_click_count_is_initialized_to_0(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

@@ -11,6 +11,7 @@ from typing import Any
 @dataclass
 class ShortURL:
     """A shortened URL record."""
+
     id: str
     slug: str
     original_url: str
@@ -35,7 +36,7 @@ class URLShortener:
 
     def validate_url(self, url: str) -> tuple[bool, str | None]:
         """Validate URL format.
-        
+
         Returns (is_valid, error_message)
         """
         if not url:
@@ -57,13 +58,14 @@ class URLShortener:
         created_by: str | None = None,
     ) -> ShortURL:
         """Store a new short URL.
-        
+
         Raises ValueError if slug already exists.
         """
         if slug in self._urls:
             raise ValueError(f"Slug '{slug}' already exists")
-        
+
         import time
+
         self._id_counter += 1
         record = ShortURL(
             id=str(self._id_counter),
@@ -82,7 +84,7 @@ class URLShortener:
 
     def increment_clicks(self, slug: str) -> int:
         """Increment click count for a slug.
-        
+
         Returns new click count.
         """
         if slug not in self._urls:
@@ -99,10 +101,11 @@ class URLShortener:
         record = self.get_by_slug(slug)
         if not record:
             raise ValueError(f"Slug '{slug}' not found")
-        
+
         import datetime
+
         created_dt = datetime.datetime.fromtimestamp(record.created_at)
-        
+
         return {
             "slug": record.slug,
             "original_url": record.original_url,
@@ -114,7 +117,7 @@ class URLShortener:
     def list_expired_urls(self, days_threshold: int) -> list[str]:
         """List slugs for URLs older than threshold days."""
         import time
-        
+
         threshold_ts = time.time() - (days_threshold * 86400)
         expired = [
             record.slug
@@ -125,7 +128,7 @@ class URLShortener:
 
     def delete_url(self, slug: str) -> bool:
         """Delete a URL by slug.
-        
+
         Returns True if deleted, raises ValueError if not found.
         """
         if slug not in self._urls:
@@ -135,7 +138,7 @@ class URLShortener:
 
     def delete_batch(self, slugs: list[str]) -> tuple[int, list[str]]:
         """Delete multiple URLs.
-        
+
         Returns (deleted_count, failed_slugs).
         """
         deleted = 0

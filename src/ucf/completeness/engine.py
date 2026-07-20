@@ -12,9 +12,15 @@ from dataclasses import dataclass, field
 
 from ucf.completeness.error_reachability import ErrorCoverage, ErrorReachabilityAnalyzer
 from ucf.completeness.input_partitions import InputPartitionAnalyzer, PartitionCoverage
-from ucf.completeness.invariant_necessity import InvariantCoverage, InvariantNecessityAnalyzer
+from ucf.completeness.invariant_necessity import (
+    InvariantCoverage,
+    InvariantNecessityAnalyzer,
+)
 from ucf.completeness.platform_binding import PlatformBindingAnalyzer, PlatformScenario
-from ucf.completeness.resource_conflicts import ResourceConflict, ResourceConflictAnalyzer
+from ucf.completeness.resource_conflicts import (
+    ResourceConflict,
+    ResourceConflictAnalyzer,
+)
 from ucf.completeness.state_coverage import StateCoverageAnalyzer, StateGraph
 from ucf.parser.registry import SpecRegistry
 from ucf.tracer.context import Finding

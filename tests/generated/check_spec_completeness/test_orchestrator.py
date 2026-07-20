@@ -7,23 +7,15 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    CheckSpecCompletenessInterface,
-    RegistryContext,
-    AnalyzeErrorsResult,
-    AnalyzePartitionsResult,
-    AnalyzeStatesResult,
-    AnalyzePlatformResult,
-    AnalyzeInvariantsResult,
-    AnalyzeResourcesResult,
-    AggregateResult,
+from .impl import (
+    check_spec_completeness_impl as check_spec_completeness_impl,
 )
-from .impl import check_spec_completeness_impl  # noqa: F401
+from .interface import CheckSpecCompletenessInterface
 
 
 @pytest.fixture
-def uc(check_spec_completeness_impl: CheckSpecCompletenessInterface) -> CheckSpecCompletenessInterface:
-    return check_spec_completeness_impl
+def uc(request: pytest.FixtureRequest) -> CheckSpecCompletenessInterface:
+    return request.getfixturevalue("check_spec_completeness_impl")
 
 
 class TestHappyPath:
@@ -33,28 +25,47 @@ class TestHappyPath:
     ) -> None:
         registry = uc.setup_registry()
 
-        analyze_errors = uc.action_analyze_errors(registry=registry.registry)
+        uc.action_analyze_errors(
+            registry=registry.registry,
+        )
 
-        analyze_partitions = uc.action_analyze_partitions(registry=registry.registry)
+        uc.action_analyze_partitions(
+            registry=registry.registry,
+        )
 
-        analyze_states = uc.action_analyze_states(registry=registry.registry)
+        uc.action_analyze_states(
+            registry=registry.registry,
+        )
 
-        analyze_platform = uc.action_analyze_platform(registry=registry.registry)
+        uc.action_analyze_platform(
+            registry=registry.registry,
+        )
 
-        analyze_invariants = uc.action_analyze_invariants(registry=registry.registry)
+        uc.action_analyze_invariants(
+            registry=registry.registry,
+        )
 
-        analyze_resources = uc.action_analyze_resources(registry=registry.registry)
+        uc.action_analyze_resources(
+            registry=registry.registry,
+        )
 
-        aggregate = uc.action_aggregate(registry=registry.registry)
+        aggregate = uc.action_aggregate(
+            registry=registry.registry,
+        )
 
-        render_report = uc.action_render_report(data={'report': aggregate.report}, format='tree')
+        uc.action_render_report(
+            data={
+                'report': aggregate.report,
+            },
+            format='tree',
+        )
 
 
-        uc.verify_developer_sees_a_completeness_report_identifying_behavioral()
-        uc.verify_every_uncovered_error_partition_state_or_platform_scenario()
-        uc.verify_every_error_has_alt_flow()
-        uc.verify_every_input_partition_covered()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_developer_sees_a_completeness_report_identifying_behavioral()
+        _ = uc.verify_every_uncovered_error_partition_state_or_platform_scenario()
+        _ = uc.verify_every_error_has_alt_flow()
+        _ = uc.verify_every_input_partition_covered()
+        _ = uc.verify_required_inputs_validated()
 
 
 class TestAltNoActionsLoaded:
@@ -62,9 +73,17 @@ class TestAltNoActionsLoaded:
     def test_no_actions_loaded(
         self, uc: CheckSpecCompletenessInterface,
     ) -> None:
-        registry = uc.setup_registry()
+        uc.setup_registry()
 
-        render_empty = uc.action_render_report(data={'message': 'no action specs found, completeness analysis requires at least one action'}, format='tree')
+        uc.action_render_empty(
+            data={
+                'message': (
+                    'no action specs found, completeness analysis requires at '
+                    'least one action'
+                ),
+            },
+            format='tree',
+        )
 
 
 

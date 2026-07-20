@@ -7,61 +7,91 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    InspectSpecDetailWebInterface,
-    LoaderContext,
-    Graph_builderContext,
-    GetDetailResult,
-    GetRelsResult,
-    ToggleTabResult,
-    NavigateRelatedResult,
+from .impl import (
+    inspect_spec_detail_web_impl as inspect_spec_detail_web_impl,
 )
-from .impl import inspect_spec_detail_web_impl  # noqa: F401
+from .interface import InspectSpecDetailWebInterface
 
 
 @pytest.fixture
-def uc(inspect_spec_detail_web_impl: InspectSpecDetailWebInterface) -> InspectSpecDetailWebInterface:
-    return inspect_spec_detail_web_impl
+def uc(request: pytest.FixtureRequest) -> InspectSpecDetailWebInterface:
+    return request.getfixturevalue("inspect_spec_detail_web_impl")
 
 
 class TestHappyPath:
 
     def test_inspect_spec_detail_web_completes_successfully(
         self, uc: InspectSpecDetailWebInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
-        graph_builder = uc.setup_graph_builder()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
+        graph_builder = uc.setup_graph_builder(
+            registry=loader.registry,
+        )
 
-        get_detail = uc.action_get_detail(registry=loader.registry, kind=inputs.get('kind'), name=inputs.get('name'))
+        get_detail = uc.action_get_detail(
+            registry=loader.registry,
+            kind=inputs['kind'],
+            name=inputs['name'],
+        )
 
-        get_rels = uc.action_get_rels(registry=loader.registry, graph=graph_builder.graph, spec_ref=inputs.get('spec_ref'))
+        get_rels = uc.action_get_rels(
+            registry=loader.registry,
+            graph=graph_builder.graph,
+            spec_ref=inputs['spec_ref'],
+        )
 
-        render_detail = uc.action_render_detail(data={'spec': get_detail.spec, 'raw_yaml': get_detail.raw_yaml, 'impl_status': get_detail.impl_status, 'upstream': get_rels.upstream, 'downstream': get_rels.downstream}, format='tree')
+        uc.action_render_detail(
+            data={
+                'spec': get_detail.spec,
+                'raw_yaml': get_detail.raw_yaml,
+                'impl_status': get_detail.impl_status,
+                'upstream': get_rels.upstream,
+                'downstream': get_rels.downstream,
+            },
+            format='tree',
+        )
 
-        toggle_tab = uc.action_toggle_tab(tab_name=inputs.get('tab_name'))
+        uc.action_toggle_tab(
+            tab_name=inputs['tab_name'],
+        )
 
-        navigate_related = uc.action_navigate_related(related_ref=inputs.get('related_ref'))
+        uc.action_navigate_related(
+            related_ref=inputs['related_ref'],
+        )
 
 
-        uc.verify_developer_sees_parsed_spec_metadata_and_schema()
-        uc.verify_developer_sees_raw_yaml_source()
-        uc.verify_developer_sees_upstream_and_downstream_relationships()
-        uc.verify_developer_sees_implementation_status()
-        uc.verify_clicking_a_tab_switches_the_detail_panel_content()
-        uc.verify_clicking_a_relationship_link_navigates_to_that_spec()
-        uc.verify_all_tabs_render_without_errors()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_developer_sees_parsed_spec_metadata_and_schema()
+        _ = uc.verify_developer_sees_raw_yaml_source()
+        _ = uc.verify_developer_sees_upstream_and_downstream_relationships()
+        _ = uc.verify_developer_sees_implementation_status()
+        _ = uc.verify_clicking_a_tab_switches_the_detail_panel_content()
+        _ = uc.verify_clicking_a_relationship_link_navigates_to_that_spec()
+        _ = uc.verify_all_tabs_render_without_errors()
+        _ = uc.verify_required_inputs_validated()
 
 
 class TestAltSpecNotFound:
 
     def test_spec_not_found(
         self, uc: InspectSpecDetailWebInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
-        graph_builder = uc.setup_graph_builder()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
+        uc.setup_graph_builder(
+            registry=loader.registry,
+        )
 
-        render_404 = uc.action_render_detail(data={'message': 'spec not found'}, format='table')
+        uc.action_render_404(
+            data={
+                'message': 'spec not found',
+            },
+            format='table',
+        )
 
 
 

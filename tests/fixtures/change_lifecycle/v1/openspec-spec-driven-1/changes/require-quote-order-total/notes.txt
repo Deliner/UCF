@@ -1,0 +1,1 @@
+This opaque note must survive import and export byte-for-byte.

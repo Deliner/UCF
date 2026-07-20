@@ -1,5 +1,9 @@
 # UCF Framework Guide — The Source of Truth
 
+> **Status: Legacy guide.** The former source-of-truth and living-document
+> labels are historical. Capability and release claims here are not current;
+> [the capability matrix](docs/CAPABILITIES.md) controls the current status.
+
 **Version**: 1.0  
 **Last Updated**: Feb 2026  
 **Status**: Living Document

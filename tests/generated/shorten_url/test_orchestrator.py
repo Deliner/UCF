@@ -7,32 +7,35 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    ShortenUrlInterface,
-    CreateShortLinkResult,
+from .impl import (
+    shorten_url_impl as shorten_url_impl,
 )
-from .impl import shorten_url_impl  # noqa: F401
+from .interface import ShortenUrlInterface
 
 
 @pytest.fixture
-def uc(shorten_url_impl: ShortenUrlInterface) -> ShortenUrlInterface:
-    return shorten_url_impl
+def uc(request: pytest.FixtureRequest) -> ShortenUrlInterface:
+    return request.getfixturevalue("shorten_url_impl")
 
 
 class TestHappyPath:
 
     def test_shorten_url_completes_successfully(
         self, uc: ShortenUrlInterface,
+        inputs: dict[str, object],
     ) -> None:
 
-        create_short_link = uc.action_create_short_link(original_url=inputs.get('original_url'), custom_code=inputs.get('custom_code'))
+        uc.action_create_short_link(
+            original_url=inputs['original_url'],
+            custom_code=inputs['custom_code'],
+        )
 
 
-        uc.verify_content_creator_receives_shortened_url()
-        uc.verify_shortened_url_is_ready_to_use_immediately()
-        uc.verify_shortened_url_redirects_to_original_page()
-        uc.verify_creation_is_recorded_with_timestamp()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_content_creator_receives_shortened_url()
+        _ = uc.verify_shortened_url_is_ready_to_use_immediately()
+        _ = uc.verify_shortened_url_redirects_to_original_page()
+        _ = uc.verify_creation_is_recorded_with_timestamp()
+        _ = uc.verify_required_inputs_validated()
 
 
 class TestAltInvalidUrl:
@@ -41,7 +44,9 @@ class TestAltInvalidUrl:
         self, uc: ShortenUrlInterface,
     ) -> None:
 
-        show_error = uc.action_show_error(error='URL must start with http:// or https://')
+        uc.action_show_error(
+            error='URL must start with http:// or https://',
+        )
 
 
 
@@ -49,9 +54,12 @@ class TestAltCustomCodeTaken:
 
     def test_custom_code_taken(
         self, uc: ShortenUrlInterface,
+        inputs: dict[str, object],
     ) -> None:
 
-        suggest_alternatives = uc.action_suggest_alternatives(requested_code=inputs.get('custom_code'))
+        uc.action_suggest_alternatives(
+            requested_code=inputs['custom_code'],
+        )
 
 
 

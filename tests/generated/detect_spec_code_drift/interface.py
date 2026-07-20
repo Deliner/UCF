@@ -41,59 +41,116 @@ class DetectResult:
     drift_count: int
 
 
+@dataclass(frozen=True)
+class BuildMapCustomResult:
+    spec_to_code: Any
+    code_to_spec: Any
+    mapped_count: int
+
+
 class DetectSpecCodeDriftInterface(ABC, FrameworkActions):
     """Interface with framework-provided actions inherited from FrameworkActions."""
 
     # ── State Setup (from requires) ──
 
     @abstractmethod
-    def setup_loader(self) -> LoaderContext:
+    def setup_loader(
+        self,
+        specs_dir: Any,
+    ) -> LoaderContext:
         ...
 
     @abstractmethod
-    def setup_scanner(self) -> ScannerContext:
+    def setup_scanner(
+        self,
+        source_dir: Any,
+    ) -> ScannerContext:
         ...
 
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_build_map(self, registry: Any, implementations: Any) -> BuildMapResult:
+    def action_build_map(
+        self,
+        registry: Any,
+        implementations: Any,
+    ) -> BuildMapResult:
         ...
 
     @abstractmethod
-    def action_detect(self, registry: Any, spec_to_code: Any, code_to_spec: Any) -> DetectResult:
+    def action_detect(
+        self,
+        registry: Any,
+        spec_to_code: Any,
+        code_to_spec: Any,
+    ) -> DetectResult:
         ...
 
     @abstractmethod
-    def action_render_drift(self, data: Any, format: Any) -> None:
+    def action_render_drift(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_build_map_custom(
+        self,
+        registry: Any,
+        implementations: Any,
+        convention: Any,
+    ) -> BuildMapCustomResult:
+        ...
+
+    @abstractmethod
+    def action_render_clean(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_every_spec_without_an_implementation_is_reported_as(self) -> None:
+    def verify_every_spec_without_an_implementation_is_reported_as(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_every_implements_marker_referencing_a_missing_spec_is(self) -> None:
+    def verify_every_implements_marker_referencing_a_missing_spec_is(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_drift_count_correctly_sums_unimplemented_orphan_stale(self) -> None:
+    def verify_drift_count_correctly_sums_unimplemented_orphan_stale(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_output_is_rendered_in_the_requested_format(self) -> None:
+    def verify_output_is_rendered_in_the_requested_format(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_spec_has_implementation(self) -> None:
+    def verify_spec_has_implementation(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_implementation_has_spec(self) -> None:
+    def verify_implementation_has_spec(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

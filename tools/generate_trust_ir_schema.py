@@ -1,0 +1,109 @@
+"""Generate the deterministic public JSON Schema for UCF trust IR v1."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+from typing import Any
+
+from ucf.ir.codec import MAX_JSON_NESTING
+from ucf.ir.trust_models import CURRENT_TRUST_IR_VERSION, TrustIR
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_OUTPUT = (
+    REPOSITORY_ROOT
+    / "src"
+    / "ucf"
+    / "schemas"
+    / "trust"
+    / "v1"
+    / "schema.json"
+)
+SCHEMA_ID = "urn:ucf:schema:trust-ir:1.0.0"
+
+
+def build_schema() -> dict[str, Any]:
+    """Build the structural schema from the authoritative trust IR models."""
+
+    schema = TrustIR.model_json_schema(mode="validation")
+    schema.update(
+        {
+            "$comment": (
+                "Generated deterministically from the UCF trust IR v1 "
+                "contract; do not edit by hand. Identity, reference, "
+                "reconciliation, and evidence checks are performed by the "
+                "runtime validator."
+            ),
+            "$id": SCHEMA_ID,
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "description": (
+                "Closed structural schema for the immutable UCF trust IR "
+                "1.0.0 overlay. Schema acceptance does not establish a claim "
+                "or validate the referenced behavior document."
+            ),
+            "title": "UCF trust IR 1.0.0",
+            "x-ucf-trust-ir-version": CURRENT_TRUST_IR_VERSION,
+            "x-ucf-runtime-semantic-checks": [
+                "global trust record identity uniqueness",
+                "typed internal reference and source trace resolution",
+                "canonical Behavior IR document binding",
+                "mapping basis and conflict disposition consistency",
+                "exact claim evidence evaluation",
+                f"maximum JSON nesting depth {MAX_JSON_NESTING}",
+            ],
+        }
+    )
+    return schema
+
+
+def render_schema() -> str:
+    return json.dumps(
+        build_schema(),
+        ensure_ascii=True,
+        indent=2,
+        sort_keys=True,
+    ) + "\n"
+
+
+def _parse_args(arguments: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Generate or check the published UCF trust IR JSON Schema."
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=DEFAULT_OUTPUT,
+        help=f"Schema output path (default: {DEFAULT_OUTPUT})",
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Exit non-zero instead of writing when the checked schema is stale.",
+    )
+    return parser.parse_args(arguments)
+
+
+def main(arguments: list[str] | None = None) -> int:
+    args = _parse_args(arguments)
+    rendered = render_schema()
+    output: Path = args.output
+
+    if args.check:
+        if not output.exists():
+            print(f"Schema is missing: {output}")
+            return 1
+        if output.read_text(encoding="utf-8") != rendered:
+            print(f"Schema is stale: {output}")
+            return 1
+        print(f"Schema is current: {output}")
+        return 0
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(rendered, encoding="utf-8")
+    print(f"Wrote schema: {output}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -2,25 +2,25 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
-from ucf.models.base import FieldDef, Metadata
+from ucf.models.base import FieldDef, Metadata, SpecModel
 
 
-class EventTrigger(BaseModel):
+class EventTrigger(SpecModel):
     after: str
 
 
-class DeliveryChannel(BaseModel):
+class DeliveryChannel(SpecModel):
     channel: str
     condition: str | None = None
 
 
-class EventSpec(BaseModel):
+class EventSpec(SpecModel):
     kind: Literal["event"] = "event"
     metadata: Metadata
     trigger: EventTrigger | None = None
-    payload: dict[str, FieldDef | dict[str, Any]] = Field(default_factory=dict)
+    payload: dict[str, FieldDef] = Field(default_factory=dict)
     delivery: list[DeliveryChannel] = Field(default_factory=list)

@@ -7,33 +7,44 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    GetUrlStatsInterface,
-    FetchStatsResult,
+from .impl import (
+    get_url_stats_impl as get_url_stats_impl,
 )
-from .impl import get_url_stats_impl  # noqa: F401
+from .interface import GetUrlStatsInterface
 
 
 @pytest.fixture
-def uc(get_url_stats_impl: GetUrlStatsInterface) -> GetUrlStatsInterface:
-    return get_url_stats_impl
+def uc(request: pytest.FixtureRequest) -> GetUrlStatsInterface:
+    return request.getfixturevalue("get_url_stats_impl")
 
 
 class TestHappyPath:
 
     def test_get_url_stats_completes_successfully(
         self, uc: GetUrlStatsInterface,
+        inputs: dict[str, object],
     ) -> None:
 
-        fetch_stats = uc.action_fetch_stats(slug=inputs.get('slug'))
+        fetch_stats = uc.action_fetch_stats(
+            slug=inputs['slug'],
+        )
 
-        render_stats = uc.action_render_stats(data={'slug': fetch_stats.slug, 'url': fetch_stats.original_url, 'clicks': fetch_stats.total_clicks, 'created': fetch_stats.created_at, 'owner': fetch_stats.created_by}, format='table')
+        uc.action_render_stats(
+            data={
+                'slug': fetch_stats.slug,
+                'url': fetch_stats.original_url,
+                'clicks': fetch_stats.total_clicks,
+                'created': fetch_stats.created_at,
+                'owner': fetch_stats.created_by,
+            },
+            format='table',
+        )
 
 
-        uc.verify_creator_sees_total_click_count()
-        uc.verify_creator_sees_original_url()
-        uc.verify_creator_sees_creation_timestamp()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_creator_sees_total_click_count()
+        _ = uc.verify_creator_sees_original_url()
+        _ = uc.verify_creator_sees_creation_timestamp()
+        _ = uc.verify_required_inputs_validated()
 
 
 class TestAltSlugNotFound:
@@ -42,7 +53,12 @@ class TestAltSlugNotFound:
         self, uc: GetUrlStatsInterface,
     ) -> None:
 
-        return_not_found = uc.action_render_stats(data={'error': 'slug not found'}, format='json')
+        uc.action_return_not_found(
+            data={
+                'error': 'slug not found',
+            },
+            format='json',
+        )
 
 
 

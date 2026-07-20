@@ -5,9 +5,17 @@ Fill in the method bodies below. This file is never overwritten by `ucf generate
 
 from __future__ import annotations
 
+{% if uses_any %}
 from typing import Any
+{% endif %}
 
-from .interface import {{ interface_class }}{% for dc in dataclasses %}, {{ dc.class_name }}{% endfor %}
+import pytest
+
+from .interface import (
+{% for import_name in interface_imports %}
+    {{ import_name }},
+{% endfor %}
+)
 
 
 class {{ impl_class }}({{ interface_class }}):
@@ -15,20 +23,46 @@ class {{ impl_class }}({{ interface_class }}):
     # ── State Setup ──
 {% for method in setup_methods %}
 
-    def {{ method.name }}(self{{ method.params_str }}) -> {{ method.return_type }}:
-        raise NotImplementedError("Fill in: {{ method.name }}")
+    def {{ method.name }}(
+        self,
+{% for param in method.params %}
+        {{ param.name }}: {{ param.type }},
+{% endfor %}
+    ) -> {{ method.return_type }}:
+        raise NotImplementedError(
+            "Fill in: "
+            "{{ method.name }}"
+        )
 {% endfor %}
 
     # ── Actions ──
 {% for method in action_methods %}
 
-    def {{ method.name }}(self{{ method.params_str }}) -> {{ method.return_type }}:
-        raise NotImplementedError("Fill in: {{ method.name }}")
+    def {{ method.name }}(
+        self,
+{% for param in method.params %}
+        {{ param.name }}: {{ param.type }},
+{% endfor %}
+    ) -> {{ method.return_type }}:
+        raise NotImplementedError(
+            "Fill in: "
+            "{{ method.name }}"
+        )
 {% endfor %}
 
     # ── Verifications ──
 {% for method in verify_methods %}
 
-    def {{ method.name }}(self{{ method.params_str }}) -> None:
-        raise NotImplementedError("Fill in: {{ method.name }}")
+    def {{ method.name }}(
+        self,
+    ) -> None:
+        raise NotImplementedError(
+            "Fill in: "
+            "{{ method.name }}"
+        )
 {% endfor %}
+
+
+@pytest.fixture
+def {{ fixture_name }}() -> {{ impl_class }}:
+    return {{ impl_class }}()

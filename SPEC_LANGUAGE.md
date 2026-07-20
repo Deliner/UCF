@@ -1,16 +1,26 @@
 # UCF Spec Language: 6 Primitives
 
-UCF (Use Case-Driven Development Framework) describes system behavior through six primitives.
-Every primitive is a YAML document with `kind`, `metadata`, and primitive-specific sections.
+> **Current status — source declarations, not an execution IR.** See
+> [docs/CAPABILITIES.md](docs/CAPABILITIES.md) for the canonical implemented,
+> experimental, and planned support matrix. Parser acceptance records declared
+> intent and does not prove transport execution, invariant checking, or formal
+> verification.
+
+The current UCF source model has six YAML document kinds with `kind`,
+`metadata`, and kind-specific fields. The generated JSON Schema and parser are
+the authority for accepted input. The shapes and examples below are
+illustrative declarations; fields without an executable consumer named in the
+capability matrix remain declaration-only.
 
 ---
 
 ## 1. Action
 
-An **action** is an atomic operation abstracted from the underlying platform.
-The same logical action can have HTTP, gRPC, GraphQL, UI, CLI, or Kafka bindings.
+An **action** declares a logical operation and may record intended HTTP, gRPC,
+GraphQL, UI, CLI, or Kafka bindings. The current core can retain selected
+binding shapes, but it does not execute those transports.
 
-### Schema
+### Illustrative source shape
 
 ```yaml
 kind: action
@@ -79,7 +89,7 @@ emits:
   - event: <event name>
 ```
 
-### Example: `add-to-cart` — HTTP variant
+### Example: `add-to-cart` — HTTP declaration only
 
 ```yaml
 kind: action
@@ -159,7 +169,7 @@ emits:
   - event: item-added-to-cart
 ```
 
-### Example: `add-to-cart` — gRPC variant
+### Example: `add-to-cart` — gRPC declaration only
 
 ```yaml
 kind: action
@@ -237,7 +247,7 @@ emits:
   - event: item-added-to-cart
 ```
 
-### Example: `add-to-cart` — UI variant
+### Example: `add-to-cart` — UI declaration only
 
 ```yaml
 kind: action
@@ -304,10 +314,11 @@ emits:
 
 ## 2. Event
 
-An **event** is an asynchronous fact that already happened in the system.
-Events trigger event-driven use cases and fan out through delivery channels.
+An **event** declares an asynchronous fact and its intended delivery metadata.
+The current source model does not deliver events or activate event-driven use
+cases at runtime.
 
-### Schema
+### Illustrative source shape
 
 ```yaml
 kind: event
@@ -329,7 +340,7 @@ delivery:
     condition: <when to deliver via this channel>
 ```
 
-### Example: `message-created`
+### Example: `message-created` — declaration only
 
 ```yaml
 kind: event
@@ -376,7 +387,7 @@ delivery:
 A **component** is a reusable block of steps — the analog of a function.
 Use cases declare which components they require, and components inject data into the use case context.
 
-### Schema
+### Illustrative source shape
 
 ```yaml
 kind: component
@@ -407,7 +418,7 @@ steps:
     when: <condition for conditional execution>
 ```
 
-### Example: `authenticated-user`
+### Example: `authenticated-user` — declaration only
 
 ```yaml
 kind: component
@@ -473,10 +484,11 @@ steps:
 
 ## 4. Protocol
 
-A **protocol** is an abstract interface with multiple concrete implementations — the analog of an interface or trait.
-Use cases reference the protocol; the runtime selects the implementation.
+A **protocol** declares an abstract interface and possible concrete
+implementations—the source-level analog of an interface or trait. The current
+runtime does not select or execute an implementation.
 
-### Schema
+### Illustrative source shape
 
 ```yaml
 kind: protocol
@@ -505,7 +517,7 @@ implementations:
   - $ref: components/<implementation-name>
 ```
 
-### Example: `payment`
+### Example: `payment` — declaration only
 
 ```yaml
 kind: protocol
@@ -566,10 +578,11 @@ implementations:
 
 ## 5. Use Case
 
-A **use case** is a complete user scenario — the central primitive of UCF.
-It wires actions, components, protocols, and events into an end-to-end flow.
+A **use case** declares the intended shape of a user scenario and references
+actions, components, protocols, events, and invariants. Loading or graphing
+that declaration is not evidence that the end-to-end scenario ran.
 
-### Schema
+### Illustrative source shape
 
 ```yaml
 kind: usecase
@@ -625,7 +638,7 @@ concurrency:
     description: <human-readable explanation>
 ```
 
-### Example: `purchase-product` (actor-initiated)
+### Example: `purchase-product` (actor-initiated, declaration only)
 
 ```yaml
 kind: usecase
@@ -771,7 +784,7 @@ concurrency:
     description: inventory reservation uses version-based optimistic locking; second buyer receives OUT_OF_STOCK
 ```
 
-### Example: `receive-new-message` (event-triggered)
+### Example: `receive-new-message` (event-triggered declaration only)
 
 ```yaml
 kind: usecase
@@ -849,7 +862,7 @@ postconditions:
   - conversation last_activity timestamp is updated
 ```
 
-### Example: `return-product` (depends on another use case)
+### Example: `return-product` (dependency declaration only)
 
 ```yaml
 kind: usecase
@@ -950,13 +963,15 @@ invariants:
 
 ## 6. Invariant
 
-An **invariant** is a business rule that can **never** be violated, regardless of which use case is executing.
-Invariants are checked automatically and serve as the safety net across the entire system.
+An **invariant** declares a business rule intended to hold across relevant use
+cases. The current package retains selected invariant declarations but does not
+automatically check them or formally verify them.
 
-Full invariant documentation with enforcement strategies, testing patterns, and composition rules
-is in [INVARIANTS.md](INVARIANTS.md).
+The target verification design and illustrative enforcement patterns are in
+[INVARIANTS.md](INVARIANTS.md); they are not current support unless the
+capability matrix names executable evidence.
 
-### Schema
+### Illustrative source shape
 
 ```yaml
 kind: invariant
@@ -972,7 +987,7 @@ applies_to:
   - <resource or use case this invariant guards>
 ```
 
-### Example: `data` invariant
+### Example: `data` invariant — declaration only
 
 ```yaml
 kind: invariant
@@ -990,7 +1005,7 @@ applies_to:
   - action: actions/create-product
 ```
 
-### Example: `relationship` invariant
+### Example: `relationship` invariant — declaration only
 
 ```yaml
 kind: invariant
@@ -1007,7 +1022,7 @@ applies_to:
   - action: actions/create-order
 ```
 
-### Example: `aggregate` invariant
+### Example: `aggregate` invariant — declaration only
 
 ```yaml
 kind: invariant
@@ -1026,7 +1041,7 @@ applies_to:
   - usecase: use-cases/purchase-product
 ```
 
-### Example: `state-machine` invariant
+### Example: `state-machine` invariant — declaration only
 
 ```yaml
 kind: invariant
@@ -1050,7 +1065,7 @@ applies_to:
   - action: actions/update-order-status
 ```
 
-### Example: `temporal` invariant
+### Example: `temporal` invariant — declaration only
 
 ```yaml
 kind: invariant
@@ -1067,7 +1082,7 @@ applies_to:
   - usecase: use-cases/return-product
 ```
 
-### Example: `uniqueness` invariant
+### Example: `uniqueness` invariant — declaration only
 
 ```yaml
 kind: invariant
@@ -1088,7 +1103,9 @@ applies_to:
 
 ## Expression Syntax
 
-UCF uses `$` expressions to reference data flowing through a use case.
+UCF source documents use `$` expressions to declare data mappings. Consumer
+coverage varies: retaining or tracing an expression does not mean UCF evaluates
+it at runtime.
 
 | Expression | Resolves to |
 |---|---|
@@ -1127,7 +1144,7 @@ postconditions:
 # Component parameters inside component definitions
 when: $parameters.require_mfa == true
 
-# Auto-generated values
+# Declared generated value (consumer-dependent)
 input:
   id: $generated.uuid
 
@@ -1139,6 +1156,9 @@ input:
 ---
 
 ## Project Structure
+
+This is an illustrative source layout, not proof that every declaration shown
+above has an executable consumer.
 
 ```
 specs/

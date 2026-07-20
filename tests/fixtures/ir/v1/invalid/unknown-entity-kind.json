@@ -1,0 +1,12 @@
+{
+  "kind": "behavior_ir",
+  "ir_version": "1.0.0",
+  "document_id": "document.invalid-entity-kind",
+  "roots": [],
+  "entities": [
+    {
+      "kind": "future_entity",
+      "id": "future.one"
+    }
+  ]
+}

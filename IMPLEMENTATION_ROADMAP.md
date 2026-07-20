@@ -1,5 +1,9 @@
 # UCF Implementation Roadmap
 
+> **Status: Superseded proposal.** Capability and release claims in this
+> document are not current; [the capability matrix](docs/CAPABILITIES.md)
+> controls the current status.
+
 ## Tech Stack
 
 | Component | Choice | Rationale |

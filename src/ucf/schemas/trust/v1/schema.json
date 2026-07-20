@@ -1,0 +1,1004 @@
+{
+  "$comment": "Generated deterministically from the UCF trust IR v1 contract; do not edit by hand. Identity, reference, reconciliation, and evidence checks are performed by the runtime validator.",
+  "$defs": {
+    "BehaviorCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_type": {
+          "const": "mapping",
+          "title": "Candidate Type",
+          "type": "string"
+        },
+        "confidence": {
+          "$ref": "#/$defs/Confidence"
+        },
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "behavior_candidate",
+          "title": "Kind",
+          "type": "string"
+        },
+        "subjects": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 2,
+          "title": "Subjects",
+          "type": "array"
+        },
+        "trace": {
+          "$ref": "#/$defs/RecordRef"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "candidate_type",
+        "subjects",
+        "confidence",
+        "trace"
+      ],
+      "title": "BehaviorCandidate",
+      "type": "object"
+    },
+    "BehaviorDocumentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "document_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "ir_version": {
+          "const": "1.0.0",
+          "title": "Ir Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "behavior_document_ref",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "document_id",
+        "ir_version",
+        "canonical_digest"
+      ],
+      "title": "BehaviorDocumentRef",
+      "type": "object"
+    },
+    "BehaviorEntityRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "document_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "ir_version": {
+          "const": "1.0.0",
+          "title": "Ir Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "behavior_entity_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/EntityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "document_id",
+        "ir_version",
+        "canonical_digest",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "BehaviorEntityRef",
+      "type": "object"
+    },
+    "BooleanValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "boolean",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "BooleanValue",
+      "type": "object"
+    },
+    "CanonicalDecimal": {
+      "pattern": "^(?:0|[1-9][0-9]*|-[1-9][0-9]*|-?(?:0|[1-9][0-9]*)\\.[0-9]*[1-9])$",
+      "type": "string"
+    },
+    "Check": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "check",
+          "title": "Kind",
+          "type": "string"
+        },
+        "procedure_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "version",
+        "procedure_uri"
+      ],
+      "title": "Check",
+      "type": "object"
+    },
+    "Claim": {
+      "additionalProperties": false,
+      "properties": {
+        "basis": {
+          "$ref": "#/$defs/ClaimBasis"
+        },
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "claim",
+          "title": "Kind",
+          "type": "string"
+        },
+        "level": {
+          "$ref": "#/$defs/ClaimLevel"
+        },
+        "subject": {
+          "$ref": "#/$defs/BehaviorEntityRef"
+        },
+        "trace": {
+          "$ref": "#/$defs/RecordRef"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "level",
+        "subject",
+        "basis",
+        "trace"
+      ],
+      "title": "Claim",
+      "type": "object"
+    },
+    "ClaimBasis": {
+      "discriminator": {
+        "mapping": {
+          "declared_claim_basis": "#/$defs/DeclaredClaimBasis",
+          "mapped_claim_basis": "#/$defs/MappedClaimBasis",
+          "observed_claim_basis": "#/$defs/ObservedClaimBasis",
+          "tested_claim_basis": "#/$defs/TestedClaimBasis",
+          "verified_claim_basis": "#/$defs/VerifiedClaimBasis"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ObservedClaimBasis"
+        },
+        {
+          "$ref": "#/$defs/DeclaredClaimBasis"
+        },
+        {
+          "$ref": "#/$defs/MappedClaimBasis"
+        },
+        {
+          "$ref": "#/$defs/TestedClaimBasis"
+        },
+        {
+          "$ref": "#/$defs/VerifiedClaimBasis"
+        }
+      ]
+    },
+    "ClaimLevel": {
+      "enum": [
+        "observed",
+        "declared",
+        "mapped",
+        "tested",
+        "verified"
+      ],
+      "title": "ClaimLevel",
+      "type": "string"
+    },
+    "Confidence": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "confidence",
+          "title": "Kind",
+          "type": "string"
+        },
+        "scale": {
+          "const": "decimal-0-to-1",
+          "title": "Scale",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/ConfidenceValue"
+        }
+      },
+      "required": [
+        "kind",
+        "scale",
+        "value"
+      ],
+      "title": "Confidence",
+      "type": "object"
+    },
+    "ConfidenceValue": {
+      "maxLength": 64,
+      "pattern": "^(?:0|1|0\\.[0-9]*[1-9])$",
+      "type": "string"
+    },
+    "DecimalValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "decimal",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/CanonicalDecimal"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "DecimalValue",
+      "type": "object"
+    },
+    "Declaration": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "declaration",
+          "title": "Kind",
+          "type": "string"
+        },
+        "subject": {
+          "$ref": "#/$defs/BehaviorEntityRef"
+        },
+        "trace": {
+          "$ref": "#/$defs/RecordRef"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "subject",
+        "trace"
+      ],
+      "title": "Declaration",
+      "type": "object"
+    },
+    "DeclaredClaimBasis": {
+      "additionalProperties": false,
+      "properties": {
+        "declaration": {
+          "$ref": "#/$defs/RecordRef"
+        },
+        "kind": {
+          "const": "declared_claim_basis",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "declaration"
+      ],
+      "title": "DeclaredClaimBasis",
+      "type": "object"
+    },
+    "Digest": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "sha-256",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "kind": {
+          "const": "digest",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/DigestValue"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm",
+        "value"
+      ],
+      "title": "Digest",
+      "type": "object"
+    },
+    "DigestValue": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "DomainTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "domain_target",
+          "title": "Kind",
+          "type": "string"
+        },
+        "path": {
+          "items": {
+            "$ref": "#/$defs/SemanticToken"
+          },
+          "title": "Path",
+          "type": "array"
+        },
+        "subject": {
+          "$ref": "#/$defs/SemanticToken"
+        }
+      },
+      "required": [
+        "kind",
+        "subject",
+        "path"
+      ],
+      "title": "DomainTarget",
+      "type": "object"
+    },
+    "EntityKind": {
+      "enum": [
+        "action",
+        "use_case",
+        "step",
+        "binding",
+        "effect",
+        "observation",
+        "invariant",
+        "provenance",
+        "verification_evidence",
+        "capability_requirement"
+      ],
+      "title": "EntityKind",
+      "type": "string"
+    },
+    "EvidenceRef": {
+      "discriminator": {
+        "mapping": {
+          "behavior_entity_ref": "#/$defs/BehaviorEntityRef",
+          "record_ref": "#/$defs/RecordRef"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/BehaviorEntityRef"
+        },
+        {
+          "$ref": "#/$defs/RecordRef"
+        }
+      ]
+    },
+    "FactAssertion": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "fact_assertion",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target": {
+          "$ref": "#/$defs/DomainTarget"
+        },
+        "value": {
+          "$ref": "#/$defs/IRValue"
+        }
+      },
+      "required": [
+        "kind",
+        "target",
+        "value"
+      ],
+      "title": "FactAssertion",
+      "type": "object"
+    },
+    "IRValue": {
+      "discriminator": {
+        "mapping": {
+          "boolean": "#/$defs/BooleanValue",
+          "decimal": "#/$defs/DecimalValue",
+          "integer": "#/$defs/IntegerValue",
+          "list": "#/$defs/ListValue",
+          "null": "#/$defs/NullValue",
+          "record": "#/$defs/RecordValue",
+          "string": "#/$defs/StringValue",
+          "timestamp": "#/$defs/TimestampValue"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/NullValue"
+        },
+        {
+          "$ref": "#/$defs/BooleanValue"
+        },
+        {
+          "$ref": "#/$defs/StringValue"
+        },
+        {
+          "$ref": "#/$defs/IntegerValue"
+        },
+        {
+          "$ref": "#/$defs/DecimalValue"
+        },
+        {
+          "$ref": "#/$defs/TimestampValue"
+        },
+        {
+          "$ref": "#/$defs/ListValue"
+        },
+        {
+          "$ref": "#/$defs/RecordValue"
+        }
+      ]
+    },
+    "Identifier": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "type": "string"
+    },
+    "IntegerValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "integer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/SafeInteger"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "IntegerValue",
+      "type": "object"
+    },
+    "ListValue": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/IRValue"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "kind": {
+          "const": "list",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "items"
+      ],
+      "title": "ListValue",
+      "type": "object"
+    },
+    "MappedClaimBasis": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "mapped_claim_basis",
+          "title": "Kind",
+          "type": "string"
+        },
+        "mapping": {
+          "$ref": "#/$defs/RecordRef"
+        }
+      },
+      "required": [
+        "kind",
+        "mapping"
+      ],
+      "title": "MappedClaimBasis",
+      "type": "object"
+    },
+    "NormalizedVersion": {
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "type": "string"
+    },
+    "NullValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "null",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "NullValue",
+      "type": "object"
+    },
+    "ObservedClaimBasis": {
+      "additionalProperties": false,
+      "properties": {
+        "fact": {
+          "$ref": "#/$defs/RecordRef"
+        },
+        "kind": {
+          "const": "observed_claim_basis",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "fact"
+      ],
+      "title": "ObservedClaimBasis",
+      "type": "object"
+    },
+    "ObservedFact": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion": {
+          "$ref": "#/$defs/FactAssertion"
+        },
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "observed_fact",
+          "title": "Kind",
+          "type": "string"
+        },
+        "subject": {
+          "$ref": "#/$defs/BehaviorEntityRef"
+        },
+        "trace": {
+          "$ref": "#/$defs/RecordRef"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "subject",
+        "assertion",
+        "trace"
+      ],
+      "title": "ObservedFact",
+      "type": "object"
+    },
+    "Producer": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "producer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/QualifiedName"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "version"
+      ],
+      "title": "Producer",
+      "type": "object"
+    },
+    "QualifiedName": {
+      "maxLength": 255,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*)+$",
+      "type": "string"
+    },
+    "RecordEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "record_entry",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "value": {
+          "$ref": "#/$defs/IRValue"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "value"
+      ],
+      "title": "RecordEntry",
+      "type": "object"
+    },
+    "RecordRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "record_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/TrustRecordKind"
+        }
+      },
+      "required": [
+        "kind",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "RecordRef",
+      "type": "object"
+    },
+    "RecordValue": {
+      "additionalProperties": false,
+      "properties": {
+        "entries": {
+          "items": {
+            "$ref": "#/$defs/RecordEntry"
+          },
+          "title": "Entries",
+          "type": "array"
+        },
+        "kind": {
+          "const": "record",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "entries"
+      ],
+      "title": "RecordValue",
+      "type": "object"
+    },
+    "SafeInteger": {
+      "maximum": 9007199254740991,
+      "minimum": -9007199254740991,
+      "type": "integer"
+    },
+    "SemanticToken": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "type": "string"
+    },
+    "SourceRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "captured_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "source_record",
+          "title": "Kind",
+          "type": "string"
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "source_revision": {
+          "$ref": "#/$defs/Digest"
+        },
+        "source_uri": {
+          "$ref": "#/$defs/URI"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "source_uri",
+        "source_revision",
+        "producer",
+        "captured_at"
+      ],
+      "title": "SourceRecord",
+      "type": "object"
+    },
+    "StringValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "string",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "StringValue",
+      "type": "object"
+    },
+    "TestedClaimBasis": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact": {
+          "$ref": "#/$defs/RecordRef"
+        },
+        "check": {
+          "$ref": "#/$defs/Check"
+        },
+        "environment": {
+          "$ref": "#/$defs/Digest"
+        },
+        "evidence": {
+          "$ref": "#/$defs/EvidenceRef"
+        },
+        "kind": {
+          "const": "tested_claim_basis",
+          "title": "Kind",
+          "type": "string"
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        }
+      },
+      "required": [
+        "kind",
+        "evidence",
+        "artifact",
+        "check",
+        "environment",
+        "producer"
+      ],
+      "title": "TestedClaimBasis",
+      "type": "object"
+    },
+    "Timestamp": {
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+      "type": "string"
+    },
+    "TimestampValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "timestamp",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/Timestamp"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "TimestampValue",
+      "type": "object"
+    },
+    "TrustMapping": {
+      "additionalProperties": false,
+      "properties": {
+        "declaration": {
+          "$ref": "#/$defs/RecordRef"
+        },
+        "disposition": {
+          "enum": [
+            "match",
+            "conflict"
+          ],
+          "title": "Disposition",
+          "type": "string"
+        },
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "mapping",
+          "title": "Kind",
+          "type": "string"
+        },
+        "observation": {
+          "$ref": "#/$defs/RecordRef"
+        },
+        "relationship": {
+          "const": "same-behavior-slot",
+          "title": "Relationship",
+          "type": "string"
+        },
+        "trace": {
+          "$ref": "#/$defs/RecordRef"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "declaration",
+        "observation",
+        "relationship",
+        "disposition",
+        "trace"
+      ],
+      "title": "TrustMapping",
+      "type": "object"
+    },
+    "TrustRecord": {
+      "discriminator": {
+        "mapping": {
+          "behavior_candidate": "#/$defs/BehaviorCandidate",
+          "claim": "#/$defs/Claim",
+          "declaration": "#/$defs/Declaration",
+          "mapping": "#/$defs/TrustMapping",
+          "observed_fact": "#/$defs/ObservedFact",
+          "source_record": "#/$defs/SourceRecord"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SourceRecord"
+        },
+        {
+          "$ref": "#/$defs/Declaration"
+        },
+        {
+          "$ref": "#/$defs/ObservedFact"
+        },
+        {
+          "$ref": "#/$defs/BehaviorCandidate"
+        },
+        {
+          "$ref": "#/$defs/TrustMapping"
+        },
+        {
+          "$ref": "#/$defs/Claim"
+        }
+      ]
+    },
+    "TrustRecordKind": {
+      "enum": [
+        "source_record",
+        "declaration",
+        "observed_fact",
+        "behavior_candidate",
+        "mapping",
+        "claim"
+      ],
+      "title": "TrustRecordKind",
+      "type": "string"
+    },
+    "URI": {
+      "maxLength": 2048,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9+.-]*:[^\\s]+$",
+      "type": "string"
+    },
+    "VerifiedClaimBasis": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "verified_claim_basis",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "VerifiedClaimBasis",
+      "type": "object"
+    }
+  },
+  "$id": "urn:ucf:schema:trust-ir:1.0.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Closed structural schema for the immutable UCF trust IR 1.0.0 overlay. Schema acceptance does not establish a claim or validate the referenced behavior document.",
+  "properties": {
+    "document_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "kind": {
+      "const": "trust_ir",
+      "title": "Kind",
+      "type": "string"
+    },
+    "records": {
+      "items": {
+        "$ref": "#/$defs/TrustRecord"
+      },
+      "title": "Records",
+      "type": "array"
+    },
+    "subject_document": {
+      "$ref": "#/$defs/BehaviorDocumentRef"
+    },
+    "trust_ir_version": {
+      "const": "1.0.0",
+      "title": "Trust Ir Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "trust_ir_version",
+    "document_id",
+    "subject_document",
+    "records"
+  ],
+  "title": "UCF trust IR 1.0.0",
+  "type": "object",
+  "x-ucf-runtime-semantic-checks": [
+    "global trust record identity uniqueness",
+    "typed internal reference and source trace resolution",
+    "canonical Behavior IR document binding",
+    "mapping basis and conflict disposition consistency",
+    "exact claim evidence evaluation",
+    "maximum JSON nesting depth 128"
+  ],
+  "x-ucf-trust-ir-version": "1.0.0"
+}

@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-import pytest
-
 from ucf.expressions.resolver import (
     ExpressionContext,
     ExpressionNamespace,
-    ResolvedExpression,
     extract_expressions,
     parse_expression,
     validate_expressions_in_value,
@@ -131,18 +128,26 @@ class TestValidateExpressionsInValue:
         ctx = ExpressionContext()
         errors = validate_expressions_in_value("$missing.field", ctx, "test")
         assert len(errors) == 1
+        assert (
+            errors[0].message
+            == "Cannot resolve '$missing.field': namespace 'missing' not available"
+        )
 
     def test_nested_dict(self):
         ctx = ExpressionContext()
         ctx.add_namespace("inputs", {"a"})
         errors = validate_expressions_in_value(
-            {"key": "$inputs.a", "bad": "$missing.b"}, ctx, "test",
+            {"key": "$inputs.a", "bad": "$missing.b"},
+            ctx,
+            "test",
         )
         assert len(errors) == 1
 
     def test_list(self):
         ctx = ExpressionContext()
         errors = validate_expressions_in_value(
-            ["$unknown.x", "plain text"], ctx, "test",
+            ["$unknown.x", "plain text"],
+            ctx,
+            "test",
         )
         assert len(errors) == 1

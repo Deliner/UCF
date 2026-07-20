@@ -7,45 +7,55 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    CompletePurchaseInterface,
-    FinalizeOrderResult,
-    ConfirmToCustomerResult,
+from .impl import (
+    complete_purchase_impl as complete_purchase_impl,
 )
-from .impl import complete_purchase_impl  # noqa: F401
+from .interface import CompletePurchaseInterface
 
 
 @pytest.fixture
-def uc(complete_purchase_impl: CompletePurchaseInterface) -> CompletePurchaseInterface:
-    return complete_purchase_impl
+def uc(request: pytest.FixtureRequest) -> CompletePurchaseInterface:
+    return request.getfixturevalue("complete_purchase_impl")
 
 
 class TestHappyPath:
 
     def test_complete_purchase_completes_successfully(
         self, uc: CompletePurchaseInterface,
+        inputs: dict[str, object],
     ) -> None:
 
-        finalize_order = uc.action_finalize_order(cart_id=inputs.get('cart_id'), payment_method_id=inputs.get('payment_method_id'), shipping_address_id=inputs.get('shipping_address_id'))
+        finalize_order = uc.action_finalize_order(
+            cart_id=inputs['cart_id'],
+            payment_method_id=inputs['payment_method_id'],
+            shipping_address_id=inputs['shipping_address_id'],
+        )
 
-        confirm_to_customer = uc.action_confirm_to_customer(order_id=finalize_order.order_id, total_amount=finalize_order.total_amount)
+        uc.action_confirm_to_customer(
+            order_id=finalize_order.order_id,
+            total_amount=finalize_order.total_amount,
+        )
 
 
-        uc.verify_order_is_placed_and_confirmed()
-        uc.verify_payment_is_processed_successfully()
-        uc.verify_customer_receives_order_confirmation_email()
-        uc.verify_inventory_is_reserved_for_order_items()
-        uc.verify_customer_can_view_order_in_order_history()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_order_is_placed_and_confirmed()
+        _ = uc.verify_payment_is_processed_successfully()
+        _ = uc.verify_customer_receives_order_confirmation_email()
+        _ = uc.verify_inventory_is_reserved_for_order_items()
+        _ = uc.verify_customer_can_view_order_in_order_history()
+        _ = uc.verify_required_inputs_validated()
 
 
 class TestAltPaymentDeclined:
 
     def test_payment_declined(
         self, uc: CompletePurchaseInterface,
+        inputs: dict[str, object],
     ) -> None:
 
-        notify_payment_failure = uc.action_notify_payment_failure(cart_id=inputs.get('cart_id'), reason='payment declined')
+        uc.action_notify_payment_failure(
+            cart_id=inputs['cart_id'],
+            reason='payment declined',
+        )
 
 
 
@@ -53,9 +63,12 @@ class TestAltOutOfStock:
 
     def test_out_of_stock(
         self, uc: CompletePurchaseInterface,
+        inputs: dict[str, object],
     ) -> None:
 
-        notify_stock_issue = uc.action_notify_stock_issue(cart_id=inputs.get('cart_id'))
+        uc.action_notify_stock_issue(
+            cart_id=inputs['cart_id'],
+        )
 
 
 
@@ -63,9 +76,12 @@ class TestAltPaymentTimeout:
 
     def test_payment_timeout(
         self, uc: CompletePurchaseInterface,
+        inputs: dict[str, object],
     ) -> None:
 
-        notify_timeout = uc.action_notify_timeout(cart_id=inputs.get('cart_id'))
+        uc.action_notify_timeout(
+            cart_id=inputs['cart_id'],
+        )
 
 
 
@@ -73,9 +89,13 @@ class TestAltInvalidCart:
 
     def test_invalid_cart(
         self, uc: CompletePurchaseInterface,
+        inputs: dict[str, object],
     ) -> None:
 
-        notify_cart_issue = uc.action_notify_cart_issue(cart_id=inputs.get('cart_id'), reason='cart invalid or expired')
+        uc.action_notify_cart_issue(
+            cart_id=inputs['cart_id'],
+            reason='cart invalid or expired',
+        )
 
 
 
@@ -83,9 +103,12 @@ class TestAltInvalidAddress:
 
     def test_invalid_address(
         self, uc: CompletePurchaseInterface,
+        inputs: dict[str, object],
     ) -> None:
 
-        notify_address_issue = uc.action_notify_address_issue(shipping_address_id=inputs.get('shipping_address_id'))
+        uc.action_notify_address_issue(
+            shipping_address_id=inputs['shipping_address_id'],
+        )
 
 
 

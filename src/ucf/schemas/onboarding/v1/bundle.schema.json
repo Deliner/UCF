@@ -1,0 +1,3846 @@
+{
+  "$comment": "Generated deterministically from UCF onboarding profile 1.0.0 models; do not edit by hand. Cross-document identity, reference, candidate, decision, materialization, trust, and summary checks remain runtime semantics.",
+  "$defs": {
+    "AcceptedDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate": {
+          "$ref": "#/$defs/CandidateRef"
+        },
+        "id": {
+          "$ref": "#/$defs/DecisionId"
+        },
+        "kind": {
+          "const": "accepted_decision",
+          "title": "Kind",
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/$defs/DecisionReason"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "candidate",
+        "reason"
+      ],
+      "title": "AcceptedDecision",
+      "type": "object"
+    },
+    "Action": {
+      "additionalProperties": false,
+      "properties": {
+        "effects": {
+          "items": {
+            "$ref": "#/$defs/EntityRef"
+          },
+          "title": "Effects",
+          "type": "array"
+        },
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "input_ports": {
+          "items": {
+            "$ref": "#/$defs/Port"
+          },
+          "title": "Input Ports",
+          "type": "array"
+        },
+        "kind": {
+          "const": "action",
+          "title": "Kind",
+          "type": "string"
+        },
+        "output_ports": {
+          "items": {
+            "$ref": "#/$defs/Port"
+          },
+          "title": "Output Ports",
+          "type": "array"
+        },
+        "provenance": {
+          "$ref": "#/$defs/EntityRef"
+        },
+        "requires": {
+          "items": {
+            "$ref": "#/$defs/EntityRef"
+          },
+          "title": "Requires",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "input_ports",
+        "output_ports",
+        "effects",
+        "requires",
+        "provenance"
+      ],
+      "title": "Action",
+      "type": "object"
+    },
+    "ApiDescriptionFact": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/InventoryConfidence"
+        },
+        "declared_version": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Declared Version"
+        },
+        "dialect_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "entry": {
+          "$ref": "#/$defs/InventoryRecordRef"
+        },
+        "id": {
+          "$ref": "#/$defs/InventoryRecordId"
+        },
+        "kind": {
+          "const": "api_description",
+          "title": "Kind",
+          "type": "string"
+        },
+        "level": {
+          "const": "observed",
+          "title": "Level",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/InventoryRecordRef"
+        }
+      },
+      "required": [
+        "id",
+        "level",
+        "provenance",
+        "confidence",
+        "kind",
+        "entry",
+        "dialect_uri",
+        "declared_version"
+      ],
+      "title": "ApiDescriptionFact",
+      "type": "object"
+    },
+    "ArtifactSource": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "artifact_source",
+          "title": "Kind",
+          "type": "string"
+        },
+        "revision": {
+          "$ref": "#/$defs/Digest"
+        },
+        "uri": {
+          "$ref": "#/$defs/URI"
+        }
+      },
+      "required": [
+        "kind",
+        "uri",
+        "revision"
+      ],
+      "title": "ArtifactSource",
+      "type": "object"
+    },
+    "BehaviorCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_type": {
+          "const": "mapping",
+          "title": "Candidate Type",
+          "type": "string"
+        },
+        "confidence": {
+          "$ref": "#/$defs/Confidence"
+        },
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "behavior_candidate",
+          "title": "Kind",
+          "type": "string"
+        },
+        "subjects": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 2,
+          "title": "Subjects",
+          "type": "array"
+        },
+        "trace": {
+          "$ref": "#/$defs/RecordRef"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "candidate_type",
+        "subjects",
+        "confidence",
+        "trace"
+      ],
+      "title": "BehaviorCandidate",
+      "type": "object"
+    },
+    "BehaviorDocumentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "document_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "ir_version": {
+          "const": "1.0.0",
+          "title": "Ir Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "behavior_document_ref",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "document_id",
+        "ir_version",
+        "canonical_digest"
+      ],
+      "title": "BehaviorDocumentRef",
+      "type": "object"
+    },
+    "BehaviorEntityRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "document_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "ir_version": {
+          "const": "1.0.0",
+          "title": "Ir Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "behavior_entity_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/EntityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "document_id",
+        "ir_version",
+        "canonical_digest",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "BehaviorEntityRef",
+      "type": "object"
+    },
+    "BehaviorIR": {
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "entities": {
+          "items": {
+            "$ref": "#/$defs/Entity"
+          },
+          "title": "Entities",
+          "type": "array"
+        },
+        "ir_version": {
+          "const": "1.0.0",
+          "title": "Ir Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "behavior_ir",
+          "title": "Kind",
+          "type": "string"
+        },
+        "roots": {
+          "items": {
+            "$ref": "#/$defs/EntityRef"
+          },
+          "title": "Roots",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "ir_version",
+        "document_id",
+        "roots",
+        "entities"
+      ],
+      "title": "BehaviorIR",
+      "type": "object"
+    },
+    "BehaviorMaterialization": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate": {
+          "$ref": "#/$defs/CandidateRef"
+        },
+        "decision_id": {
+          "$ref": "#/$defs/DecisionId"
+        },
+        "entities": {
+          "items": {
+            "$ref": "#/$defs/BehaviorEntityRef"
+          },
+          "maxItems": 1025,
+          "minItems": 1,
+          "title": "Entities",
+          "type": "array"
+        },
+        "kind": {
+          "const": "behavior_materialization",
+          "title": "Kind",
+          "type": "string"
+        },
+        "root": {
+          "$ref": "#/$defs/BehaviorEntityRef"
+        }
+      },
+      "required": [
+        "kind",
+        "candidate",
+        "decision_id",
+        "root",
+        "entities"
+      ],
+      "title": "BehaviorMaterialization",
+      "type": "object"
+    },
+    "Binding": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "binding",
+          "title": "Kind",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/EntityRef"
+        },
+        "source": {
+          "$ref": "#/$defs/BindingSource"
+        },
+        "target": {
+          "$ref": "#/$defs/PortRef"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "target",
+        "source",
+        "provenance"
+      ],
+      "title": "Binding",
+      "type": "object"
+    },
+    "BindingSource": {
+      "discriminator": {
+        "mapping": {
+          "boolean": "#/$defs/BooleanValue",
+          "decimal": "#/$defs/DecimalValue",
+          "integer": "#/$defs/IntegerValue",
+          "list": "#/$defs/ListValue",
+          "null": "#/$defs/NullValue",
+          "port_ref": "#/$defs/PortRef",
+          "record": "#/$defs/RecordValue",
+          "string": "#/$defs/StringValue",
+          "timestamp": "#/$defs/TimestampValue"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/PortRef"
+        },
+        {
+          "$ref": "#/$defs/NullValue"
+        },
+        {
+          "$ref": "#/$defs/BooleanValue"
+        },
+        {
+          "$ref": "#/$defs/StringValue"
+        },
+        {
+          "$ref": "#/$defs/IntegerValue"
+        },
+        {
+          "$ref": "#/$defs/DecimalValue"
+        },
+        {
+          "$ref": "#/$defs/TimestampValue"
+        },
+        {
+          "$ref": "#/$defs/ListValue"
+        },
+        {
+          "$ref": "#/$defs/RecordValue"
+        }
+      ]
+    },
+    "BooleanValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "boolean",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "BooleanValue",
+      "type": "object"
+    },
+    "BuildManifestFact": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/InventoryConfidence"
+        },
+        "dialect_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "entry": {
+          "$ref": "#/$defs/InventoryRecordRef"
+        },
+        "id": {
+          "$ref": "#/$defs/InventoryRecordId"
+        },
+        "kind": {
+          "const": "build_manifest",
+          "title": "Kind",
+          "type": "string"
+        },
+        "level": {
+          "const": "observed",
+          "title": "Level",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/InventoryRecordRef"
+        }
+      },
+      "required": [
+        "id",
+        "level",
+        "provenance",
+        "confidence",
+        "kind",
+        "entry",
+        "dialect_uri"
+      ],
+      "title": "BuildManifestFact",
+      "type": "object"
+    },
+    "BundleDocumentKind": {
+      "enum": [
+        "inventory",
+        "discovery",
+        "decisions",
+        "behavior",
+        "trust"
+      ],
+      "title": "BundleDocumentKind",
+      "type": "string"
+    },
+    "BundleDocumentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "document_kind": {
+          "$ref": "#/$defs/BundleDocumentKind"
+        },
+        "kind": {
+          "const": "bundle_document_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "document_kind",
+        "schema_uri",
+        "schema_version",
+        "canonical_digest"
+      ],
+      "title": "BundleDocumentRef",
+      "type": "object"
+    },
+    "CandidateProposal": {
+      "additionalProperties": false,
+      "properties": {
+        "entities": {
+          "items": {
+            "$ref": "#/$defs/ProposalEntity"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Entities",
+          "type": "array"
+        },
+        "kind": {
+          "const": "candidate_proposal",
+          "title": "Kind",
+          "type": "string"
+        },
+        "root": {
+          "$ref": "#/$defs/ProposalEntityRef"
+        }
+      },
+      "required": [
+        "kind",
+        "root",
+        "entities"
+      ],
+      "title": "CandidateProposal",
+      "type": "object"
+    },
+    "CandidateRef": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": {
+          "$ref": "#/$defs/DiscoveryCandidateId"
+        },
+        "discovery_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "candidate_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "semantic_digest": {
+          "$ref": "#/$defs/Digest"
+        }
+      },
+      "required": [
+        "kind",
+        "discovery_digest",
+        "candidate_id",
+        "semantic_digest"
+      ],
+      "title": "CandidateRef",
+      "type": "object"
+    },
+    "CanonicalDecimal": {
+      "pattern": "^(?:0|[1-9][0-9]*|-[1-9][0-9]*|-?(?:0|[1-9][0-9]*)\\.[0-9]*[1-9])$",
+      "type": "string"
+    },
+    "CapabilityRequirement": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "capability_requirement",
+          "title": "Kind",
+          "type": "string"
+        },
+        "minimum_version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        },
+        "name": {
+          "$ref": "#/$defs/QualifiedName"
+        },
+        "provenance": {
+          "$ref": "#/$defs/EntityRef"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "minimum_version",
+        "required",
+        "provenance"
+      ],
+      "title": "CapabilityRequirement",
+      "type": "object"
+    },
+    "CapabilitySelection": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "capability",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/QualifiedName"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "version"
+      ],
+      "title": "CapabilitySelection",
+      "type": "object"
+    },
+    "CaptureContext": {
+      "additionalProperties": false,
+      "properties": {
+        "captured_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "environment": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "capture_context",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "captured_at",
+        "environment"
+      ],
+      "title": "CaptureContext",
+      "type": "object"
+    },
+    "Check": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "check",
+          "title": "Kind",
+          "type": "string"
+        },
+        "procedure_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "version",
+        "procedure_uri"
+      ],
+      "title": "Check",
+      "type": "object"
+    },
+    "Claim": {
+      "additionalProperties": false,
+      "properties": {
+        "basis": {
+          "$ref": "#/$defs/ClaimBasis"
+        },
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "claim",
+          "title": "Kind",
+          "type": "string"
+        },
+        "level": {
+          "$ref": "#/$defs/ClaimLevel"
+        },
+        "subject": {
+          "$ref": "#/$defs/BehaviorEntityRef"
+        },
+        "trace": {
+          "$ref": "#/$defs/RecordRef"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "level",
+        "subject",
+        "basis",
+        "trace"
+      ],
+      "title": "Claim",
+      "type": "object"
+    },
+    "ClaimBasis": {
+      "discriminator": {
+        "mapping": {
+          "declared_claim_basis": "#/$defs/DeclaredClaimBasis",
+          "mapped_claim_basis": "#/$defs/MappedClaimBasis",
+          "observed_claim_basis": "#/$defs/ObservedClaimBasis",
+          "tested_claim_basis": "#/$defs/TestedClaimBasis",
+          "verified_claim_basis": "#/$defs/VerifiedClaimBasis"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ObservedClaimBasis"
+        },
+        {
+          "$ref": "#/$defs/DeclaredClaimBasis"
+        },
+        {
+          "$ref": "#/$defs/MappedClaimBasis"
+        },
+        {
+          "$ref": "#/$defs/TestedClaimBasis"
+        },
+        {
+          "$ref": "#/$defs/VerifiedClaimBasis"
+        }
+      ]
+    },
+    "ClaimLevel": {
+      "enum": [
+        "observed",
+        "declared",
+        "mapped",
+        "tested",
+        "verified"
+      ],
+      "title": "ClaimLevel",
+      "type": "string"
+    },
+    "ClaimLevelSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "claim_ids": {
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "maxItems": 20000,
+          "title": "Claim Ids",
+          "type": "array"
+        },
+        "kind": {
+          "const": "claim_level_summary",
+          "title": "Kind",
+          "type": "string"
+        },
+        "level": {
+          "$ref": "#/$defs/ClaimLevel"
+        }
+      },
+      "required": [
+        "kind",
+        "level",
+        "claim_ids"
+      ],
+      "title": "ClaimLevelSummary",
+      "type": "object"
+    },
+    "Confidence": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "confidence",
+          "title": "Kind",
+          "type": "string"
+        },
+        "scale": {
+          "const": "decimal-0-to-1",
+          "title": "Scale",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/ConfidenceValue"
+        }
+      },
+      "required": [
+        "kind",
+        "scale",
+        "value"
+      ],
+      "title": "Confidence",
+      "type": "object"
+    },
+    "ConfidenceValue": {
+      "maxLength": 64,
+      "pattern": "^(?:0|1|0\\.[0-9]*[1-9])$",
+      "type": "string"
+    },
+    "DecimalValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "decimal",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/CanonicalDecimal"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "DecimalValue",
+      "type": "object"
+    },
+    "Decision": {
+      "discriminator": {
+        "mapping": {
+          "accepted_decision": "#/$defs/AcceptedDecision",
+          "edited_decision": "#/$defs/EditedDecision",
+          "rejected_decision": "#/$defs/RejectedDecision",
+          "uncertain_decision": "#/$defs/UncertainDecision"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/AcceptedDecision"
+        },
+        {
+          "$ref": "#/$defs/EditedDecision"
+        },
+        {
+          "$ref": "#/$defs/RejectedDecision"
+        },
+        {
+          "$ref": "#/$defs/UncertainDecision"
+        }
+      ]
+    },
+    "DecisionId": {
+      "pattern": "^decision\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "DecisionReason": {
+      "maxLength": 512,
+      "minLength": 1,
+      "type": "string"
+    },
+    "DecisionSet": {
+      "additionalProperties": false,
+      "properties": {
+        "capture_context": {
+          "$ref": "#/$defs/CaptureContext"
+        },
+        "decisions": {
+          "items": {
+            "$ref": "#/$defs/Decision"
+          },
+          "maxItems": 10000,
+          "title": "Decisions",
+          "type": "array"
+        },
+        "discovery": {
+          "$ref": "#/$defs/DiscoveryDocumentRef"
+        },
+        "inventory_binding": {
+          "$ref": "#/$defs/InventoryBinding"
+        },
+        "kind": {
+          "const": "decision_set_profile",
+          "title": "Kind",
+          "type": "string"
+        },
+        "onboarding_version": {
+          "const": "1.0.0",
+          "title": "Onboarding Version",
+          "type": "string"
+        },
+        "reviewer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:onboarding:decision-set:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "onboarding_version",
+        "schema_uri",
+        "discovery",
+        "inventory_binding",
+        "reviewer",
+        "capture_context",
+        "decisions"
+      ],
+      "title": "DecisionSet",
+      "type": "object"
+    },
+    "Declaration": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "declaration",
+          "title": "Kind",
+          "type": "string"
+        },
+        "subject": {
+          "$ref": "#/$defs/BehaviorEntityRef"
+        },
+        "trace": {
+          "$ref": "#/$defs/RecordRef"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "subject",
+        "trace"
+      ],
+      "title": "Declaration",
+      "type": "object"
+    },
+    "DeclaredClaimBasis": {
+      "additionalProperties": false,
+      "properties": {
+        "declaration": {
+          "$ref": "#/$defs/RecordRef"
+        },
+        "kind": {
+          "const": "declared_claim_basis",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "declaration"
+      ],
+      "title": "DeclaredClaimBasis",
+      "type": "object"
+    },
+    "DeclaredRule": {
+      "additionalProperties": false,
+      "properties": {
+        "dialect": {
+          "$ref": "#/$defs/URI"
+        },
+        "kind": {
+          "const": "declared_rule",
+          "title": "Kind",
+          "type": "string"
+        },
+        "statement": {
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "dialect",
+        "statement"
+      ],
+      "title": "DeclaredRule",
+      "type": "object"
+    },
+    "Digest": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "sha-256",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "kind": {
+          "const": "digest",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/DigestValue"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm",
+        "value"
+      ],
+      "title": "Digest",
+      "type": "object"
+    },
+    "DigestValue": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "DiscoveryCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/InventoryConfidence"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/InventoryRecordRef"
+          },
+          "maxItems": 256,
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "id": {
+          "$ref": "#/$defs/DiscoveryCandidateId"
+        },
+        "kind": {
+          "const": "discovery_candidate",
+          "title": "Kind",
+          "type": "string"
+        },
+        "proposal": {
+          "$ref": "#/$defs/CandidateProposal"
+        },
+        "semantic_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "subject": {
+          "$ref": "#/$defs/InventoryRecordRef"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "semantic_digest",
+        "subject",
+        "evidence",
+        "confidence",
+        "proposal"
+      ],
+      "title": "DiscoveryCandidate",
+      "type": "object"
+    },
+    "DiscoveryCandidateId": {
+      "pattern": "^candidate\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "DiscoveryCoverage": {
+      "additionalProperties": false,
+      "properties": {
+        "eligible_subjects": {
+          "items": {
+            "$ref": "#/$defs/InventoryRecordRef"
+          },
+          "maxItems": 10000,
+          "title": "Eligible Subjects",
+          "type": "array"
+        },
+        "kind": {
+          "const": "discovery_coverage",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "complete",
+            "partial"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "uncovered_subjects": {
+          "items": {
+            "$ref": "#/$defs/InventoryRecordRef"
+          },
+          "maxItems": 10000,
+          "title": "Uncovered Subjects",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "status",
+        "eligible_subjects",
+        "uncovered_subjects"
+      ],
+      "title": "DiscoveryCoverage",
+      "type": "object"
+    },
+    "DiscoveryDiagnostic": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/QualifiedName"
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/InventoryRecordRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "id": {
+          "$ref": "#/$defs/DiscoveryDiagnosticId"
+        },
+        "kind": {
+          "const": "discovery_diagnostic",
+          "title": "Kind",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "warning",
+            "error"
+          ],
+          "title": "Severity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "severity",
+        "code",
+        "message",
+        "evidence"
+      ],
+      "title": "DiscoveryDiagnostic",
+      "type": "object"
+    },
+    "DiscoveryDiagnosticId": {
+      "pattern": "^diagnostic\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "DiscoveryDocumentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "discovery_document_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:adapter:discovery-result:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "schema_uri",
+        "schema_version",
+        "canonical_digest"
+      ],
+      "title": "DiscoveryDocumentRef",
+      "type": "object"
+    },
+    "DiscoveryResult": {
+      "additionalProperties": false,
+      "properties": {
+        "candidates": {
+          "items": {
+            "$ref": "#/$defs/DiscoveryCandidate"
+          },
+          "maxItems": 10000,
+          "title": "Candidates",
+          "type": "array"
+        },
+        "capability": {
+          "$ref": "#/$defs/CapabilitySelection",
+          "properties": {
+            "name": {
+              "const": "org.ucf.adapter.discovery"
+            },
+            "version": {
+              "const": "1.0.0"
+            }
+          }
+        },
+        "coverage": {
+          "$ref": "#/$defs/DiscoveryCoverage"
+        },
+        "diagnostics": {
+          "items": {
+            "$ref": "#/$defs/DiscoveryDiagnostic"
+          },
+          "maxItems": 10000,
+          "title": "Diagnostics",
+          "type": "array"
+        },
+        "inventory_binding": {
+          "$ref": "#/$defs/InventoryBinding"
+        },
+        "kind": {
+          "const": "discovery_result_profile",
+          "title": "Kind",
+          "type": "string"
+        },
+        "onboarding_version": {
+          "const": "1.0.0",
+          "title": "Onboarding Version",
+          "type": "string"
+        },
+        "procedure_uri": {
+          "$ref": "#/$defs/URI",
+          "pattern": "(?:[:/])(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)$"
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:adapter:discovery-result:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "onboarding_version",
+        "schema_uri",
+        "inventory_binding",
+        "producer",
+        "capability",
+        "procedure_uri",
+        "coverage",
+        "diagnostics",
+        "candidates"
+      ],
+      "title": "DiscoveryResult",
+      "type": "object"
+    },
+    "DispositionKind": {
+      "enum": [
+        "accepted",
+        "edited",
+        "rejected",
+        "uncertain"
+      ],
+      "title": "DispositionKind",
+      "type": "string"
+    },
+    "DispositionSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_ids": {
+          "items": {
+            "$ref": "#/$defs/DiscoveryCandidateId"
+          },
+          "maxItems": 10000,
+          "title": "Candidate Ids",
+          "type": "array"
+        },
+        "disposition": {
+          "$ref": "#/$defs/DispositionKind"
+        },
+        "kind": {
+          "const": "disposition_summary",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "disposition",
+        "candidate_ids"
+      ],
+      "title": "DispositionSummary",
+      "type": "object"
+    },
+    "DomainTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "domain_target",
+          "title": "Kind",
+          "type": "string"
+        },
+        "path": {
+          "items": {
+            "$ref": "#/$defs/SemanticToken"
+          },
+          "title": "Path",
+          "type": "array"
+        },
+        "subject": {
+          "$ref": "#/$defs/SemanticToken"
+        }
+      },
+      "required": [
+        "kind",
+        "subject",
+        "path"
+      ],
+      "title": "DomainTarget",
+      "type": "object"
+    },
+    "EditedDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate": {
+          "$ref": "#/$defs/CandidateRef"
+        },
+        "id": {
+          "$ref": "#/$defs/DecisionId"
+        },
+        "kind": {
+          "const": "edited_decision",
+          "title": "Kind",
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/$defs/DecisionReason"
+        },
+        "replacement": {
+          "$ref": "#/$defs/CandidateProposal"
+        },
+        "replacement_digest": {
+          "$ref": "#/$defs/Digest"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "candidate",
+        "reason",
+        "replacement_digest",
+        "replacement"
+      ],
+      "title": "EditedDecision",
+      "type": "object"
+    },
+    "Effect": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "effect",
+          "title": "Kind",
+          "type": "string"
+        },
+        "operation": {
+          "$ref": "#/$defs/SemanticToken"
+        },
+        "provenance": {
+          "$ref": "#/$defs/EntityRef"
+        },
+        "requires": {
+          "$ref": "#/$defs/NonEmptyEntityRefs"
+        },
+        "target": {
+          "$ref": "#/$defs/DomainTarget"
+        },
+        "value": {
+          "$ref": "#/$defs/IRValue"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "operation",
+        "target",
+        "value",
+        "requires",
+        "provenance"
+      ],
+      "title": "Effect",
+      "type": "object"
+    },
+    "Entity": {
+      "discriminator": {
+        "mapping": {
+          "action": "#/$defs/Action",
+          "binding": "#/$defs/Binding",
+          "capability_requirement": "#/$defs/CapabilityRequirement",
+          "effect": "#/$defs/Effect",
+          "invariant": "#/$defs/Invariant",
+          "observation": "#/$defs/Observation",
+          "provenance": "#/$defs/Provenance",
+          "step": "#/$defs/Step",
+          "use_case": "#/$defs/UseCase",
+          "verification_evidence": "#/$defs/VerificationEvidence"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Action"
+        },
+        {
+          "$ref": "#/$defs/UseCase"
+        },
+        {
+          "$ref": "#/$defs/Step"
+        },
+        {
+          "$ref": "#/$defs/Binding"
+        },
+        {
+          "$ref": "#/$defs/Effect"
+        },
+        {
+          "$ref": "#/$defs/Observation"
+        },
+        {
+          "$ref": "#/$defs/Invariant"
+        },
+        {
+          "$ref": "#/$defs/Provenance"
+        },
+        {
+          "$ref": "#/$defs/VerificationEvidence"
+        },
+        {
+          "$ref": "#/$defs/CapabilityRequirement"
+        }
+      ]
+    },
+    "EntityKind": {
+      "enum": [
+        "action",
+        "use_case",
+        "step",
+        "binding",
+        "effect",
+        "observation",
+        "invariant",
+        "provenance",
+        "verification_evidence",
+        "capability_requirement"
+      ],
+      "title": "EntityKind",
+      "type": "string"
+    },
+    "EntityRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "entity_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/EntityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "EntityRef",
+      "type": "object"
+    },
+    "EvidenceRef": {
+      "discriminator": {
+        "mapping": {
+          "behavior_entity_ref": "#/$defs/BehaviorEntityRef",
+          "record_ref": "#/$defs/RecordRef"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/BehaviorEntityRef"
+        },
+        {
+          "$ref": "#/$defs/RecordRef"
+        }
+      ]
+    },
+    "FactAssertion": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "fact_assertion",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target": {
+          "$ref": "#/$defs/DomainTarget"
+        },
+        "value": {
+          "$ref": "#/$defs/IRValue"
+        }
+      },
+      "required": [
+        "kind",
+        "target",
+        "value"
+      ],
+      "title": "FactAssertion",
+      "type": "object"
+    },
+    "FactKind": {
+      "enum": [
+        "api_description",
+        "build_manifest",
+        "public_interface",
+        "repository_entry",
+        "test_asset"
+      ],
+      "title": "FactKind",
+      "type": "string"
+    },
+    "IRValue": {
+      "discriminator": {
+        "mapping": {
+          "boolean": "#/$defs/BooleanValue",
+          "decimal": "#/$defs/DecimalValue",
+          "integer": "#/$defs/IntegerValue",
+          "list": "#/$defs/ListValue",
+          "null": "#/$defs/NullValue",
+          "record": "#/$defs/RecordValue",
+          "string": "#/$defs/StringValue",
+          "timestamp": "#/$defs/TimestampValue"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/NullValue"
+        },
+        {
+          "$ref": "#/$defs/BooleanValue"
+        },
+        {
+          "$ref": "#/$defs/StringValue"
+        },
+        {
+          "$ref": "#/$defs/IntegerValue"
+        },
+        {
+          "$ref": "#/$defs/DecimalValue"
+        },
+        {
+          "$ref": "#/$defs/TimestampValue"
+        },
+        {
+          "$ref": "#/$defs/ListValue"
+        },
+        {
+          "$ref": "#/$defs/RecordValue"
+        }
+      ]
+    },
+    "Identifier": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "type": "string"
+    },
+    "IgnoreMatcher": {
+      "discriminator": {
+        "mapping": {
+          "path_prefix": "#/$defs/PathPrefixMatcher",
+          "path_segment": "#/$defs/PathSegmentMatcher"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/PathPrefixMatcher"
+        },
+        {
+          "$ref": "#/$defs/PathSegmentMatcher"
+        }
+      ]
+    },
+    "IgnorePolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "ignore_policy",
+          "title": "Kind",
+          "type": "string"
+        },
+        "policy_version": {
+          "const": "1.0.0",
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "rules": {
+          "items": {
+            "$ref": "#/$defs/IgnoreRule"
+          },
+          "maxItems": 256,
+          "title": "Rules",
+          "type": "array",
+          "uniqueItems": true,
+          "x-ucf-canonical-order-by": [
+            "id"
+          ],
+          "x-ucf-unique-by": [
+            "id",
+            "matcher.kind+portable-path-identity"
+          ],
+          "x-ucf-validation-algorithm": "urn:ucf:inventory-algorithm:ignore-policy:1.0.0"
+        }
+      },
+      "required": [
+        "kind",
+        "policy_version",
+        "rules"
+      ],
+      "title": "IgnorePolicy",
+      "type": "object"
+    },
+    "IgnoreRule": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "ignore_rule",
+          "title": "Kind",
+          "type": "string"
+        },
+        "matcher": {
+          "$ref": "#/$defs/IgnoreMatcher"
+        },
+        "reason": {
+          "$ref": "#/$defs/QualifiedName"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "reason",
+        "matcher"
+      ],
+      "title": "IgnoreRule",
+      "type": "object"
+    },
+    "IntegerValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "integer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/ucf__ir__models__SafeInteger__2"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "IntegerValue",
+      "type": "object"
+    },
+    "Invariant": {
+      "additionalProperties": false,
+      "properties": {
+        "applies_to": {
+          "items": {
+            "$ref": "#/$defs/EntityRef"
+          },
+          "title": "Applies To",
+          "type": "array"
+        },
+        "condition": {
+          "$ref": "#/$defs/DeclaredRule"
+        },
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "invariant",
+          "title": "Kind",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/EntityRef"
+        },
+        "requires": {
+          "$ref": "#/$defs/NonEmptyEntityRefs"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "applies_to",
+        "condition",
+        "requires",
+        "provenance"
+      ],
+      "title": "Invariant",
+      "type": "object"
+    },
+    "InventoryBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "inventory_version": {
+          "const": "1.0.0",
+          "title": "Inventory Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "inventory_binding",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:schema:inventory:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "source_revision": {
+          "$ref": "#/$defs/Digest"
+        },
+        "subject_uri": {
+          "$ref": "#/$defs/URI"
+        }
+      },
+      "required": [
+        "kind",
+        "schema_uri",
+        "inventory_version",
+        "subject_uri",
+        "source_revision",
+        "canonical_digest"
+      ],
+      "title": "InventoryBinding",
+      "type": "object"
+    },
+    "InventoryConfidence": {
+      "additionalProperties": false,
+      "properties": {
+        "basis": {
+          "$ref": "#/$defs/URI",
+          "pattern": "(?:[:/])(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)$"
+        },
+        "kind": {
+          "const": "confidence",
+          "title": "Kind",
+          "type": "string"
+        },
+        "scale": {
+          "const": "decimal-0-to-1",
+          "title": "Scale",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/ConfidenceValue"
+        }
+      },
+      "required": [
+        "kind",
+        "scale",
+        "value",
+        "basis"
+      ],
+      "title": "InventoryConfidence",
+      "type": "object"
+    },
+    "InventoryCoverage": {
+      "additionalProperties": false,
+      "properties": {
+        "fact_kind": {
+          "$ref": "#/$defs/FactKind"
+        },
+        "kind": {
+          "const": "inventory_coverage",
+          "title": "Kind",
+          "type": "string"
+        },
+        "record_count": {
+          "$ref": "#/$defs/ucf__ir__models__SafeInteger__3"
+        },
+        "status": {
+          "enum": [
+            "complete",
+            "partial"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "fact_kind",
+        "status",
+        "record_count"
+      ],
+      "title": "InventoryCoverage",
+      "type": "object"
+    },
+    "InventoryDiagnostic": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/QualifiedName"
+        },
+        "fact_kind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FactKind"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "id": {
+          "$ref": "#/$defs/InventoryRecordId"
+        },
+        "kind": {
+          "const": "inventory_diagnostic",
+          "title": "Kind",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RepositoryPath"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/InventoryRecordRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "warning",
+            "error"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "stage": {
+          "$ref": "#/$defs/SemanticToken"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "severity",
+        "code",
+        "fact_kind",
+        "path",
+        "stage",
+        "message",
+        "provenance"
+      ],
+      "title": "InventoryDiagnostic",
+      "type": "object"
+    },
+    "InventoryIgnoreMatch": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/InventoryRecordId"
+        },
+        "kind": {
+          "const": "inventory_ignore_match",
+          "title": "Kind",
+          "type": "string"
+        },
+        "path": {
+          "$ref": "#/$defs/RepositoryPath"
+        },
+        "rule_id": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "rule_id",
+        "path"
+      ],
+      "title": "InventoryIgnoreMatch",
+      "type": "object"
+    },
+    "InventoryProvenance": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "source_span": {
+                "not": {
+                  "type": "null"
+                }
+              }
+            },
+            "required": [
+              "source_span"
+            ]
+          },
+          "then": {
+            "properties": {
+              "content_digest": {
+                "not": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "content_digest": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Digest"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "id": {
+          "$ref": "#/$defs/InventoryRecordId"
+        },
+        "kind": {
+          "const": "inventory_provenance",
+          "title": "Kind",
+          "type": "string"
+        },
+        "procedure_uri": {
+          "$ref": "#/$defs/URI",
+          "pattern": "(?:[:/])(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)$"
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "source_path": {
+          "$ref": "#/$defs/RepositoryPath"
+        },
+        "source_span": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceSpan"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "source_path",
+        "content_digest",
+        "source_span",
+        "producer",
+        "procedure_uri"
+      ],
+      "title": "InventoryProvenance",
+      "type": "object"
+    },
+    "InventoryRecord": {
+      "discriminator": {
+        "mapping": {
+          "api_description": "#/$defs/ApiDescriptionFact",
+          "build_manifest": "#/$defs/BuildManifestFact",
+          "inventory_diagnostic": "#/$defs/InventoryDiagnostic",
+          "inventory_ignore_match": "#/$defs/InventoryIgnoreMatch",
+          "inventory_provenance": "#/$defs/InventoryProvenance",
+          "public_interface": "#/$defs/PublicInterfaceFact",
+          "repository_entry": "#/$defs/RepositoryEntryFact",
+          "test_asset": "#/$defs/TestAssetFact"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ApiDescriptionFact"
+        },
+        {
+          "$ref": "#/$defs/BuildManifestFact"
+        },
+        {
+          "$ref": "#/$defs/InventoryDiagnostic"
+        },
+        {
+          "$ref": "#/$defs/InventoryIgnoreMatch"
+        },
+        {
+          "$ref": "#/$defs/InventoryProvenance"
+        },
+        {
+          "$ref": "#/$defs/PublicInterfaceFact"
+        },
+        {
+          "$ref": "#/$defs/RepositoryEntryFact"
+        },
+        {
+          "$ref": "#/$defs/TestAssetFact"
+        }
+      ]
+    },
+    "InventoryRecordId": {
+      "pattern": "^(?:api|diagnostic|entry|ignore|interface|manifest|provenance|test)\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "InventoryRecordKind": {
+      "enum": [
+        "api_description",
+        "build_manifest",
+        "inventory_diagnostic",
+        "inventory_ignore_match",
+        "inventory_provenance",
+        "public_interface",
+        "repository_entry",
+        "test_asset"
+      ],
+      "title": "InventoryRecordKind",
+      "type": "string"
+    },
+    "InventoryRecordRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "inventory_record_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/InventoryRecordId"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/InventoryRecordKind"
+        }
+      },
+      "required": [
+        "kind",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "InventoryRecordRef",
+      "type": "object"
+    },
+    "InventorySnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "applied_policy": {
+          "$ref": "#/$defs/IgnorePolicy"
+        },
+        "capability": {
+          "$ref": "#/$defs/CapabilitySelection",
+          "properties": {
+            "name": {
+              "const": "org.ucf.adapter.inventory"
+            },
+            "version": {
+              "const": "1.0.0"
+            }
+          }
+        },
+        "coverage": {
+          "items": {
+            "$ref": "#/$defs/InventoryCoverage"
+          },
+          "title": "Coverage",
+          "type": "array"
+        },
+        "inventory_version": {
+          "const": "1.0.0",
+          "title": "Inventory Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "inventory_snapshot",
+          "title": "Kind",
+          "type": "string"
+        },
+        "path_identity": {
+          "const": "unicode-nfc-ascii-casefold-1",
+          "title": "Path Identity",
+          "type": "string"
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "records": {
+          "items": {
+            "$ref": "#/$defs/InventoryRecord"
+          },
+          "maxItems": 65534,
+          "title": "Records",
+          "type": "array"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:schema:inventory:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "source_revision": {
+          "$ref": "#/$defs/Digest"
+        },
+        "subject_uri": {
+          "$ref": "#/$defs/InventorySubjectURI"
+        }
+      },
+      "required": [
+        "kind",
+        "inventory_version",
+        "schema_uri",
+        "subject_uri",
+        "path_identity",
+        "source_revision",
+        "producer",
+        "capability",
+        "applied_policy",
+        "coverage",
+        "records"
+      ],
+      "title": "InventorySnapshot",
+      "type": "object"
+    },
+    "InventorySubjectURI": {
+      "$ref": "#/$defs/URI",
+      "not": {
+        "pattern": "^file:"
+      }
+    },
+    "ListValue": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/IRValue"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "kind": {
+          "const": "list",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "items"
+      ],
+      "title": "ListValue",
+      "type": "object"
+    },
+    "MappedClaimBasis": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "mapped_claim_basis",
+          "title": "Kind",
+          "type": "string"
+        },
+        "mapping": {
+          "$ref": "#/$defs/RecordRef"
+        }
+      },
+      "required": [
+        "kind",
+        "mapping"
+      ],
+      "title": "MappedClaimBasis",
+      "type": "object"
+    },
+    "NonEmptyEntityRefs": {
+      "items": {
+        "$ref": "#/$defs/EntityRef"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "NormalizedVersion": {
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "type": "string"
+    },
+    "NullValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "null",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "NullValue",
+      "type": "object"
+    },
+    "Observation": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "observation",
+          "title": "Kind",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/EntityRef"
+        },
+        "subject": {
+          "$ref": "#/$defs/EntityRef"
+        },
+        "target": {
+          "$ref": "#/$defs/DomainTarget"
+        },
+        "value": {
+          "$ref": "#/$defs/IRValue"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "subject",
+        "target",
+        "value",
+        "provenance"
+      ],
+      "title": "Observation",
+      "type": "object"
+    },
+    "ObservedClaimBasis": {
+      "additionalProperties": false,
+      "properties": {
+        "fact": {
+          "$ref": "#/$defs/RecordRef"
+        },
+        "kind": {
+          "const": "observed_claim_basis",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "fact"
+      ],
+      "title": "ObservedClaimBasis",
+      "type": "object"
+    },
+    "ObservedFact": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion": {
+          "$ref": "#/$defs/FactAssertion"
+        },
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "observed_fact",
+          "title": "Kind",
+          "type": "string"
+        },
+        "subject": {
+          "$ref": "#/$defs/BehaviorEntityRef"
+        },
+        "trace": {
+          "$ref": "#/$defs/RecordRef"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "subject",
+        "assertion",
+        "trace"
+      ],
+      "title": "ObservedFact",
+      "type": "object"
+    },
+    "OnboardingBaseline": {
+      "additionalProperties": false,
+      "properties": {
+        "claim_levels": {
+          "items": {
+            "$ref": "#/$defs/ClaimLevelSummary"
+          },
+          "maxItems": 5,
+          "minItems": 5,
+          "title": "Claim Levels",
+          "type": "array"
+        },
+        "discovery_status": {
+          "enum": [
+            "complete",
+            "partial"
+          ],
+          "title": "Discovery Status",
+          "type": "string"
+        },
+        "dispositions": {
+          "items": {
+            "$ref": "#/$defs/DispositionSummary"
+          },
+          "maxItems": 4,
+          "minItems": 4,
+          "title": "Dispositions",
+          "type": "array"
+        },
+        "documents": {
+          "items": {
+            "$ref": "#/$defs/BundleDocumentRef"
+          },
+          "maxItems": 5,
+          "minItems": 5,
+          "title": "Documents",
+          "type": "array"
+        },
+        "kind": {
+          "const": "onboarding_baseline",
+          "title": "Kind",
+          "type": "string"
+        },
+        "materializations": {
+          "items": {
+            "$ref": "#/$defs/BehaviorMaterialization"
+          },
+          "maxItems": 10000,
+          "title": "Materializations",
+          "type": "array"
+        },
+        "uncovered_subjects": {
+          "items": {
+            "$ref": "#/$defs/InventoryRecordRef"
+          },
+          "maxItems": 10000,
+          "title": "Uncovered Subjects",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "documents",
+        "dispositions",
+        "materializations",
+        "discovery_status",
+        "uncovered_subjects",
+        "claim_levels"
+      ],
+      "title": "OnboardingBaseline",
+      "type": "object"
+    },
+    "PathPrefixMatcher": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "path_prefix",
+          "title": "Kind",
+          "type": "string"
+        },
+        "path": {
+          "$ref": "#/$defs/RepositoryPath",
+          "not": {
+            "const": "."
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "path"
+      ],
+      "title": "PathPrefixMatcher",
+      "type": "object"
+    },
+    "PathSegment": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^(?!(?:(?:[Aa][Uu][Xx]|[Cc][Oo][Nn]|[Nn][Uu][Ll]|[Pp][Rr][Nn]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9]))(?:\\.|$))[^/\\\\:<>\"|?*\\u0000-\\u001f\\u007f]*[^/\\\\:<>\"|?*\\u0000-\\u001f\\u007f .]$",
+      "type": "string",
+      "x-ucf-normalization": "unicode-nfc",
+      "x-ucf-validation-algorithm": "urn:ucf:inventory-algorithm:portable-path:1.0.0"
+    },
+    "PathSegmentMatcher": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "path_segment",
+          "title": "Kind",
+          "type": "string"
+        },
+        "segment": {
+          "$ref": "#/$defs/PathSegment"
+        }
+      },
+      "required": [
+        "kind",
+        "segment"
+      ],
+      "title": "PathSegmentMatcher",
+      "type": "object"
+    },
+    "Port": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "port",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        },
+        "value_kind": {
+          "$ref": "#/$defs/ValueKind"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "value_kind",
+        "required"
+      ],
+      "title": "Port",
+      "type": "object"
+    },
+    "PortRef": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "enum": [
+            "input",
+            "output"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "kind": {
+          "const": "port_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "owner": {
+          "$ref": "#/$defs/EntityRef"
+        }
+      },
+      "required": [
+        "kind",
+        "owner",
+        "direction",
+        "name"
+      ],
+      "title": "PortRef",
+      "type": "object"
+    },
+    "Producer": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "producer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/QualifiedName"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "version"
+      ],
+      "title": "Producer",
+      "type": "object"
+    },
+    "ProposalEntity": {
+      "discriminator": {
+        "mapping": {
+          "proposed_action": "#/$defs/ProposedAction",
+          "proposed_binding": "#/$defs/ProposedBinding",
+          "proposed_step": "#/$defs/ProposedStep",
+          "proposed_use_case": "#/$defs/ProposedUseCase"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ProposedAction"
+        },
+        {
+          "$ref": "#/$defs/ProposedBinding"
+        },
+        {
+          "$ref": "#/$defs/ProposedStep"
+        },
+        {
+          "$ref": "#/$defs/ProposedUseCase"
+        }
+      ]
+    },
+    "ProposalEntityKind": {
+      "enum": [
+        "proposed_action",
+        "proposed_binding",
+        "proposed_step",
+        "proposed_use_case"
+      ],
+      "title": "ProposalEntityKind",
+      "type": "string"
+    },
+    "ProposalEntityRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "proposal_entity_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "title": "Target Id",
+          "type": "string"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/ProposalEntityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "ProposalEntityRef",
+      "type": "object"
+    },
+    "ProposalPortRef": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "enum": [
+            "input",
+            "output"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "kind": {
+          "const": "proposal_port_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "owner": {
+          "$ref": "#/$defs/ProposalEntityRef"
+        }
+      },
+      "required": [
+        "kind",
+        "owner",
+        "direction",
+        "name"
+      ],
+      "title": "ProposalPortRef",
+      "type": "object"
+    },
+    "ProposedAction": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "input_ports": {
+          "items": {
+            "$ref": "#/$defs/Port"
+          },
+          "title": "Input Ports",
+          "type": "array"
+        },
+        "kind": {
+          "const": "proposed_action",
+          "title": "Kind",
+          "type": "string"
+        },
+        "output_ports": {
+          "items": {
+            "$ref": "#/$defs/Port"
+          },
+          "title": "Output Ports",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "input_ports",
+        "output_ports"
+      ],
+      "title": "ProposedAction",
+      "type": "object"
+    },
+    "ProposedBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "const": "proposed_binding",
+          "title": "Kind",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/ProposalPortRef"
+        },
+        "target": {
+          "$ref": "#/$defs/ProposalPortRef"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "target",
+        "source"
+      ],
+      "title": "ProposedBinding",
+      "type": "object"
+    },
+    "ProposedStep": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/ProposalEntityRef"
+        },
+        "bindings": {
+          "items": {
+            "$ref": "#/$defs/ProposalEntityRef"
+          },
+          "title": "Bindings",
+          "type": "array"
+        },
+        "id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "const": "proposed_step",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "action",
+        "bindings"
+      ],
+      "title": "ProposedStep",
+      "type": "object"
+    },
+    "ProposedUseCase": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "input_ports": {
+          "items": {
+            "$ref": "#/$defs/Port"
+          },
+          "title": "Input Ports",
+          "type": "array"
+        },
+        "kind": {
+          "const": "proposed_use_case",
+          "title": "Kind",
+          "type": "string"
+        },
+        "output_ports": {
+          "items": {
+            "$ref": "#/$defs/Port"
+          },
+          "title": "Output Ports",
+          "type": "array"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/ProposalEntityRef"
+          },
+          "maxItems": 256,
+          "minItems": 1,
+          "title": "Steps",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "input_ports",
+        "output_ports",
+        "steps"
+      ],
+      "title": "ProposedUseCase",
+      "type": "object"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "captured_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "provenance",
+          "title": "Kind",
+          "type": "string"
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "source": {
+          "$ref": "#/$defs/ArtifactSource"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "source",
+        "producer",
+        "captured_at"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
+    "PublicInterfaceFact": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/InventoryConfidence"
+        },
+        "container": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Container"
+        },
+        "declaration_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "entry": {
+          "$ref": "#/$defs/InventoryRecordRef"
+        },
+        "id": {
+          "$ref": "#/$defs/InventoryRecordId"
+        },
+        "interface_kind_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "kind": {
+          "const": "public_interface",
+          "title": "Kind",
+          "type": "string"
+        },
+        "level": {
+          "const": "observed",
+          "title": "Level",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/InventoryRecordRef"
+        }
+      },
+      "required": [
+        "id",
+        "level",
+        "provenance",
+        "confidence",
+        "kind",
+        "entry",
+        "interface_kind_uri",
+        "name",
+        "container",
+        "declaration_digest"
+      ],
+      "title": "PublicInterfaceFact",
+      "type": "object"
+    },
+    "QualifiedName": {
+      "maxLength": 255,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*)+$",
+      "type": "string"
+    },
+    "RecordEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "record_entry",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "value": {
+          "$ref": "#/$defs/IRValue"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "value"
+      ],
+      "title": "RecordEntry",
+      "type": "object"
+    },
+    "RecordRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "record_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/TrustRecordKind"
+        }
+      },
+      "required": [
+        "kind",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "RecordRef",
+      "type": "object"
+    },
+    "RecordValue": {
+      "additionalProperties": false,
+      "properties": {
+        "entries": {
+          "items": {
+            "$ref": "#/$defs/RecordEntry"
+          },
+          "title": "Entries",
+          "type": "array"
+        },
+        "kind": {
+          "const": "record",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "entries"
+      ],
+      "title": "RecordValue",
+      "type": "object"
+    },
+    "RejectedDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate": {
+          "$ref": "#/$defs/CandidateRef"
+        },
+        "id": {
+          "$ref": "#/$defs/DecisionId"
+        },
+        "kind": {
+          "const": "rejected_decision",
+          "title": "Kind",
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/$defs/DecisionReason"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "candidate",
+        "reason"
+      ],
+      "title": "RejectedDecision",
+      "type": "object"
+    },
+    "RepositoryEntryFact": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "entry_kind": {
+                "const": "directory"
+              }
+            },
+            "required": [
+              "entry_kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "content_digest": {
+                "type": "null"
+              },
+              "size_bytes": {
+                "type": "null"
+              },
+              "symlink_target_digest": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "entry_kind": {
+                "const": "file"
+              }
+            },
+            "required": [
+              "entry_kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "content_digest": {
+                "not": {
+                  "type": "null"
+                }
+              },
+              "size_bytes": {
+                "type": "integer"
+              },
+              "symlink_target_digest": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "entry_kind": {
+                "const": "symlink"
+              }
+            },
+            "required": [
+              "entry_kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "content_digest": {
+                "type": "null"
+              },
+              "size_bytes": {
+                "type": "null"
+              },
+              "symlink_target_digest": {
+                "not": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/InventoryConfidence"
+        },
+        "content_digest": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Digest"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "entry_kind": {
+          "enum": [
+            "directory",
+            "file",
+            "symlink"
+          ],
+          "title": "Entry Kind",
+          "type": "string"
+        },
+        "id": {
+          "$ref": "#/$defs/InventoryRecordId"
+        },
+        "kind": {
+          "const": "repository_entry",
+          "title": "Kind",
+          "type": "string"
+        },
+        "level": {
+          "const": "observed",
+          "title": "Level",
+          "type": "string"
+        },
+        "path": {
+          "$ref": "#/$defs/RepositoryPath"
+        },
+        "provenance": {
+          "$ref": "#/$defs/InventoryRecordRef"
+        },
+        "size_bytes": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ucf__ir__models__SafeInteger__3"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "symlink_target_digest": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Digest"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "level",
+        "provenance",
+        "confidence",
+        "kind",
+        "path",
+        "entry_kind",
+        "size_bytes",
+        "content_digest",
+        "symlink_target_digest"
+      ],
+      "title": "RepositoryEntryFact",
+      "type": "object"
+    },
+    "RepositoryPath": {
+      "maxLength": 1024,
+      "minLength": 1,
+      "pattern": "^(?:\\.|(?!(?:(?:[Aa][Uu][Xx]|[Cc][Oo][Nn]|[Nn][Uu][Ll]|[Pp][Rr][Nn]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9]))(?:\\.|$))[^/\\\\:<>\"|?*\\u0000-\\u001f\\u007f]*[^/\\\\:<>\"|?*\\u0000-\\u001f\\u007f .](?:/(?!(?:(?:[Aa][Uu][Xx]|[Cc][Oo][Nn]|[Nn][Uu][Ll]|[Pp][Rr][Nn]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9]))(?:\\.|$))[^/\\\\:<>\"|?*\\u0000-\\u001f\\u007f]*[^/\\\\:<>\"|?*\\u0000-\\u001f\\u007f .])*)$",
+      "type": "string",
+      "x-ucf-normalization": "unicode-nfc",
+      "x-ucf-validation-algorithm": "urn:ucf:inventory-algorithm:portable-path:1.0.0"
+    },
+    "SemanticToken": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "type": "string"
+    },
+    "SourceRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "captured_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "source_record",
+          "title": "Kind",
+          "type": "string"
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "source_revision": {
+          "$ref": "#/$defs/Digest"
+        },
+        "source_uri": {
+          "$ref": "#/$defs/URI"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "source_uri",
+        "source_revision",
+        "producer",
+        "captured_at"
+      ],
+      "title": "SourceRecord",
+      "type": "object"
+    },
+    "SourceSpan": {
+      "additionalProperties": false,
+      "properties": {
+        "end_column": {
+          "$ref": "#/$defs/ucf__ir__models__SafeInteger__1"
+        },
+        "end_line": {
+          "$ref": "#/$defs/ucf__ir__models__SafeInteger__1"
+        },
+        "kind": {
+          "const": "source_span",
+          "title": "Kind",
+          "type": "string"
+        },
+        "start_column": {
+          "$ref": "#/$defs/ucf__ir__models__SafeInteger__1"
+        },
+        "start_line": {
+          "$ref": "#/$defs/ucf__ir__models__SafeInteger__1"
+        }
+      },
+      "required": [
+        "kind",
+        "start_line",
+        "start_column",
+        "end_line",
+        "end_column"
+      ],
+      "title": "SourceSpan",
+      "type": "object",
+      "x-ucf-validation-algorithm": "urn:ucf:inventory-algorithm:source-span-order:1.0.0"
+    },
+    "Step": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/EntityRef"
+        },
+        "bindings": {
+          "items": {
+            "$ref": "#/$defs/EntityRef"
+          },
+          "title": "Bindings",
+          "type": "array"
+        },
+        "effects": {
+          "items": {
+            "$ref": "#/$defs/EntityRef"
+          },
+          "title": "Effects",
+          "type": "array"
+        },
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "step",
+          "title": "Kind",
+          "type": "string"
+        },
+        "observations": {
+          "items": {
+            "$ref": "#/$defs/EntityRef"
+          },
+          "title": "Observations",
+          "type": "array"
+        },
+        "provenance": {
+          "$ref": "#/$defs/EntityRef"
+        },
+        "requires": {
+          "items": {
+            "$ref": "#/$defs/EntityRef"
+          },
+          "title": "Requires",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "action",
+        "bindings",
+        "effects",
+        "observations",
+        "requires",
+        "provenance"
+      ],
+      "title": "Step",
+      "type": "object"
+    },
+    "StringValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "string",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "StringValue",
+      "type": "object"
+    },
+    "TestAssetFact": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/InventoryConfidence"
+        },
+        "entry": {
+          "$ref": "#/$defs/InventoryRecordRef"
+        },
+        "id": {
+          "$ref": "#/$defs/InventoryRecordId"
+        },
+        "kind": {
+          "const": "test_asset",
+          "title": "Kind",
+          "type": "string"
+        },
+        "level": {
+          "const": "observed",
+          "title": "Level",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Name"
+        },
+        "provenance": {
+          "$ref": "#/$defs/InventoryRecordRef"
+        },
+        "test_kind_uri": {
+          "$ref": "#/$defs/URI"
+        }
+      },
+      "required": [
+        "id",
+        "level",
+        "provenance",
+        "confidence",
+        "kind",
+        "entry",
+        "test_kind_uri",
+        "name"
+      ],
+      "title": "TestAssetFact",
+      "type": "object"
+    },
+    "TestedClaimBasis": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact": {
+          "$ref": "#/$defs/RecordRef"
+        },
+        "check": {
+          "$ref": "#/$defs/Check"
+        },
+        "environment": {
+          "$ref": "#/$defs/Digest"
+        },
+        "evidence": {
+          "$ref": "#/$defs/EvidenceRef"
+        },
+        "kind": {
+          "const": "tested_claim_basis",
+          "title": "Kind",
+          "type": "string"
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        }
+      },
+      "required": [
+        "kind",
+        "evidence",
+        "artifact",
+        "check",
+        "environment",
+        "producer"
+      ],
+      "title": "TestedClaimBasis",
+      "type": "object"
+    },
+    "Timestamp": {
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+      "type": "string"
+    },
+    "TimestampValue": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "timestamp",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/Timestamp"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "TimestampValue",
+      "type": "object"
+    },
+    "TrustIR": {
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "trust_ir",
+          "title": "Kind",
+          "type": "string"
+        },
+        "records": {
+          "items": {
+            "$ref": "#/$defs/TrustRecord"
+          },
+          "title": "Records",
+          "type": "array"
+        },
+        "subject_document": {
+          "$ref": "#/$defs/BehaviorDocumentRef"
+        },
+        "trust_ir_version": {
+          "const": "1.0.0",
+          "title": "Trust Ir Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "trust_ir_version",
+        "document_id",
+        "subject_document",
+        "records"
+      ],
+      "title": "TrustIR",
+      "type": "object"
+    },
+    "TrustMapping": {
+      "additionalProperties": false,
+      "properties": {
+        "declaration": {
+          "$ref": "#/$defs/RecordRef"
+        },
+        "disposition": {
+          "enum": [
+            "match",
+            "conflict"
+          ],
+          "title": "Disposition",
+          "type": "string"
+        },
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "mapping",
+          "title": "Kind",
+          "type": "string"
+        },
+        "observation": {
+          "$ref": "#/$defs/RecordRef"
+        },
+        "relationship": {
+          "const": "same-behavior-slot",
+          "title": "Relationship",
+          "type": "string"
+        },
+        "trace": {
+          "$ref": "#/$defs/RecordRef"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "declaration",
+        "observation",
+        "relationship",
+        "disposition",
+        "trace"
+      ],
+      "title": "TrustMapping",
+      "type": "object"
+    },
+    "TrustRecord": {
+      "discriminator": {
+        "mapping": {
+          "behavior_candidate": "#/$defs/BehaviorCandidate",
+          "claim": "#/$defs/Claim",
+          "declaration": "#/$defs/Declaration",
+          "mapping": "#/$defs/TrustMapping",
+          "observed_fact": "#/$defs/ObservedFact",
+          "source_record": "#/$defs/SourceRecord"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SourceRecord"
+        },
+        {
+          "$ref": "#/$defs/Declaration"
+        },
+        {
+          "$ref": "#/$defs/ObservedFact"
+        },
+        {
+          "$ref": "#/$defs/BehaviorCandidate"
+        },
+        {
+          "$ref": "#/$defs/TrustMapping"
+        },
+        {
+          "$ref": "#/$defs/Claim"
+        }
+      ]
+    },
+    "TrustRecordKind": {
+      "enum": [
+        "source_record",
+        "declaration",
+        "observed_fact",
+        "behavior_candidate",
+        "mapping",
+        "claim"
+      ],
+      "title": "TrustRecordKind",
+      "type": "string"
+    },
+    "URI": {
+      "maxLength": 2048,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9+.-]*:[^\\s]+$",
+      "type": "string"
+    },
+    "UncertainDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate": {
+          "$ref": "#/$defs/CandidateRef"
+        },
+        "id": {
+          "$ref": "#/$defs/DecisionId"
+        },
+        "kind": {
+          "const": "uncertain_decision",
+          "title": "Kind",
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/$defs/DecisionReason"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "candidate",
+        "reason"
+      ],
+      "title": "UncertainDecision",
+      "type": "object"
+    },
+    "UseCase": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "input_ports": {
+          "items": {
+            "$ref": "#/$defs/Port"
+          },
+          "title": "Input Ports",
+          "type": "array"
+        },
+        "invariants": {
+          "items": {
+            "$ref": "#/$defs/EntityRef"
+          },
+          "title": "Invariants",
+          "type": "array"
+        },
+        "kind": {
+          "const": "use_case",
+          "title": "Kind",
+          "type": "string"
+        },
+        "output_ports": {
+          "items": {
+            "$ref": "#/$defs/Port"
+          },
+          "title": "Output Ports",
+          "type": "array"
+        },
+        "provenance": {
+          "$ref": "#/$defs/EntityRef"
+        },
+        "requires": {
+          "items": {
+            "$ref": "#/$defs/EntityRef"
+          },
+          "title": "Requires",
+          "type": "array"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/EntityRef"
+          },
+          "title": "Steps",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "input_ports",
+        "output_ports",
+        "steps",
+        "invariants",
+        "requires",
+        "provenance"
+      ],
+      "title": "UseCase",
+      "type": "object"
+    },
+    "ValueKind": {
+      "enum": [
+        "null",
+        "boolean",
+        "string",
+        "integer",
+        "decimal",
+        "timestamp",
+        "list",
+        "record"
+      ],
+      "title": "ValueKind",
+      "type": "string"
+    },
+    "VerificationEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "check": {
+          "$ref": "#/$defs/Check"
+        },
+        "environment": {
+          "$ref": "#/$defs/Digest"
+        },
+        "executed_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "verification_evidence",
+          "title": "Kind",
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "passed",
+            "failed",
+            "error"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/EntityRef"
+        },
+        "source_revision": {
+          "$ref": "#/$defs/Digest"
+        },
+        "subjects": {
+          "items": {
+            "$ref": "#/$defs/EntityRef"
+          },
+          "title": "Subjects",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "subjects",
+        "check",
+        "outcome",
+        "executed_at",
+        "source_revision",
+        "environment",
+        "provenance"
+      ],
+      "title": "VerificationEvidence",
+      "type": "object"
+    },
+    "VerifiedClaimBasis": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "verified_claim_basis",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "VerifiedClaimBasis",
+      "type": "object"
+    },
+    "ucf__ir__models__SafeInteger__1": {
+      "maximum": 9007199254740991,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "ucf__ir__models__SafeInteger__2": {
+      "maximum": 9007199254740991,
+      "minimum": -9007199254740991,
+      "type": "integer"
+    },
+    "ucf__ir__models__SafeInteger__3": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "$id": "urn:ucf:onboarding:bundle:1.0.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "baseline": {
+      "$ref": "#/$defs/OnboardingBaseline"
+    },
+    "behavior": {
+      "$ref": "#/$defs/BehaviorIR"
+    },
+    "capture_context": {
+      "$ref": "#/$defs/CaptureContext"
+    },
+    "decisions": {
+      "$ref": "#/$defs/DecisionSet"
+    },
+    "discovery": {
+      "$ref": "#/$defs/DiscoveryResult"
+    },
+    "inventory": {
+      "$ref": "#/$defs/InventorySnapshot"
+    },
+    "kind": {
+      "const": "onboarding_bundle",
+      "title": "Kind",
+      "type": "string"
+    },
+    "onboarding_version": {
+      "const": "1.0.0",
+      "title": "Onboarding Version",
+      "type": "string"
+    },
+    "schema_uri": {
+      "const": "urn:ucf:onboarding:bundle:1.0.0",
+      "title": "Schema Uri",
+      "type": "string"
+    },
+    "trust": {
+      "$ref": "#/$defs/TrustIR"
+    }
+  },
+  "required": [
+    "kind",
+    "onboarding_version",
+    "schema_uri",
+    "capture_context",
+    "inventory",
+    "discovery",
+    "decisions",
+    "behavior",
+    "trust",
+    "baseline"
+  ],
+  "title": "UCF deterministic onboarding bundle profile 1.0.0",
+  "type": "object",
+  "x-ucf-document-kind": "onboarding_bundle",
+  "x-ucf-onboarding-version": "1.0.0",
+  "x-ucf-runtime-semantic-checks": [
+    "strict UTF-8 and duplicate-member JSON decoding",
+    "maximum JSON nesting depth 128",
+    "complete inventory canonical digest and source revision",
+    "exact discovery capability and profile coordinates",
+    "typed inventory reference resolution and target kinds",
+    "content-derived candidate and decision identities",
+    "canonical candidate, evidence, decision, and entity order",
+    "closed proposal graph topology and required input bindings",
+    "exact accepted, edited, rejected, uncertain decision coverage",
+    "stale discovery, candidate, and replacement rejection",
+    "accepted and edited materialization only",
+    "exact Behavior IR and Trust IR document binding",
+    "observed and declared claims without confidence promotion",
+    "derived baseline document, disposition, coverage, and claim summaries",
+    "maximum 10000 discovery candidates",
+    "maximum 10000 discovery diagnostics"
+  ]
+}

@@ -1,5 +1,9 @@
 # UCF Framework Stress Test Report
 
+> **Status: Historical evidence.** Capability and release claims in this
+> document are not current; [the capability matrix](docs/CAPABILITIES.md)
+> controls the current status.
+
 **Date**: Feb 2026  
 **Product**: URL Shortener  
 **Goal**: "Ломать фреймворк" — identify and fix framework limitations

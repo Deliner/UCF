@@ -1,0 +1,340 @@
+{
+  "$comment": "Generated deterministically from UCF change-lifecycle profile 1.0.0 models; do not edit by hand. The x-ucf-runtime-semantic-checks annotation names only the additional runtime checks for this document kind.",
+  "$defs": {
+    "AddedBehavior": {
+      "additionalProperties": false,
+      "properties": {
+        "final_is_root": {
+          "title": "Final Is Root",
+          "type": "boolean"
+        },
+        "final_subject": {
+          "$ref": "#/$defs/BehaviorEntityRef"
+        },
+        "kind": {
+          "const": "added_behavior",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "final_subject",
+        "final_is_root"
+      ],
+      "title": "AddedBehavior",
+      "type": "object"
+    },
+    "BehaviorDeltaEntry": {
+      "discriminator": {
+        "mapping": {
+          "added_behavior": "#/$defs/AddedBehavior",
+          "modified_behavior": "#/$defs/ModifiedBehavior",
+          "removed_behavior": "#/$defs/RemovedBehavior"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/AddedBehavior"
+        },
+        {
+          "$ref": "#/$defs/ModifiedBehavior"
+        },
+        {
+          "$ref": "#/$defs/RemovedBehavior"
+        }
+      ]
+    },
+    "BehaviorDocumentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "document_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "ir_version": {
+          "const": "1.0.0",
+          "title": "Ir Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "behavior_document_ref",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "document_id",
+        "ir_version",
+        "canonical_digest"
+      ],
+      "title": "BehaviorDocumentRef",
+      "type": "object"
+    },
+    "BehaviorEntityRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "document_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "ir_version": {
+          "const": "1.0.0",
+          "title": "Ir Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "behavior_entity_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/EntityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "document_id",
+        "ir_version",
+        "canonical_digest",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "BehaviorEntityRef",
+      "type": "object"
+    },
+    "ChangeProposalRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "change_id": {
+          "$ref": "#/$defs/OpenSpecChangeId"
+        },
+        "change_lifecycle_version": {
+          "const": "1.0.0",
+          "title": "Change Lifecycle Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "change_proposal_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:change-lifecycle:proposal:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "change_lifecycle_version",
+        "schema_uri",
+        "change_id",
+        "canonical_digest"
+      ],
+      "title": "ChangeProposalRef",
+      "type": "object"
+    },
+    "Digest": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "sha-256",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "kind": {
+          "const": "digest",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/DigestValue"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm",
+        "value"
+      ],
+      "title": "Digest",
+      "type": "object"
+    },
+    "DigestValue": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "EntityKind": {
+      "enum": [
+        "action",
+        "use_case",
+        "step",
+        "binding",
+        "effect",
+        "observation",
+        "invariant",
+        "provenance",
+        "verification_evidence",
+        "capability_requirement"
+      ],
+      "title": "EntityKind",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "type": "string"
+    },
+    "ModifiedBehavior": {
+      "additionalProperties": false,
+      "properties": {
+        "aspects": {
+          "items": {
+            "enum": [
+              "definition",
+              "root_membership"
+            ],
+            "type": "string"
+          },
+          "maxItems": 2,
+          "minItems": 1,
+          "title": "Aspects",
+          "type": "array"
+        },
+        "base_is_root": {
+          "title": "Base Is Root",
+          "type": "boolean"
+        },
+        "base_subject": {
+          "$ref": "#/$defs/BehaviorEntityRef"
+        },
+        "final_is_root": {
+          "title": "Final Is Root",
+          "type": "boolean"
+        },
+        "final_subject": {
+          "$ref": "#/$defs/BehaviorEntityRef"
+        },
+        "kind": {
+          "const": "modified_behavior",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "base_subject",
+        "final_subject",
+        "aspects",
+        "base_is_root",
+        "final_is_root"
+      ],
+      "title": "ModifiedBehavior",
+      "type": "object"
+    },
+    "OpenSpecChangeId": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "type": "string"
+    },
+    "RemovedBehavior": {
+      "additionalProperties": false,
+      "properties": {
+        "base_is_root": {
+          "title": "Base Is Root",
+          "type": "boolean"
+        },
+        "base_subject": {
+          "$ref": "#/$defs/BehaviorEntityRef"
+        },
+        "kind": {
+          "const": "removed_behavior",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "base_subject",
+        "base_is_root"
+      ],
+      "title": "RemovedBehavior",
+      "type": "object"
+    }
+  },
+  "$id": "urn:ucf:change-lifecycle:behavior-delta:1.0.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "base_behavior": {
+      "$ref": "#/$defs/BehaviorDocumentRef"
+    },
+    "change_id": {
+      "$ref": "#/$defs/OpenSpecChangeId"
+    },
+    "change_lifecycle_version": {
+      "const": "1.0.0",
+      "title": "Change Lifecycle Version",
+      "type": "string"
+    },
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/BehaviorDeltaEntry"
+      },
+      "minItems": 1,
+      "title": "Entries",
+      "type": "array"
+    },
+    "final_behavior": {
+      "$ref": "#/$defs/BehaviorDocumentRef"
+    },
+    "kind": {
+      "const": "behavior_delta",
+      "title": "Kind",
+      "type": "string"
+    },
+    "proposal": {
+      "$ref": "#/$defs/ChangeProposalRef"
+    },
+    "schema_uri": {
+      "const": "urn:ucf:change-lifecycle:behavior-delta:1.0.0",
+      "title": "Schema Uri",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "change_lifecycle_version",
+    "schema_uri",
+    "change_id",
+    "proposal",
+    "base_behavior",
+    "final_behavior",
+    "entries"
+  ],
+  "title": "UCF behavior delta profile 1.0.0",
+  "type": "object",
+  "x-ucf-change-lifecycle-version": "1.0.0",
+  "x-ucf-document-kind": "behavior_delta",
+  "x-ucf-runtime-semantic-checks": [
+    "strict UTF-8 and duplicate-member JSON decoding",
+    "maximum JSON nesting depth 128",
+    "exact proposal, base behavior, and final behavior context",
+    "delta entry subjects bind their top-level behavior document coordinates",
+    "exhaustive canonical behavior delta"
+  ]
+}

@@ -59,11 +59,13 @@ class DriftDetector:
             if not code_paths:
                 parts = ref.split("/", 1)
                 kind = parts[0] if parts else "unknown"
-                result.unimplemented_specs.append(DriftEntry(
-                    ref=ref,
-                    kind=kind,
-                    detail=f"No implementation found for '{ref}'",
-                ))
+                result.unimplemented_specs.append(
+                    DriftEntry(
+                        ref=ref,
+                        kind=kind,
+                        detail=f"No implementation found for '{ref}'",
+                    )
+                )
 
     def _find_orphan_code(self, result: DriftResult) -> None:
         all_refs = {
@@ -75,11 +77,16 @@ class DriftDetector:
         for code_path, spec_refs in self.map.code_to_spec.items():
             for ref in spec_refs:
                 if ref not in all_refs:
-                    result.orphan_code.append(DriftEntry(
-                        ref=code_path,
-                        kind="orphan",
-                        detail=f"'{code_path}' references '{ref}' which does not exist in specs",
-                    ))
+                    result.orphan_code.append(
+                        DriftEntry(
+                            ref=code_path,
+                            kind="orphan",
+                            detail=(
+                                f"'{code_path}' references '{ref}' which does "
+                                "not exist in specs"
+                            ),
+                        )
+                    )
 
     @staticmethod
     def _kind_to_plural(kind: str) -> str:

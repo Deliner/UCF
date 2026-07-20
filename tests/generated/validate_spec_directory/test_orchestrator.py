@@ -7,49 +7,70 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    ValidateSpecDirectoryInterface,
-    LoaderContext,
-    ValidateResult,
+from .impl import (
+    validate_spec_directory_impl as validate_spec_directory_impl,
 )
-from .impl import validate_spec_directory_impl  # noqa: F401
+from .interface import ValidateSpecDirectoryInterface
 
 
 @pytest.fixture
-def uc(validate_spec_directory_impl: ValidateSpecDirectoryInterface) -> ValidateSpecDirectoryInterface:
-    return validate_spec_directory_impl
+def uc(request: pytest.FixtureRequest) -> ValidateSpecDirectoryInterface:
+    return request.getfixturevalue("validate_spec_directory_impl")
 
 
 class TestHappyPath:
 
     def test_validate_spec_directory_completes_successfully(
         self, uc: ValidateSpecDirectoryInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        validate = uc.action_validate(registry=loader.registry)
+        validate = uc.action_validate(
+            registry=loader.registry,
+        )
 
-        render_results = uc.action_render_results(data={'loaded_count': loader.loaded_count, 'load_errors': loader.load_errors, 'issues': validate.issues, 'error_count': validate.error_count, 'warning_count': validate.warning_count, 'info_count': validate.info_count}, format='table')
+        uc.action_render_results(
+            data={
+                'loaded_count': loader.loaded_count,
+                'load_errors': loader.load_errors,
+                'issues': validate.issues,
+                'error_count': validate.error_count,
+                'warning_count': validate.warning_count,
+                'info_count': validate.info_count,
+            },
+            format='table',
+        )
 
 
-        uc.verify_all_loaded_specs_have_been_validated()
-        uc.verify_all_issues_are_reported_with_severity_category_and()
-        uc.verify_exit_code_is_1_if_any_errors_exist_0_otherwise()
-        uc.verify_spec_names_unique()
-        uc.verify_refs_resolvable()
-        uc.verify_kind_determines_schema()
-        uc.verify_no_circular_refs()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_all_loaded_specs_have_been_validated()
+        _ = uc.verify_all_issues_are_reported_with_severity_category_and()
+        _ = uc.verify_exit_code_is_1_if_any_errors_exist_0_otherwise()
+        _ = uc.verify_spec_names_unique()
+        _ = uc.verify_refs_resolvable()
+        _ = uc.verify_kind_determines_schema()
+        _ = uc.verify_no_circular_refs()
+        _ = uc.verify_required_inputs_validated()
 
 
 class TestAltFileNotFound:
 
     def test_file_not_found(
         self, uc: ValidateSpecDirectoryInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        render_file_error = uc.action_render_results(data={'message': 'spec file not found'}, format='tree')
+        uc.action_render_file_error(
+            data={
+                'message': 'spec file not found',
+            },
+            format='tree',
+        )
 
 
 
@@ -57,10 +78,18 @@ class TestAltYamlSyntaxError:
 
     def test_yaml_syntax_error(
         self, uc: ValidateSpecDirectoryInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        render_yaml_error = uc.action_render_results(data={'message': 'YAML syntax error in spec file'}, format='tree')
+        uc.action_render_yaml_error(
+            data={
+                'message': 'YAML syntax error in spec file',
+            },
+            format='tree',
+        )
 
 
 
@@ -68,10 +97,18 @@ class TestAltNotAMapping:
 
     def test_not_a_mapping(
         self, uc: ValidateSpecDirectoryInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        render_mapping_error = uc.action_render_results(data={'message': 'spec file root is not a YAML mapping'}, format='tree')
+        uc.action_render_mapping_error(
+            data={
+                'message': 'spec file root is not a YAML mapping',
+            },
+            format='tree',
+        )
 
 
 
@@ -79,10 +116,18 @@ class TestAltMissingKind:
 
     def test_missing_kind(
         self, uc: ValidateSpecDirectoryInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        render_kind_missing = uc.action_render_results(data={'message': 'spec is missing required kind field'}, format='tree')
+        uc.action_render_kind_missing(
+            data={
+                'message': 'spec is missing required kind field',
+            },
+            format='tree',
+        )
 
 
 
@@ -90,10 +135,18 @@ class TestAltUnknownKind:
 
     def test_unknown_kind(
         self, uc: ValidateSpecDirectoryInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        render_unknown_kind = uc.action_render_results(data={'message': 'spec has unrecognized kind value'}, format='tree')
+        uc.action_render_unknown_kind(
+            data={
+                'message': 'spec has unrecognized kind value',
+            },
+            format='tree',
+        )
 
 
 
@@ -101,10 +154,18 @@ class TestAltValidationError:
 
     def test_validation_error(
         self, uc: ValidateSpecDirectoryInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        render_validation_error = uc.action_render_results(data={'message': 'spec data fails schema validation'}, format='tree')
+        uc.action_render_validation_error(
+            data={
+                'message': 'spec data fails schema validation',
+            },
+            format='tree',
+        )
 
 
 
@@ -112,10 +173,18 @@ class TestAltRefNotFound:
 
     def test_ref_not_found(
         self, uc: ValidateSpecDirectoryInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        render_ref_error = uc.action_render_results(data={'message': 'referenced spec file not found'}, format='tree')
+        uc.action_render_ref_error(
+            data={
+                'message': 'referenced spec file not found',
+            },
+            format='tree',
+        )
 
 
 
@@ -123,10 +192,18 @@ class TestAltMaxDepthExceeded:
 
     def test_max_depth_exceeded(
         self, uc: ValidateSpecDirectoryInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        render_depth_error = uc.action_render_results(data={'message': 'ref resolution chain too deep'}, format='tree')
+        uc.action_render_depth_error(
+            data={
+                'message': 'ref resolution chain too deep',
+            },
+            format='tree',
+        )
 
 
 
@@ -134,10 +211,18 @@ class TestAltNegativeDepth:
 
     def test_negative_depth(
         self, uc: ValidateSpecDirectoryInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        render_depth_invalid = uc.action_render_results(data={'message': 'ref resolution depth cannot be negative'}, format='tree')
+        uc.action_render_depth_invalid(
+            data={
+                'message': 'ref resolution depth cannot be negative',
+            },
+            format='tree',
+        )
 
 
 
@@ -145,14 +230,29 @@ class TestAltParseFailures:
 
     def test_parse_failures(
         self, uc: ValidateSpecDirectoryInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        render_errors = uc.action_render_results(data={'load_errors': loader.load_errors}, format='table')
+        uc.action_render_errors(
+            data={
+                'load_errors': loader.load_errors,
+            },
+            format='table',
+        )
 
-        validate_partial = uc.action_validate(registry=loader.registry)
+        validate_partial = uc.action_validate_partial(
+            registry=loader.registry,
+        )
 
-        render_partial_results = uc.action_render_results(data={'issues': validate_partial.issues}, format='table')
+        uc.action_render_partial_results(
+            data={
+                'issues': validate_partial.issues,
+            },
+            format='table',
+        )
 
 
 

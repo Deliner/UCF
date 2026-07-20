@@ -1,0 +1,22 @@
+{
+  "name": "legacy-quote-service",
+  "version": "0.7.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "22.x",
+    "npm": "10.x"
+  },
+  "packageManager": "npm@10.9.8",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test dist/service.test.js"
+  },
+  "dependencies": {
+    "fastify": "5.10.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.1",
+    "typescript": "7.0.2"
+  }
+}

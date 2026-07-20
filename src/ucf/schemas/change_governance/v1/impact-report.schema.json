@@ -1,0 +1,691 @@
+{
+  "$comment": "Generated deterministically from UCF change-governance profile 1.0.0 models; do not edit by hand. The x-ucf-runtime-semantic-checks annotation names only additional checks beyond JSON Schema.",
+  "$defs": {
+    "BehaviorDeltaRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "change_id": {
+          "$ref": "#/$defs/OpenSpecChangeId"
+        },
+        "change_lifecycle_version": {
+          "const": "1.0.0",
+          "title": "Change Lifecycle Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "behavior_delta_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:change-lifecycle:behavior-delta:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "change_lifecycle_version",
+        "schema_uri",
+        "change_id",
+        "canonical_digest"
+      ],
+      "title": "BehaviorDeltaRef",
+      "type": "object"
+    },
+    "BehaviorDocumentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "document_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "ir_version": {
+          "const": "1.0.0",
+          "title": "Ir Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "behavior_document_ref",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "document_id",
+        "ir_version",
+        "canonical_digest"
+      ],
+      "title": "BehaviorDocumentRef",
+      "type": "object"
+    },
+    "ChangeProposalRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "change_id": {
+          "$ref": "#/$defs/OpenSpecChangeId"
+        },
+        "change_lifecycle_version": {
+          "const": "1.0.0",
+          "title": "Change Lifecycle Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "change_proposal_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:change-lifecycle:proposal:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "change_lifecycle_version",
+        "schema_uri",
+        "change_id",
+        "canonical_digest"
+      ],
+      "title": "ChangeProposalRef",
+      "type": "object"
+    },
+    "CompatibilityAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "compatibility_assessment",
+          "title": "Kind",
+          "type": "string"
+        },
+        "outcome": {
+          "$ref": "#/$defs/CompatibilityOutcome"
+        },
+        "profile": {
+          "$ref": "#/$defs/CompatibilityProfile"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/$defs/GovernanceReason"
+          },
+          "minItems": 1,
+          "title": "Reasons",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "outcome",
+        "profile",
+        "reasons"
+      ],
+      "title": "CompatibilityAssessment",
+      "type": "object"
+    },
+    "CompatibilityOutcome": {
+      "enum": [
+        "compatible",
+        "breaking",
+        "unresolved"
+      ],
+      "title": "CompatibilityOutcome",
+      "type": "string"
+    },
+    "CompatibilityProfile": {
+      "enum": [
+        "backward_compatible_graph_extension",
+        "breaking_base_root_contract",
+        "breaking_required_capability",
+        "compatibility_unresolved"
+      ],
+      "title": "CompatibilityProfile",
+      "type": "string"
+    },
+    "DecisionClass": {
+      "enum": [
+        "public_contract_or_serialized_boundary",
+        "production_dependency_license_or_hosted_service",
+        "destructive_or_irreversible_migration",
+        "security_privacy_correctness_or_gate_weakening",
+        "material_product_semantics",
+        "scope_expansion_for_preexisting_failure"
+      ],
+      "title": "DecisionClass",
+      "type": "string"
+    },
+    "Digest": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "sha-256",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "kind": {
+          "const": "digest",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/DigestValue"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm",
+        "value"
+      ],
+      "title": "Digest",
+      "type": "object"
+    },
+    "DigestValue": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "DocumentCoordinate": {
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "document_coordinate",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "document_id"
+      ],
+      "title": "DocumentCoordinate",
+      "type": "object"
+    },
+    "EntityCoordinate": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "entity_coordinate",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/EntityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "EntityCoordinate",
+      "type": "object"
+    },
+    "EntityKind": {
+      "enum": [
+        "action",
+        "use_case",
+        "step",
+        "binding",
+        "effect",
+        "observation",
+        "invariant",
+        "provenance",
+        "verification_evidence",
+        "capability_requirement"
+      ],
+      "title": "EntityKind",
+      "type": "string"
+    },
+    "GovernanceReason": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "type": "string"
+    },
+    "GraphSide": {
+      "enum": [
+        "base",
+        "final"
+      ],
+      "title": "GraphSide",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "type": "string"
+    },
+    "ImpactCoordinate": {
+      "discriminator": {
+        "mapping": {
+          "document_coordinate": "#/$defs/DocumentCoordinate",
+          "entity_coordinate": "#/$defs/EntityCoordinate",
+          "port_coordinate": "#/$defs/PortCoordinate"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/EntityCoordinate"
+        },
+        {
+          "$ref": "#/$defs/PortCoordinate"
+        },
+        {
+          "$ref": "#/$defs/DocumentCoordinate"
+        }
+      ]
+    },
+    "ImpactEdge": {
+      "additionalProperties": false,
+      "properties": {
+        "field_path": {
+          "$ref": "#/$defs/ImpactFieldPath"
+        },
+        "kind": {
+          "const": "impact_edge",
+          "title": "Kind",
+          "type": "string"
+        },
+        "precision": {
+          "$ref": "#/$defs/ImpactPrecision"
+        },
+        "relation": {
+          "$ref": "#/$defs/ImpactRelation"
+        },
+        "side": {
+          "$ref": "#/$defs/GraphSide"
+        },
+        "source": {
+          "$ref": "#/$defs/ImpactCoordinate"
+        },
+        "target": {
+          "$ref": "#/$defs/ImpactCoordinate"
+        }
+      },
+      "required": [
+        "kind",
+        "side",
+        "source",
+        "target",
+        "field_path",
+        "relation",
+        "precision"
+      ],
+      "title": "ImpactEdge",
+      "type": "object"
+    },
+    "ImpactFieldPath": {
+      "maxLength": 2048,
+      "type": "string"
+    },
+    "ImpactFinding": {
+      "additionalProperties": false,
+      "properties": {
+        "changed_paths": {
+          "items": {
+            "$ref": "#/$defs/ImpactFieldPath"
+          },
+          "minItems": 1,
+          "title": "Changed Paths",
+          "type": "array"
+        },
+        "kind": {
+          "const": "impact_finding",
+          "title": "Kind",
+          "type": "string"
+        },
+        "precision": {
+          "$ref": "#/$defs/ImpactPrecision"
+        },
+        "subject": {
+          "$ref": "#/$defs/ImpactSubject"
+        }
+      },
+      "required": [
+        "kind",
+        "subject",
+        "precision",
+        "changed_paths"
+      ],
+      "title": "ImpactFinding",
+      "type": "object"
+    },
+    "ImpactPrecision": {
+      "enum": [
+        "definite",
+        "may_affect",
+        "unresolved"
+      ],
+      "title": "ImpactPrecision",
+      "type": "string"
+    },
+    "ImpactRelation": {
+      "enum": [
+        "root_reference",
+        "entity_reference",
+        "port_selection",
+        "step_port_definition",
+        "required_capability"
+      ],
+      "title": "ImpactRelation",
+      "type": "string"
+    },
+    "ImpactSubject": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "impact_subject",
+          "title": "Kind",
+          "type": "string"
+        },
+        "operation": {
+          "enum": [
+            "added",
+            "modified",
+            "removed",
+            "unchanged"
+          ],
+          "title": "Operation",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/EntityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "operation",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "ImpactSubject",
+      "type": "object"
+    },
+    "ImpactWitness": {
+      "additionalProperties": false,
+      "properties": {
+        "affected": {
+          "$ref": "#/$defs/ImpactCoordinate"
+        },
+        "direct_subject": {
+          "$ref": "#/$defs/ImpactSubject"
+        },
+        "edge_indexes": {
+          "items": {
+            "$ref": "#/$defs/SafeInteger"
+          },
+          "minItems": 1,
+          "title": "Edge Indexes",
+          "type": "array"
+        },
+        "kind": {
+          "const": "impact_witness",
+          "title": "Kind",
+          "type": "string"
+        },
+        "precision": {
+          "$ref": "#/$defs/ImpactPrecision"
+        },
+        "side": {
+          "$ref": "#/$defs/GraphSide"
+        }
+      },
+      "required": [
+        "kind",
+        "direct_subject",
+        "side",
+        "affected",
+        "precision",
+        "edge_indexes"
+      ],
+      "title": "ImpactWitness",
+      "type": "object"
+    },
+    "OpenSpecChangeId": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "type": "string"
+    },
+    "PortCoordinate": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "enum": [
+            "input",
+            "output"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "kind": {
+          "const": "port_coordinate",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "owner_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "owner_kind": {
+          "enum": [
+            "action",
+            "use_case",
+            "step"
+          ],
+          "title": "Owner Kind",
+          "type": "string"
+        },
+        "resolved_action_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "owner_kind",
+        "owner_id",
+        "direction",
+        "name",
+        "resolved_action_id"
+      ],
+      "title": "PortCoordinate",
+      "type": "object"
+    },
+    "SafeInteger": {
+      "maximum": 9007199254740991,
+      "minimum": -9007199254740991,
+      "type": "integer"
+    },
+    "UnresolvedImpact": {
+      "additionalProperties": false,
+      "properties": {
+        "changed_path": {
+          "$ref": "#/$defs/ImpactFieldPath"
+        },
+        "kind": {
+          "const": "unresolved_impact",
+          "title": "Kind",
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/$defs/UnresolvedImpactReason"
+        },
+        "sides": {
+          "items": {
+            "$ref": "#/$defs/GraphSide"
+          },
+          "maxItems": 2,
+          "minItems": 1,
+          "title": "Sides",
+          "type": "array"
+        },
+        "subject": {
+          "$ref": "#/$defs/ImpactSubject"
+        }
+      },
+      "required": [
+        "kind",
+        "subject",
+        "changed_path",
+        "sides",
+        "reason"
+      ],
+      "title": "UnresolvedImpact",
+      "type": "object"
+    },
+    "UnresolvedImpactReason": {
+      "enum": [
+        "opaque_declared_rule",
+        "domain_semantics",
+        "value_semantics",
+        "provenance_context",
+        "verification_context",
+        "capability_semantics"
+      ],
+      "title": "UnresolvedImpactReason",
+      "type": "string"
+    }
+  },
+  "$id": "urn:ucf:change-governance:impact-report:1.0.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "base_behavior": {
+      "$ref": "#/$defs/BehaviorDocumentRef"
+    },
+    "change_governance_version": {
+      "const": "1.0.0",
+      "title": "Change Governance Version",
+      "type": "string"
+    },
+    "change_id": {
+      "$ref": "#/$defs/OpenSpecChangeId"
+    },
+    "compatibility": {
+      "$ref": "#/$defs/CompatibilityAssessment"
+    },
+    "decision_policy_uri": {
+      "const": "urn:ucf:change-governance:human-decision-policy:1.0.0",
+      "title": "Decision Policy Uri",
+      "type": "string"
+    },
+    "delta": {
+      "$ref": "#/$defs/BehaviorDeltaRef"
+    },
+    "derived_required_classes": {
+      "items": {
+        "$ref": "#/$defs/DecisionClass"
+      },
+      "title": "Derived Required Classes",
+      "type": "array"
+    },
+    "edges": {
+      "items": {
+        "$ref": "#/$defs/ImpactEdge"
+      },
+      "title": "Edges",
+      "type": "array"
+    },
+    "final_behavior": {
+      "$ref": "#/$defs/BehaviorDocumentRef"
+    },
+    "findings": {
+      "items": {
+        "$ref": "#/$defs/ImpactFinding"
+      },
+      "minItems": 1,
+      "title": "Findings",
+      "type": "array"
+    },
+    "kind": {
+      "const": "impact_report",
+      "title": "Kind",
+      "type": "string"
+    },
+    "procedure_uri": {
+      "const": "urn:ucf:change-governance:structural-impact:1.0.0",
+      "title": "Procedure Uri",
+      "type": "string"
+    },
+    "proposal": {
+      "$ref": "#/$defs/ChangeProposalRef"
+    },
+    "schema_uri": {
+      "const": "urn:ucf:change-governance:impact-report:1.0.0",
+      "title": "Schema Uri",
+      "type": "string"
+    },
+    "unresolved": {
+      "items": {
+        "$ref": "#/$defs/UnresolvedImpact"
+      },
+      "title": "Unresolved",
+      "type": "array"
+    },
+    "witnesses": {
+      "items": {
+        "$ref": "#/$defs/ImpactWitness"
+      },
+      "title": "Witnesses",
+      "type": "array"
+    }
+  },
+  "required": [
+    "kind",
+    "change_governance_version",
+    "schema_uri",
+    "change_id",
+    "proposal",
+    "delta",
+    "base_behavior",
+    "final_behavior",
+    "procedure_uri",
+    "decision_policy_uri",
+    "findings",
+    "edges",
+    "witnesses",
+    "unresolved",
+    "compatibility",
+    "derived_required_classes"
+  ],
+  "title": "UCF structural change impact report 1.0.0",
+  "type": "object",
+  "x-ucf-change-governance-version": "1.0.0",
+  "x-ucf-document-kind": "impact_report",
+  "x-ucf-runtime-semantic-checks": [
+    "strict UTF-8 and duplicate-member JSON decoding",
+    "maximum JSON and typed nesting depth 128",
+    "exact canonical runtime model and container types",
+    "exact proposal, delta, base, and final behavior context",
+    "exhaustive direct delta subjects and canonical field differences",
+    "side-separated supported edge graph with cycle-safe shortest witnesses",
+    "narrow structural compatibility and explicit unresolved semantics"
+  ]
+}

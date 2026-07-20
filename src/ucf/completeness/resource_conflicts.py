@@ -52,20 +52,22 @@ class ResourceConflictAnalyzer:
             conflicts.append(conflict)
 
             if not conflict.is_guarded:
-                findings.append(Finding(
-                    severity=FindingSeverity.WARNING,
-                    category=FindingCategory.UNGUARDED_RESOURCE_CONFLICT,
-                    step_id=f"resource:{resource}",
-                    message=(
-                        f"Resource '{resource}' is written by multiple actions "
-                        f"({', '.join(sorted(writers))}) but has no invariant or "
-                        f"concurrency policy guarding it"
-                    ),
-                    suggestion=(
-                        f"Add an invariant for '{resource}' or add a concurrency "
-                        f"policy to use cases that access it"
-                    ),
-                ))
+                findings.append(
+                    Finding(
+                        severity=FindingSeverity.WARNING,
+                        category=FindingCategory.UNGUARDED_RESOURCE_CONFLICT,
+                        step_id=f"resource:{resource}",
+                        message=(
+                            f"Resource '{resource}' is written by multiple actions "
+                            f"({', '.join(sorted(writers))}) but has no invariant or "
+                            f"concurrency policy guarding it"
+                        ),
+                        suggestion=(
+                            f"Add an invariant for '{resource}' or add a concurrency "
+                            f"policy to use cases that access it"
+                        ),
+                    )
+                )
 
         return conflicts, findings
 

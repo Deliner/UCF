@@ -7,51 +7,77 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    GenerateNegativeTestCodeInterface,
-    LoaderContext,
-    ExtractErrorsResult,
-    GenerateResult,
+from .impl import (
+    generate_negative_test_code_impl as generate_negative_test_code_impl,
 )
-from .impl import generate_negative_test_code_impl  # noqa: F401
+from .interface import GenerateNegativeTestCodeInterface
 
 
 @pytest.fixture
-def uc(generate_negative_test_code_impl: GenerateNegativeTestCodeInterface) -> GenerateNegativeTestCodeInterface:
-    return generate_negative_test_code_impl
+def uc(request: pytest.FixtureRequest) -> GenerateNegativeTestCodeInterface:
+    return request.getfixturevalue("generate_negative_test_code_impl")
 
 
 class TestHappyPath:
 
     def test_generate_negative_test_code_completes_successfully(
         self, uc: GenerateNegativeTestCodeInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        extract_errors = uc.action_extract_errors(usecase=inputs.get('target_usecase'), registry=loader.registry)
+        extract_errors = uc.action_extract_errors(
+            usecase=inputs['target_usecase'],
+            registry=loader.registry,
+        )
 
-        generate = uc.action_generate(error_defs=extract_errors.error_defs, interface_class=inputs.get('interface_class'), usecase_name=inputs.get('usecase_name'))
+        generate = uc.action_generate(
+            error_defs=extract_errors.error_defs,
+            interface_class=inputs['interface_class'],
+            usecase_name=inputs['usecase_name'],
+        )
 
-        render_results = uc.action_render_results(data={'error_count': extract_errors.error_count, 'test_count': generate.test_count, 'error_methods': generate.error_methods}, format='table')
+        uc.action_render_results(
+            data={
+                'error_count': extract_errors.error_count,
+                'test_count': generate.test_count,
+                'error_methods': generate.error_methods,
+            },
+            format='table',
+        )
 
 
-        uc.verify_for_each_action_error_a_testerror_class_is_generated()
-        uc.verify_the_interface_has_abstract_error_methods_for_each_error()
-        uc.verify_error_test_methods_receive_the_error_condition_as_a()
-        uc.verify_generated_code_compiles_without_syntaxerror()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_for_each_action_error_a_testerror_class_is_generated()
+        _ = uc.verify_the_interface_has_abstract_error_methods_for_each_error()
+        _ = uc.verify_error_test_methods_receive_the_error_condition_as_a()
+        _ = uc.verify_generated_code_compiles_without_syntaxerror()
+        _ = uc.verify_required_inputs_validated()
 
 
 class TestAltNoErrorsDefined:
 
     def test_no_errors_defined(
         self, uc: GenerateNegativeTestCodeInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        extract_errors = uc.action_extract_errors(usecase=inputs.get('target_usecase'), registry=loader.registry)
+        extract_errors = uc.action_extract_errors(
+            usecase=inputs['target_usecase'],
+            registry=loader.registry,
+        )
 
-        render_empty = uc.action_render_results(data={'message': 'no error definitions found in action specs', 'error_count': extract_errors.error_count}, format='tree')
+        uc.action_render_empty(
+            data={
+                'message': 'no error definitions found in action specs',
+                'error_count': extract_errors.error_count,
+            },
+            format='tree',
+        )
 
 
 

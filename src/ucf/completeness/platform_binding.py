@@ -62,19 +62,21 @@ class PlatformBindingAnalyzer:
 
         for s in scenarios:
             if not s.is_covered:
-                findings.append(Finding(
-                    severity=FindingSeverity.INFO,
-                    category=FindingCategory.UNCOVERED_HTTP_SCENARIO,
-                    step_id=f"actions/{s.action_name}",
-                    message=(
-                        f"Platform scenario '{s.scenario}' ({s.description}) "
-                        f"is not covered by any use case"
-                    ),
-                    suggestion=(
-                        f"Add a use case or alternative flow that exercises "
-                        f"the '{s.scenario}' scenario for this action"
-                    ),
-                ))
+                findings.append(
+                    Finding(
+                        severity=FindingSeverity.INFO,
+                        category=FindingCategory.UNCOVERED_HTTP_SCENARIO,
+                        step_id=f"actions/{s.action_name}",
+                        message=(
+                            f"Platform scenario '{s.scenario}' ({s.description}) "
+                            f"is not covered by any use case"
+                        ),
+                        suggestion=(
+                            f"Add a use case or alternative flow that exercises "
+                            f"the '{s.scenario}' scenario for this action"
+                        ),
+                    )
+                )
 
         return scenarios, findings
 
@@ -91,23 +93,30 @@ class PlatformBindingAnalyzer:
             PlatformScenario(
                 action_name=name,
                 scenario="http_success",
-                description=f"HTTP {action.platform.http.method} {action.platform.http.path} returns 2xx",
+                description=(
+                    f"HTTP {action.platform.http.method} "
+                    f"{action.platform.http.path} returns 2xx"
+                ),
             ),
         ]
 
         for error in action.errors:
-            scenarios.append(PlatformScenario(
-                action_name=name,
-                scenario=f"http_error_{error.status}",
-                description=f"HTTP returns {error.status} ({error.code})",
-            ))
+            scenarios.append(
+                PlatformScenario(
+                    action_name=name,
+                    scenario=f"http_error_{error.status}",
+                    description=f"HTTP returns {error.status} ({error.code})",
+                )
+            )
 
         if action.reads:
-            scenarios.append(PlatformScenario(
-                action_name=name,
-                scenario="http_resource_not_found",
-                description="Referenced resource does not exist",
-            ))
+            scenarios.append(
+                PlatformScenario(
+                    action_name=name,
+                    scenario="http_resource_not_found",
+                    description="Referenced resource does not exist",
+                )
+            )
 
         return scenarios
 
@@ -149,7 +158,9 @@ class PlatformBindingAnalyzer:
                 if "not found" in trigger_lower or "not exist" in trigger_lower:
                     return True
                 if alt.handles_error:
-                    error_codes = self._error_codes_for_status(scenario.action_name, "404")
+                    error_codes = self._error_codes_for_status(
+                        scenario.action_name, "404"
+                    )
                     if alt.handles_error in error_codes:
                         return True
 

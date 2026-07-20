@@ -38,41 +38,75 @@ class GenerateNegativeTestCodeInterface(ABC, FrameworkActions):
     # ── State Setup (from requires) ──
 
     @abstractmethod
-    def setup_loader(self) -> LoaderContext:
+    def setup_loader(
+        self,
+        specs_dir: Any,
+    ) -> LoaderContext:
         ...
 
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_extract_errors(self, usecase: Any, registry: Any) -> ExtractErrorsResult:
+    def action_extract_errors(
+        self,
+        usecase: Any,
+        registry: Any,
+    ) -> ExtractErrorsResult:
         ...
 
     @abstractmethod
-    def action_generate(self, error_defs: Any, interface_class: Any, usecase_name: Any) -> GenerateResult:
+    def action_generate(
+        self,
+        error_defs: Any,
+        interface_class: Any,
+        usecase_name: Any,
+    ) -> GenerateResult:
         ...
 
     @abstractmethod
-    def action_render_results(self, data: Any, format: Any) -> None:
+    def action_render_results(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_empty(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_for_each_action_error_a_testerror_class_is_generated(self) -> None:
+    def verify_for_each_action_error_a_testerror_class_is_generated(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_the_interface_has_abstract_error_methods_for_each_error(self) -> None:
+    def verify_the_interface_has_abstract_error_methods_for_each_error(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_error_test_methods_receive_the_error_condition_as_a(self) -> None:
+    def verify_error_test_methods_receive_the_error_condition_as_a(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_generated_code_compiles_without_syntaxerror(self) -> None:
+    def verify_generated_code_compiles_without_syntaxerror(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

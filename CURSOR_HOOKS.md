@@ -1,5 +1,9 @@
 # Cursor IDE Hooks — AI Agent Discipline System
 
+> **Status: Legacy guide.** Capability and release claims in this document are
+> not current; [the capability matrix](docs/CAPABILITIES.md) controls the
+> current status.
+
 ## 1. Overview
 
 Cursor IDE hooks (beta, available since v1.7+) execute custom scripts at specific

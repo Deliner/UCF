@@ -1,0 +1,1173 @@
+{
+  "$comment": "Generated deterministically from UCF inventory profile 1.0.0 models; do not edit by hand. Strict JSON, global identity, reference, coverage, paging, and digest semantics remain runtime checks.",
+  "$defs": {
+    "ApiDescriptionFact": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/InventoryConfidence"
+        },
+        "declared_version": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Declared Version"
+        },
+        "dialect_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "entry": {
+          "$ref": "#/$defs/InventoryRecordRef"
+        },
+        "id": {
+          "$ref": "#/$defs/InventoryRecordId"
+        },
+        "kind": {
+          "const": "api_description",
+          "title": "Kind",
+          "type": "string"
+        },
+        "level": {
+          "const": "observed",
+          "title": "Level",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/InventoryRecordRef"
+        }
+      },
+      "required": [
+        "id",
+        "level",
+        "provenance",
+        "confidence",
+        "kind",
+        "entry",
+        "dialect_uri",
+        "declared_version"
+      ],
+      "title": "ApiDescriptionFact",
+      "type": "object"
+    },
+    "BuildManifestFact": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/InventoryConfidence"
+        },
+        "dialect_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "entry": {
+          "$ref": "#/$defs/InventoryRecordRef"
+        },
+        "id": {
+          "$ref": "#/$defs/InventoryRecordId"
+        },
+        "kind": {
+          "const": "build_manifest",
+          "title": "Kind",
+          "type": "string"
+        },
+        "level": {
+          "const": "observed",
+          "title": "Level",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/InventoryRecordRef"
+        }
+      },
+      "required": [
+        "id",
+        "level",
+        "provenance",
+        "confidence",
+        "kind",
+        "entry",
+        "dialect_uri"
+      ],
+      "title": "BuildManifestFact",
+      "type": "object"
+    },
+    "CapabilitySelection": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "capability",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/QualifiedName"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "version"
+      ],
+      "title": "CapabilitySelection",
+      "type": "object"
+    },
+    "ConfidenceValue": {
+      "maxLength": 64,
+      "pattern": "^(?:0|1|0\\.[0-9]*[1-9])$",
+      "type": "string"
+    },
+    "Digest": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "sha-256",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "kind": {
+          "const": "digest",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/DigestValue"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm",
+        "value"
+      ],
+      "title": "Digest",
+      "type": "object"
+    },
+    "DigestValue": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "FactKind": {
+      "enum": [
+        "api_description",
+        "build_manifest",
+        "public_interface",
+        "repository_entry",
+        "test_asset"
+      ],
+      "title": "FactKind",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "type": "string"
+    },
+    "IgnoreMatcher": {
+      "discriminator": {
+        "mapping": {
+          "path_prefix": "#/$defs/PathPrefixMatcher",
+          "path_segment": "#/$defs/PathSegmentMatcher"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/PathPrefixMatcher"
+        },
+        {
+          "$ref": "#/$defs/PathSegmentMatcher"
+        }
+      ]
+    },
+    "IgnorePolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "ignore_policy",
+          "title": "Kind",
+          "type": "string"
+        },
+        "policy_version": {
+          "const": "1.0.0",
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "rules": {
+          "items": {
+            "$ref": "#/$defs/IgnoreRule"
+          },
+          "maxItems": 256,
+          "title": "Rules",
+          "type": "array",
+          "uniqueItems": true,
+          "x-ucf-canonical-order-by": [
+            "id"
+          ],
+          "x-ucf-unique-by": [
+            "id",
+            "matcher.kind+portable-path-identity"
+          ],
+          "x-ucf-validation-algorithm": "urn:ucf:inventory-algorithm:ignore-policy:1.0.0"
+        }
+      },
+      "required": [
+        "kind",
+        "policy_version",
+        "rules"
+      ],
+      "title": "IgnorePolicy",
+      "type": "object"
+    },
+    "IgnoreRule": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "kind": {
+          "const": "ignore_rule",
+          "title": "Kind",
+          "type": "string"
+        },
+        "matcher": {
+          "$ref": "#/$defs/IgnoreMatcher"
+        },
+        "reason": {
+          "$ref": "#/$defs/QualifiedName"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "reason",
+        "matcher"
+      ],
+      "title": "IgnoreRule",
+      "type": "object"
+    },
+    "InventoryConfidence": {
+      "additionalProperties": false,
+      "properties": {
+        "basis": {
+          "$ref": "#/$defs/URI",
+          "pattern": "(?:[:/])(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)$"
+        },
+        "kind": {
+          "const": "confidence",
+          "title": "Kind",
+          "type": "string"
+        },
+        "scale": {
+          "const": "decimal-0-to-1",
+          "title": "Scale",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/ConfidenceValue"
+        }
+      },
+      "required": [
+        "kind",
+        "scale",
+        "value",
+        "basis"
+      ],
+      "title": "InventoryConfidence",
+      "type": "object"
+    },
+    "InventoryCoverage": {
+      "additionalProperties": false,
+      "properties": {
+        "fact_kind": {
+          "$ref": "#/$defs/FactKind"
+        },
+        "kind": {
+          "const": "inventory_coverage",
+          "title": "Kind",
+          "type": "string"
+        },
+        "record_count": {
+          "$ref": "#/$defs/ucf__ir__models__SafeInteger__2"
+        },
+        "status": {
+          "enum": [
+            "complete",
+            "partial"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "fact_kind",
+        "status",
+        "record_count"
+      ],
+      "title": "InventoryCoverage",
+      "type": "object"
+    },
+    "InventoryDiagnostic": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/QualifiedName"
+        },
+        "fact_kind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FactKind"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "id": {
+          "$ref": "#/$defs/InventoryRecordId"
+        },
+        "kind": {
+          "const": "inventory_diagnostic",
+          "title": "Kind",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RepositoryPath"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/InventoryRecordRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "warning",
+            "error"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "stage": {
+          "$ref": "#/$defs/SemanticToken"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "severity",
+        "code",
+        "fact_kind",
+        "path",
+        "stage",
+        "message",
+        "provenance"
+      ],
+      "title": "InventoryDiagnostic",
+      "type": "object"
+    },
+    "InventoryIgnoreMatch": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/InventoryRecordId"
+        },
+        "kind": {
+          "const": "inventory_ignore_match",
+          "title": "Kind",
+          "type": "string"
+        },
+        "path": {
+          "$ref": "#/$defs/RepositoryPath"
+        },
+        "rule_id": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "rule_id",
+        "path"
+      ],
+      "title": "InventoryIgnoreMatch",
+      "type": "object"
+    },
+    "InventoryProvenance": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "source_span": {
+                "not": {
+                  "type": "null"
+                }
+              }
+            },
+            "required": [
+              "source_span"
+            ]
+          },
+          "then": {
+            "properties": {
+              "content_digest": {
+                "not": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "content_digest": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Digest"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "id": {
+          "$ref": "#/$defs/InventoryRecordId"
+        },
+        "kind": {
+          "const": "inventory_provenance",
+          "title": "Kind",
+          "type": "string"
+        },
+        "procedure_uri": {
+          "$ref": "#/$defs/URI",
+          "pattern": "(?:[:/])(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)$"
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "source_path": {
+          "$ref": "#/$defs/RepositoryPath"
+        },
+        "source_span": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceSpan"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "source_path",
+        "content_digest",
+        "source_span",
+        "producer",
+        "procedure_uri"
+      ],
+      "title": "InventoryProvenance",
+      "type": "object"
+    },
+    "InventoryRecord": {
+      "discriminator": {
+        "mapping": {
+          "api_description": "#/$defs/ApiDescriptionFact",
+          "build_manifest": "#/$defs/BuildManifestFact",
+          "inventory_diagnostic": "#/$defs/InventoryDiagnostic",
+          "inventory_ignore_match": "#/$defs/InventoryIgnoreMatch",
+          "inventory_provenance": "#/$defs/InventoryProvenance",
+          "public_interface": "#/$defs/PublicInterfaceFact",
+          "repository_entry": "#/$defs/RepositoryEntryFact",
+          "test_asset": "#/$defs/TestAssetFact"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ApiDescriptionFact"
+        },
+        {
+          "$ref": "#/$defs/BuildManifestFact"
+        },
+        {
+          "$ref": "#/$defs/InventoryDiagnostic"
+        },
+        {
+          "$ref": "#/$defs/InventoryIgnoreMatch"
+        },
+        {
+          "$ref": "#/$defs/InventoryProvenance"
+        },
+        {
+          "$ref": "#/$defs/PublicInterfaceFact"
+        },
+        {
+          "$ref": "#/$defs/RepositoryEntryFact"
+        },
+        {
+          "$ref": "#/$defs/TestAssetFact"
+        }
+      ]
+    },
+    "InventoryRecordId": {
+      "pattern": "^(?:api|diagnostic|entry|ignore|interface|manifest|provenance|test)\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "InventoryRecordKind": {
+      "enum": [
+        "api_description",
+        "build_manifest",
+        "inventory_diagnostic",
+        "inventory_ignore_match",
+        "inventory_provenance",
+        "public_interface",
+        "repository_entry",
+        "test_asset"
+      ],
+      "title": "InventoryRecordKind",
+      "type": "string"
+    },
+    "InventoryRecordRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "inventory_record_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/InventoryRecordId"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/InventoryRecordKind"
+        }
+      },
+      "required": [
+        "kind",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "InventoryRecordRef",
+      "type": "object"
+    },
+    "InventorySubjectURI": {
+      "$ref": "#/$defs/URI",
+      "not": {
+        "pattern": "^file:"
+      }
+    },
+    "NormalizedVersion": {
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "type": "string"
+    },
+    "PathPrefixMatcher": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "path_prefix",
+          "title": "Kind",
+          "type": "string"
+        },
+        "path": {
+          "$ref": "#/$defs/RepositoryPath",
+          "not": {
+            "const": "."
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "path"
+      ],
+      "title": "PathPrefixMatcher",
+      "type": "object"
+    },
+    "PathSegment": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^(?!(?:(?:[Aa][Uu][Xx]|[Cc][Oo][Nn]|[Nn][Uu][Ll]|[Pp][Rr][Nn]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9]))(?:\\.|$))[^/\\\\:<>\"|?*\\u0000-\\u001f\\u007f]*[^/\\\\:<>\"|?*\\u0000-\\u001f\\u007f .]$",
+      "type": "string",
+      "x-ucf-normalization": "unicode-nfc",
+      "x-ucf-validation-algorithm": "urn:ucf:inventory-algorithm:portable-path:1.0.0"
+    },
+    "PathSegmentMatcher": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "path_segment",
+          "title": "Kind",
+          "type": "string"
+        },
+        "segment": {
+          "$ref": "#/$defs/PathSegment"
+        }
+      },
+      "required": [
+        "kind",
+        "segment"
+      ],
+      "title": "PathSegmentMatcher",
+      "type": "object"
+    },
+    "Producer": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "producer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/QualifiedName"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "version"
+      ],
+      "title": "Producer",
+      "type": "object"
+    },
+    "PublicInterfaceFact": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/InventoryConfidence"
+        },
+        "container": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Container"
+        },
+        "declaration_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "entry": {
+          "$ref": "#/$defs/InventoryRecordRef"
+        },
+        "id": {
+          "$ref": "#/$defs/InventoryRecordId"
+        },
+        "interface_kind_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "kind": {
+          "const": "public_interface",
+          "title": "Kind",
+          "type": "string"
+        },
+        "level": {
+          "const": "observed",
+          "title": "Level",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/InventoryRecordRef"
+        }
+      },
+      "required": [
+        "id",
+        "level",
+        "provenance",
+        "confidence",
+        "kind",
+        "entry",
+        "interface_kind_uri",
+        "name",
+        "container",
+        "declaration_digest"
+      ],
+      "title": "PublicInterfaceFact",
+      "type": "object"
+    },
+    "QualifiedName": {
+      "maxLength": 255,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*)+$",
+      "type": "string"
+    },
+    "RepositoryEntryFact": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "entry_kind": {
+                "const": "directory"
+              }
+            },
+            "required": [
+              "entry_kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "content_digest": {
+                "type": "null"
+              },
+              "size_bytes": {
+                "type": "null"
+              },
+              "symlink_target_digest": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "entry_kind": {
+                "const": "file"
+              }
+            },
+            "required": [
+              "entry_kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "content_digest": {
+                "not": {
+                  "type": "null"
+                }
+              },
+              "size_bytes": {
+                "type": "integer"
+              },
+              "symlink_target_digest": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "entry_kind": {
+                "const": "symlink"
+              }
+            },
+            "required": [
+              "entry_kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "content_digest": {
+                "type": "null"
+              },
+              "size_bytes": {
+                "type": "null"
+              },
+              "symlink_target_digest": {
+                "not": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/InventoryConfidence"
+        },
+        "content_digest": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Digest"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "entry_kind": {
+          "enum": [
+            "directory",
+            "file",
+            "symlink"
+          ],
+          "title": "Entry Kind",
+          "type": "string"
+        },
+        "id": {
+          "$ref": "#/$defs/InventoryRecordId"
+        },
+        "kind": {
+          "const": "repository_entry",
+          "title": "Kind",
+          "type": "string"
+        },
+        "level": {
+          "const": "observed",
+          "title": "Level",
+          "type": "string"
+        },
+        "path": {
+          "$ref": "#/$defs/RepositoryPath"
+        },
+        "provenance": {
+          "$ref": "#/$defs/InventoryRecordRef"
+        },
+        "size_bytes": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ucf__ir__models__SafeInteger__2"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "symlink_target_digest": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Digest"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "level",
+        "provenance",
+        "confidence",
+        "kind",
+        "path",
+        "entry_kind",
+        "size_bytes",
+        "content_digest",
+        "symlink_target_digest"
+      ],
+      "title": "RepositoryEntryFact",
+      "type": "object"
+    },
+    "RepositoryPath": {
+      "maxLength": 1024,
+      "minLength": 1,
+      "pattern": "^(?:\\.|(?!(?:(?:[Aa][Uu][Xx]|[Cc][Oo][Nn]|[Nn][Uu][Ll]|[Pp][Rr][Nn]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9]))(?:\\.|$))[^/\\\\:<>\"|?*\\u0000-\\u001f\\u007f]*[^/\\\\:<>\"|?*\\u0000-\\u001f\\u007f .](?:/(?!(?:(?:[Aa][Uu][Xx]|[Cc][Oo][Nn]|[Nn][Uu][Ll]|[Pp][Rr][Nn]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9]))(?:\\.|$))[^/\\\\:<>\"|?*\\u0000-\\u001f\\u007f]*[^/\\\\:<>\"|?*\\u0000-\\u001f\\u007f .])*)$",
+      "type": "string",
+      "x-ucf-normalization": "unicode-nfc",
+      "x-ucf-validation-algorithm": "urn:ucf:inventory-algorithm:portable-path:1.0.0"
+    },
+    "SemanticToken": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "type": "string"
+    },
+    "SourceSpan": {
+      "additionalProperties": false,
+      "properties": {
+        "end_column": {
+          "$ref": "#/$defs/ucf__ir__models__SafeInteger__1"
+        },
+        "end_line": {
+          "$ref": "#/$defs/ucf__ir__models__SafeInteger__1"
+        },
+        "kind": {
+          "const": "source_span",
+          "title": "Kind",
+          "type": "string"
+        },
+        "start_column": {
+          "$ref": "#/$defs/ucf__ir__models__SafeInteger__1"
+        },
+        "start_line": {
+          "$ref": "#/$defs/ucf__ir__models__SafeInteger__1"
+        }
+      },
+      "required": [
+        "kind",
+        "start_line",
+        "start_column",
+        "end_line",
+        "end_column"
+      ],
+      "title": "SourceSpan",
+      "type": "object",
+      "x-ucf-validation-algorithm": "urn:ucf:inventory-algorithm:source-span-order:1.0.0"
+    },
+    "TestAssetFact": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/InventoryConfidence"
+        },
+        "entry": {
+          "$ref": "#/$defs/InventoryRecordRef"
+        },
+        "id": {
+          "$ref": "#/$defs/InventoryRecordId"
+        },
+        "kind": {
+          "const": "test_asset",
+          "title": "Kind",
+          "type": "string"
+        },
+        "level": {
+          "const": "observed",
+          "title": "Level",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Name"
+        },
+        "provenance": {
+          "$ref": "#/$defs/InventoryRecordRef"
+        },
+        "test_kind_uri": {
+          "$ref": "#/$defs/URI"
+        }
+      },
+      "required": [
+        "id",
+        "level",
+        "provenance",
+        "confidence",
+        "kind",
+        "entry",
+        "test_kind_uri",
+        "name"
+      ],
+      "title": "TestAssetFact",
+      "type": "object"
+    },
+    "URI": {
+      "maxLength": 2048,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9+.-]*:[^\\s]+$",
+      "type": "string"
+    },
+    "ucf__ir__models__SafeInteger__1": {
+      "maximum": 9007199254740991,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "ucf__ir__models__SafeInteger__2": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "$id": "urn:ucf:schema:inventory:1.0.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Closed logical schema for a complete UCF observed-only brownfield inventory snapshot.",
+  "properties": {
+    "applied_policy": {
+      "$ref": "#/$defs/IgnorePolicy"
+    },
+    "capability": {
+      "$ref": "#/$defs/CapabilitySelection",
+      "properties": {
+        "name": {
+          "const": "org.ucf.adapter.inventory"
+        },
+        "version": {
+          "const": "1.0.0"
+        }
+      }
+    },
+    "coverage": {
+      "items": false,
+      "maxItems": 5,
+      "minItems": 5,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/InventoryCoverage",
+          "properties": {
+            "fact_kind": {
+              "const": "api_description"
+            }
+          }
+        },
+        {
+          "$ref": "#/$defs/InventoryCoverage",
+          "properties": {
+            "fact_kind": {
+              "const": "build_manifest"
+            }
+          }
+        },
+        {
+          "$ref": "#/$defs/InventoryCoverage",
+          "properties": {
+            "fact_kind": {
+              "const": "public_interface"
+            }
+          }
+        },
+        {
+          "$ref": "#/$defs/InventoryCoverage",
+          "properties": {
+            "fact_kind": {
+              "const": "repository_entry"
+            }
+          }
+        },
+        {
+          "$ref": "#/$defs/InventoryCoverage",
+          "properties": {
+            "fact_kind": {
+              "const": "test_asset"
+            }
+          }
+        }
+      ],
+      "title": "Coverage",
+      "type": "array",
+      "x-ucf-canonical-order-by": [
+        "fact_kind"
+      ]
+    },
+    "inventory_version": {
+      "const": "1.0.0",
+      "title": "Inventory Version",
+      "type": "string"
+    },
+    "kind": {
+      "const": "inventory_snapshot",
+      "title": "Kind",
+      "type": "string"
+    },
+    "path_identity": {
+      "const": "unicode-nfc-ascii-casefold-1",
+      "title": "Path Identity",
+      "type": "string"
+    },
+    "producer": {
+      "$ref": "#/$defs/Producer"
+    },
+    "records": {
+      "items": {
+        "$ref": "#/$defs/InventoryRecord"
+      },
+      "maxItems": 65534,
+      "title": "Records",
+      "type": "array"
+    },
+    "schema_uri": {
+      "const": "urn:ucf:schema:inventory:1.0.0",
+      "title": "Schema Uri",
+      "type": "string"
+    },
+    "source_revision": {
+      "$ref": "#/$defs/Digest"
+    },
+    "subject_uri": {
+      "$ref": "#/$defs/InventorySubjectURI"
+    }
+  },
+  "required": [
+    "kind",
+    "inventory_version",
+    "schema_uri",
+    "subject_uri",
+    "path_identity",
+    "source_revision",
+    "producer",
+    "capability",
+    "applied_policy",
+    "coverage",
+    "records"
+  ],
+  "title": "UCF inventory snapshot profile 1.0.0",
+  "type": "object",
+  "x-ucf-document-kind": "inventory_snapshot",
+  "x-ucf-inventory-version": "1.0.0",
+  "x-ucf-normative-algorithms": [
+    "urn:ucf:inventory-algorithm:cursor-coordinate:1.0.0",
+    "urn:ucf:inventory-algorithm:ignore-policy:1.0.0",
+    "urn:ucf:inventory-algorithm:page-terminal:1.0.0",
+    "urn:ucf:inventory-algorithm:portable-path:1.0.0",
+    "urn:ucf:inventory-algorithm:source-span-order:1.0.0"
+  ],
+  "x-ucf-runtime-semantic-checks": [
+    "strict UTF-8 and duplicate-member JSON decoding",
+    "maximum JSON nesting depth 128",
+    "canonical tagged IRValue field order and exact value kinds",
+    "content-derived record identities",
+    "content-derived source revision",
+    "typed cross-record reference resolution",
+    "repository parent topology and portable path identity",
+    "Unicode NFC normalization of repository paths",
+    "explicit ignore-policy matching and pruned evidence",
+    "ignore rule ID and portable matcher uniqueness with canonical ID order",
+    "coverage counts and error-diagnostic agreement",
+    "producer, provenance path, and content digest agreement",
+    "canonical record order and semantic identity uniqueness",
+    "revision-bound contiguous page cursor chain",
+    "exact repeated page headers and terminal state",
+    "assembled canonical snapshot digest agreement",
+    "maximum 256 records per page",
+    "maximum 65534 records per snapshot",
+    "maximum 65534 pages per snapshot",
+    "maximum 10000 diagnostics per snapshot"
+  ],
+  "x-ucf-wire-contract": "tagged AdapterPayload in adapter protocol 1.0.0"
+}

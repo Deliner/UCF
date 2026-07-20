@@ -1,0 +1,752 @@
+{
+  "$comment": "Generated deterministically from UCF onboarding profile 1.0.0 models; do not edit by hand. Cross-document identity, reference, candidate, decision, materialization, trust, and summary checks remain runtime semantics.",
+  "$defs": {
+    "AcceptedDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate": {
+          "$ref": "#/$defs/CandidateRef"
+        },
+        "id": {
+          "$ref": "#/$defs/DecisionId"
+        },
+        "kind": {
+          "const": "accepted_decision",
+          "title": "Kind",
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/$defs/DecisionReason"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "candidate",
+        "reason"
+      ],
+      "title": "AcceptedDecision",
+      "type": "object"
+    },
+    "CandidateProposal": {
+      "additionalProperties": false,
+      "properties": {
+        "entities": {
+          "items": {
+            "$ref": "#/$defs/ProposalEntity"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Entities",
+          "type": "array"
+        },
+        "kind": {
+          "const": "candidate_proposal",
+          "title": "Kind",
+          "type": "string"
+        },
+        "root": {
+          "$ref": "#/$defs/ProposalEntityRef"
+        }
+      },
+      "required": [
+        "kind",
+        "root",
+        "entities"
+      ],
+      "title": "CandidateProposal",
+      "type": "object"
+    },
+    "CandidateRef": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": {
+          "$ref": "#/$defs/DiscoveryCandidateId"
+        },
+        "discovery_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "candidate_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "semantic_digest": {
+          "$ref": "#/$defs/Digest"
+        }
+      },
+      "required": [
+        "kind",
+        "discovery_digest",
+        "candidate_id",
+        "semantic_digest"
+      ],
+      "title": "CandidateRef",
+      "type": "object"
+    },
+    "CaptureContext": {
+      "additionalProperties": false,
+      "properties": {
+        "captured_at": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "environment": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "capture_context",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "captured_at",
+        "environment"
+      ],
+      "title": "CaptureContext",
+      "type": "object"
+    },
+    "Decision": {
+      "discriminator": {
+        "mapping": {
+          "accepted_decision": "#/$defs/AcceptedDecision",
+          "edited_decision": "#/$defs/EditedDecision",
+          "rejected_decision": "#/$defs/RejectedDecision",
+          "uncertain_decision": "#/$defs/UncertainDecision"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/AcceptedDecision"
+        },
+        {
+          "$ref": "#/$defs/EditedDecision"
+        },
+        {
+          "$ref": "#/$defs/RejectedDecision"
+        },
+        {
+          "$ref": "#/$defs/UncertainDecision"
+        }
+      ]
+    },
+    "DecisionId": {
+      "pattern": "^decision\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "DecisionReason": {
+      "maxLength": 512,
+      "minLength": 1,
+      "type": "string"
+    },
+    "Digest": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "sha-256",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "kind": {
+          "const": "digest",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/DigestValue"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm",
+        "value"
+      ],
+      "title": "Digest",
+      "type": "object"
+    },
+    "DigestValue": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "DiscoveryCandidateId": {
+      "pattern": "^candidate\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "DiscoveryDocumentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "discovery_document_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:adapter:discovery-result:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "schema_uri",
+        "schema_version",
+        "canonical_digest"
+      ],
+      "title": "DiscoveryDocumentRef",
+      "type": "object"
+    },
+    "EditedDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate": {
+          "$ref": "#/$defs/CandidateRef"
+        },
+        "id": {
+          "$ref": "#/$defs/DecisionId"
+        },
+        "kind": {
+          "const": "edited_decision",
+          "title": "Kind",
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/$defs/DecisionReason"
+        },
+        "replacement": {
+          "$ref": "#/$defs/CandidateProposal"
+        },
+        "replacement_digest": {
+          "$ref": "#/$defs/Digest"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "candidate",
+        "reason",
+        "replacement_digest",
+        "replacement"
+      ],
+      "title": "EditedDecision",
+      "type": "object"
+    },
+    "Identifier": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "type": "string"
+    },
+    "InventoryBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "inventory_version": {
+          "const": "1.0.0",
+          "title": "Inventory Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "inventory_binding",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:schema:inventory:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "source_revision": {
+          "$ref": "#/$defs/Digest"
+        },
+        "subject_uri": {
+          "$ref": "#/$defs/URI"
+        }
+      },
+      "required": [
+        "kind",
+        "schema_uri",
+        "inventory_version",
+        "subject_uri",
+        "source_revision",
+        "canonical_digest"
+      ],
+      "title": "InventoryBinding",
+      "type": "object"
+    },
+    "NormalizedVersion": {
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "type": "string"
+    },
+    "Port": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "port",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        },
+        "value_kind": {
+          "$ref": "#/$defs/ValueKind"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "value_kind",
+        "required"
+      ],
+      "title": "Port",
+      "type": "object"
+    },
+    "Producer": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "producer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/QualifiedName"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "version"
+      ],
+      "title": "Producer",
+      "type": "object"
+    },
+    "ProposalEntity": {
+      "discriminator": {
+        "mapping": {
+          "proposed_action": "#/$defs/ProposedAction",
+          "proposed_binding": "#/$defs/ProposedBinding",
+          "proposed_step": "#/$defs/ProposedStep",
+          "proposed_use_case": "#/$defs/ProposedUseCase"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ProposedAction"
+        },
+        {
+          "$ref": "#/$defs/ProposedBinding"
+        },
+        {
+          "$ref": "#/$defs/ProposedStep"
+        },
+        {
+          "$ref": "#/$defs/ProposedUseCase"
+        }
+      ]
+    },
+    "ProposalEntityKind": {
+      "enum": [
+        "proposed_action",
+        "proposed_binding",
+        "proposed_step",
+        "proposed_use_case"
+      ],
+      "title": "ProposalEntityKind",
+      "type": "string"
+    },
+    "ProposalEntityRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "proposal_entity_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "title": "Target Id",
+          "type": "string"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/ProposalEntityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "ProposalEntityRef",
+      "type": "object"
+    },
+    "ProposalPortRef": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "enum": [
+            "input",
+            "output"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "kind": {
+          "const": "proposal_port_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "owner": {
+          "$ref": "#/$defs/ProposalEntityRef"
+        }
+      },
+      "required": [
+        "kind",
+        "owner",
+        "direction",
+        "name"
+      ],
+      "title": "ProposalPortRef",
+      "type": "object"
+    },
+    "ProposedAction": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "input_ports": {
+          "items": {
+            "$ref": "#/$defs/Port"
+          },
+          "title": "Input Ports",
+          "type": "array"
+        },
+        "kind": {
+          "const": "proposed_action",
+          "title": "Kind",
+          "type": "string"
+        },
+        "output_ports": {
+          "items": {
+            "$ref": "#/$defs/Port"
+          },
+          "title": "Output Ports",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "input_ports",
+        "output_ports"
+      ],
+      "title": "ProposedAction",
+      "type": "object"
+    },
+    "ProposedBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "const": "proposed_binding",
+          "title": "Kind",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/ProposalPortRef"
+        },
+        "target": {
+          "$ref": "#/$defs/ProposalPortRef"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "target",
+        "source"
+      ],
+      "title": "ProposedBinding",
+      "type": "object"
+    },
+    "ProposedStep": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/ProposalEntityRef"
+        },
+        "bindings": {
+          "items": {
+            "$ref": "#/$defs/ProposalEntityRef"
+          },
+          "title": "Bindings",
+          "type": "array"
+        },
+        "id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "const": "proposed_step",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "action",
+        "bindings"
+      ],
+      "title": "ProposedStep",
+      "type": "object"
+    },
+    "ProposedUseCase": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "input_ports": {
+          "items": {
+            "$ref": "#/$defs/Port"
+          },
+          "title": "Input Ports",
+          "type": "array"
+        },
+        "kind": {
+          "const": "proposed_use_case",
+          "title": "Kind",
+          "type": "string"
+        },
+        "output_ports": {
+          "items": {
+            "$ref": "#/$defs/Port"
+          },
+          "title": "Output Ports",
+          "type": "array"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/ProposalEntityRef"
+          },
+          "maxItems": 256,
+          "minItems": 1,
+          "title": "Steps",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "input_ports",
+        "output_ports",
+        "steps"
+      ],
+      "title": "ProposedUseCase",
+      "type": "object"
+    },
+    "QualifiedName": {
+      "maxLength": 255,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*)+$",
+      "type": "string"
+    },
+    "RejectedDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate": {
+          "$ref": "#/$defs/CandidateRef"
+        },
+        "id": {
+          "$ref": "#/$defs/DecisionId"
+        },
+        "kind": {
+          "const": "rejected_decision",
+          "title": "Kind",
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/$defs/DecisionReason"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "candidate",
+        "reason"
+      ],
+      "title": "RejectedDecision",
+      "type": "object"
+    },
+    "Timestamp": {
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+      "type": "string"
+    },
+    "URI": {
+      "maxLength": 2048,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9+.-]*:[^\\s]+$",
+      "type": "string"
+    },
+    "UncertainDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate": {
+          "$ref": "#/$defs/CandidateRef"
+        },
+        "id": {
+          "$ref": "#/$defs/DecisionId"
+        },
+        "kind": {
+          "const": "uncertain_decision",
+          "title": "Kind",
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/$defs/DecisionReason"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "candidate",
+        "reason"
+      ],
+      "title": "UncertainDecision",
+      "type": "object"
+    },
+    "ValueKind": {
+      "enum": [
+        "null",
+        "boolean",
+        "string",
+        "integer",
+        "decimal",
+        "timestamp",
+        "list",
+        "record"
+      ],
+      "title": "ValueKind",
+      "type": "string"
+    }
+  },
+  "$id": "urn:ucf:onboarding:decision-set:1.0.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "capture_context": {
+      "$ref": "#/$defs/CaptureContext"
+    },
+    "decisions": {
+      "items": {
+        "$ref": "#/$defs/Decision"
+      },
+      "maxItems": 10000,
+      "title": "Decisions",
+      "type": "array"
+    },
+    "discovery": {
+      "$ref": "#/$defs/DiscoveryDocumentRef"
+    },
+    "inventory_binding": {
+      "$ref": "#/$defs/InventoryBinding"
+    },
+    "kind": {
+      "const": "decision_set_profile",
+      "title": "Kind",
+      "type": "string"
+    },
+    "onboarding_version": {
+      "const": "1.0.0",
+      "title": "Onboarding Version",
+      "type": "string"
+    },
+    "reviewer": {
+      "$ref": "#/$defs/Producer"
+    },
+    "schema_uri": {
+      "const": "urn:ucf:onboarding:decision-set:1.0.0",
+      "title": "Schema Uri",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "onboarding_version",
+    "schema_uri",
+    "discovery",
+    "inventory_binding",
+    "reviewer",
+    "capture_context",
+    "decisions"
+  ],
+  "title": "UCF onboarding decision set profile 1.0.0",
+  "type": "object",
+  "x-ucf-document-kind": "decision_set_profile",
+  "x-ucf-onboarding-version": "1.0.0",
+  "x-ucf-runtime-semantic-checks": [
+    "strict UTF-8 and duplicate-member JSON decoding",
+    "maximum JSON nesting depth 128",
+    "complete inventory canonical digest and source revision",
+    "exact discovery capability and profile coordinates",
+    "typed inventory reference resolution and target kinds",
+    "content-derived candidate and decision identities",
+    "canonical candidate, evidence, decision, and entity order",
+    "closed proposal graph topology and required input bindings",
+    "exact accepted, edited, rejected, uncertain decision coverage",
+    "stale discovery, candidate, and replacement rejection",
+    "accepted and edited materialization only",
+    "exact Behavior IR and Trust IR document binding",
+    "observed and declared claims without confidence promotion",
+    "derived baseline document, disposition, coverage, and claim summaries",
+    "maximum 10000 discovery candidates",
+    "maximum 10000 discovery diagnostics"
+  ]
+}

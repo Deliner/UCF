@@ -2,11 +2,7 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
-import pytest
-
-from ucf.drift.detector import DriftDetector, DriftResult
+from ucf.drift.detector import DriftDetector
 from ucf.drift.mapper import SpecCodeMap, SpecCodeMapper
 from ucf.drift.scanner import ImplementationEntry, SourceScanner
 from ucf.models.spec import parse_spec
@@ -27,8 +23,7 @@ def _registry(*names: str) -> SpecRegistry:
 class TestSourceScanner:
     def test_finds_decorator_marker(self, tmp_path):
         (tmp_path / "handler.py").write_text(
-            '@implements("actions/create-order")\n'
-            "def create_order(): pass\n",
+            '@implements("actions/create-order")\ndef create_order(): pass\n',
             encoding="utf-8",
         )
         scanner = SourceScanner(tmp_path)
@@ -40,8 +35,7 @@ class TestSourceScanner:
 
     def test_finds_comment_marker(self, tmp_path):
         (tmp_path / "service.py").write_text(
-            '# @implements("actions/validate-spec")\n'
-            "class Validator: pass\n",
+            '# @implements("actions/validate-spec")\nclass Validator: pass\n',
             encoding="utf-8",
         )
         scanner = SourceScanner(tmp_path)
@@ -72,7 +66,8 @@ class TestSourceScanner:
 
     def test_custom_pattern(self, tmp_path):
         (tmp_path / "lib.js").write_text(
-            '// @implements("actions/foo")\n', encoding="utf-8",
+            '// @implements("actions/foo")\n',
+            encoding="utf-8",
         )
         (tmp_path / "lib.py").write_text("pass\n", encoding="utf-8")
         scanner = SourceScanner(tmp_path, patterns=["**/*.js"])
@@ -83,7 +78,8 @@ class TestSourceScanner:
         sub = tmp_path / "pkg"
         sub.mkdir()
         (sub / "handler.py").write_text(
-            '@implements("actions/x")\ndef x(): pass\n', encoding="utf-8",
+            '@implements("actions/x")\ndef x(): pass\n',
+            encoding="utf-8",
         )
         scanner = SourceScanner(tmp_path)
         result = scanner.scan()

@@ -1,5 +1,9 @@
 # UCF Framework: Known Limitations, Edge Cases & Mitigations
 
+> **Status: Historical evidence.** Capability and release claims in this
+> document are not current; [the capability matrix](docs/CAPABILITIES.md)
+> controls the current status.
+
 UCF provides structural guarantees that most codebases lack — but it is not
 a silver bullet. This document catalogues the sharp edges we know about,
 rates their severity, and describes the mitigations that exist today or are

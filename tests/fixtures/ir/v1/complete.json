@@ -1,0 +1,328 @@
+{
+  "kind": "behavior_ir",
+  "ir_version": "1.0.0",
+  "document_id": "document.checkout-reservation",
+  "roots": [
+    {
+      "kind": "entity_ref",
+      "target_kind": "use_case",
+      "target_id": "use-case.reserve-item"
+    }
+  ],
+  "entities": [
+    {
+      "kind": "use_case",
+      "id": "use-case.reserve-item",
+      "input_ports": [
+        {
+          "kind": "port",
+          "name": "item-id",
+          "value_kind": "string",
+          "required": true
+        }
+      ],
+      "output_ports": [
+        {
+          "kind": "port",
+          "name": "reservation-id",
+          "value_kind": "string",
+          "required": true
+        }
+      ],
+      "steps": [
+        {
+          "kind": "entity_ref",
+          "target_kind": "step",
+          "target_id": "step.reserve-item"
+        }
+      ],
+      "invariants": [
+        {
+          "kind": "entity_ref",
+          "target_kind": "invariant",
+          "target_id": "invariant.reservation-present"
+        }
+      ],
+      "requires": [
+        {
+          "kind": "entity_ref",
+          "target_kind": "capability_requirement",
+          "target_id": "capability.rule-preservation"
+        }
+      ],
+      "provenance": {
+        "kind": "entity_ref",
+        "target_kind": "provenance",
+        "target_id": "provenance.fixture"
+      }
+    },
+    {
+      "kind": "action",
+      "id": "action.reserve-item",
+      "input_ports": [
+        {
+          "kind": "port",
+          "name": "item-id",
+          "value_kind": "string",
+          "required": true
+        }
+      ],
+      "output_ports": [
+        {
+          "kind": "port",
+          "name": "reservation-id",
+          "value_kind": "string",
+          "required": true
+        }
+      ],
+      "effects": [
+        {
+          "kind": "entity_ref",
+          "target_kind": "effect",
+          "target_id": "effect.reservation-created"
+        }
+      ],
+      "requires": [
+        {
+          "kind": "entity_ref",
+          "target_kind": "capability_requirement",
+          "target_id": "capability.state-assignment"
+        }
+      ],
+      "provenance": {
+        "kind": "entity_ref",
+        "target_kind": "provenance",
+        "target_id": "provenance.fixture"
+      }
+    },
+    {
+      "kind": "step",
+      "id": "step.reserve-item",
+      "action": {
+        "kind": "entity_ref",
+        "target_kind": "action",
+        "target_id": "action.reserve-item"
+      },
+      "bindings": [
+        {
+          "kind": "entity_ref",
+          "target_kind": "binding",
+          "target_id": "binding.item-id"
+        }
+      ],
+      "effects": [
+        {
+          "kind": "entity_ref",
+          "target_kind": "effect",
+          "target_id": "effect.reservation-created"
+        }
+      ],
+      "observations": [
+        {
+          "kind": "entity_ref",
+          "target_kind": "observation",
+          "target_id": "observation.reservation-created"
+        }
+      ],
+      "requires": [
+        {
+          "kind": "entity_ref",
+          "target_kind": "capability_requirement",
+          "target_id": "capability.state-assignment"
+        }
+      ],
+      "provenance": {
+        "kind": "entity_ref",
+        "target_kind": "provenance",
+        "target_id": "provenance.fixture"
+      }
+    },
+    {
+      "kind": "binding",
+      "id": "binding.item-id",
+      "target": {
+        "kind": "port_ref",
+        "owner": {
+          "kind": "entity_ref",
+          "target_kind": "step",
+          "target_id": "step.reserve-item"
+        },
+        "direction": "input",
+        "name": "item-id"
+      },
+      "source": {
+        "kind": "port_ref",
+        "owner": {
+          "kind": "entity_ref",
+          "target_kind": "use_case",
+          "target_id": "use-case.reserve-item"
+        },
+        "direction": "input",
+        "name": "item-id"
+      },
+      "provenance": {
+        "kind": "entity_ref",
+        "target_kind": "provenance",
+        "target_id": "provenance.fixture"
+      }
+    },
+    {
+      "kind": "effect",
+      "id": "effect.reservation-created",
+      "operation": "assign",
+      "target": {
+        "kind": "domain_target",
+        "subject": "reservation",
+        "path": [
+          "status"
+        ]
+      },
+      "value": {
+        "kind": "string",
+        "value": "created"
+      },
+      "requires": [
+        {
+          "kind": "entity_ref",
+          "target_kind": "capability_requirement",
+          "target_id": "capability.state-assignment"
+        }
+      ],
+      "provenance": {
+        "kind": "entity_ref",
+        "target_kind": "provenance",
+        "target_id": "provenance.fixture"
+      }
+    },
+    {
+      "kind": "observation",
+      "id": "observation.reservation-created",
+      "subject": {
+        "kind": "entity_ref",
+        "target_kind": "action",
+        "target_id": "action.reserve-item"
+      },
+      "target": {
+        "kind": "domain_target",
+        "subject": "reservation",
+        "path": [
+          "status"
+        ]
+      },
+      "value": {
+        "kind": "string",
+        "value": "created"
+      },
+      "provenance": {
+        "kind": "entity_ref",
+        "target_kind": "provenance",
+        "target_id": "provenance.fixture"
+      }
+    },
+    {
+      "kind": "invariant",
+      "id": "invariant.reservation-present",
+      "applies_to": [
+        {
+          "kind": "entity_ref",
+          "target_kind": "use_case",
+          "target_id": "use-case.reserve-item"
+        }
+      ],
+      "condition": {
+        "kind": "declared_rule",
+        "dialect": "urn:ucf:rule:declaration:v1",
+        "statement": "reservation id is present"
+      },
+      "requires": [
+        {
+          "kind": "entity_ref",
+          "target_kind": "capability_requirement",
+          "target_id": "capability.rule-preservation"
+        }
+      ],
+      "provenance": {
+        "kind": "entity_ref",
+        "target_kind": "provenance",
+        "target_id": "provenance.fixture"
+      }
+    },
+    {
+      "kind": "provenance",
+      "id": "provenance.fixture",
+      "source": {
+        "kind": "artifact_source",
+        "uri": "urn:ucf:fixture:ir-v1",
+        "revision": {
+          "kind": "digest",
+          "algorithm": "sha-256",
+          "value": "1f40fc92da241694750979ee6cf582f2d5d7d28e18335de05abc54d0560e0f53"
+        }
+      },
+      "producer": {
+        "kind": "producer",
+        "name": "org.ucf.fixture",
+        "version": "1.0.0"
+      },
+      "captured_at": "2026-07-19T00:00:00Z"
+    },
+    {
+      "kind": "verification_evidence",
+      "id": "evidence.reservation-present",
+      "subjects": [
+        {
+          "kind": "entity_ref",
+          "target_kind": "invariant",
+          "target_id": "invariant.reservation-present"
+        }
+      ],
+      "check": {
+        "kind": "check",
+        "id": "check.reservation-present",
+        "version": "1.0.0",
+        "procedure_uri": "urn:ucf:check:fixture-roundtrip"
+      },
+      "outcome": "passed",
+      "executed_at": "2026-07-19T00:01:00Z",
+      "source_revision": {
+        "kind": "digest",
+        "algorithm": "sha-256",
+        "value": "1f40fc92da241694750979ee6cf582f2d5d7d28e18335de05abc54d0560e0f53"
+      },
+      "environment": {
+        "kind": "digest",
+        "algorithm": "sha-256",
+        "value": "8d680f6c6a943c45c73cfa8d8f8879ab0db078de3c9f621c26914e1c25e703a5"
+      },
+      "provenance": {
+        "kind": "entity_ref",
+        "target_kind": "provenance",
+        "target_id": "provenance.fixture"
+      }
+    },
+    {
+      "kind": "capability_requirement",
+      "id": "capability.state-assignment",
+      "name": "org.ucf.state.assign",
+      "minimum_version": "1.0.0",
+      "required": true,
+      "provenance": {
+        "kind": "entity_ref",
+        "target_kind": "provenance",
+        "target_id": "provenance.fixture"
+      }
+    },
+    {
+      "kind": "capability_requirement",
+      "id": "capability.rule-preservation",
+      "name": "org.ucf.rule.preserve",
+      "minimum_version": "1.0.0",
+      "required": true,
+      "provenance": {
+        "kind": "entity_ref",
+        "target_kind": "provenance",
+        "target_id": "provenance.fixture"
+      }
+    }
+  ]
+}

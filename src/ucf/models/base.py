@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class FieldType(str, Enum):
+class SpecModel(BaseModel):
+    """Strict base for every modeled specification object."""
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class FieldType(StrEnum):
     STRING = "string"
     INTEGER = "integer"
     NUMBER = "number"
@@ -17,7 +23,7 @@ class FieldType(str, Enum):
     OBJECT = "object"
 
 
-class MutationType(str, Enum):
+class MutationType(StrEnum):
     CREATE = "create"
     SET = "set"
     INCREMENT = "increment"
@@ -26,22 +32,23 @@ class MutationType(str, Enum):
     DELETE = "delete"
 
 
-class Severity(str, Enum):
+class Severity(StrEnum):
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
 
 
-class Metadata(BaseModel):
+class Metadata(SpecModel):
     name: str
     version: str | None = None
     owner: str | None = None
     actor: str | None = None
     tags: list[str] = Field(default_factory=list)
     severity: Severity | None = None
+    description: str | None = None
 
 
-class FieldDef(BaseModel):
+class FieldDef(SpecModel):
     type: FieldType
     required: bool = False
     format: str | None = None
@@ -51,30 +58,32 @@ class FieldDef(BaseModel):
     description: str | None = None
 
 
-class ErrorDef(BaseModel):
+class ErrorDef(SpecModel):
     status: str | int
     code: str
     condition: str
+    description: str | None = None
 
 
-class ResourceRead(BaseModel):
+class ResourceRead(SpecModel):
     resource: str
     fields: list[str] = Field(default_factory=list)
 
 
-class ResourceWrite(BaseModel):
+class ResourceWrite(SpecModel):
     resource: str
     mutation: MutationType
     by: str | None = None
+    fields: list[str] = Field(default_factory=list)
 
 
-class EmitRef(BaseModel):
+class EmitRef(SpecModel):
     event: str
 
 
-class Ref(BaseModel):
+class Ref(SpecModel):
     """A $ref to another spec file."""
 
     ref: str = Field(alias="$ref")
 
-    model_config = {"populate_by_name": True}
+    model_config = ConfigDict(populate_by_name=True)

@@ -1,0 +1,235 @@
+{
+  "$comment": "Generated deterministically from UCF change-lifecycle profile 1.0.0 models; do not edit by hand. The x-ucf-runtime-semantic-checks annotation names only the additional runtime checks for this document kind.",
+  "$defs": {
+    "Base64ArtifactContent": {
+      "maxLength": 349528,
+      "type": "string"
+    },
+    "BehaviorDocumentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "document_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "ir_version": {
+          "const": "1.0.0",
+          "title": "Ir Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "behavior_document_ref",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "document_id",
+        "ir_version",
+        "canonical_digest"
+      ],
+      "title": "BehaviorDocumentRef",
+      "type": "object"
+    },
+    "Digest": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "sha-256",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "kind": {
+          "const": "digest",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/DigestValue"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm",
+        "value"
+      ],
+      "title": "Digest",
+      "type": "object"
+    },
+    "DigestValue": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "type": "string"
+    },
+    "OpenSpecArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "content_base64": {
+          "$ref": "#/$defs/Base64ArtifactContent"
+        },
+        "kind": {
+          "const": "openspec_artifact",
+          "title": "Kind",
+          "type": "string"
+        },
+        "media_type": {
+          "enum": [
+            "application/octet-stream",
+            "application/yaml;charset=utf-8",
+            "text/markdown;charset=utf-8",
+            "text/plain;charset=utf-8"
+          ],
+          "title": "Media Type",
+          "type": "string"
+        },
+        "path": {
+          "$ref": "#/$defs/RelativeArtifactPath"
+        },
+        "role": {
+          "$ref": "#/$defs/OpenSpecArtifactRole"
+        }
+      },
+      "required": [
+        "kind",
+        "path",
+        "role",
+        "media_type",
+        "content_base64",
+        "byte_digest"
+      ],
+      "title": "OpenSpecArtifact",
+      "type": "object"
+    },
+    "OpenSpecArtifactRole": {
+      "enum": [
+        "project_config",
+        "change_metadata",
+        "proposal",
+        "design",
+        "tasks",
+        "delta_spec",
+        "base_spec",
+        "opaque"
+      ],
+      "title": "OpenSpecArtifactRole",
+      "type": "string"
+    },
+    "OpenSpecChangeId": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "type": "string"
+    },
+    "OpenSpecManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "artifacts": {
+          "items": {
+            "$ref": "#/$defs/OpenSpecArtifact"
+          },
+          "maxItems": 256,
+          "minItems": 1,
+          "title": "Artifacts",
+          "type": "array"
+        },
+        "change_path": {
+          "$ref": "#/$defs/RelativeArtifactPath"
+        },
+        "kind": {
+          "const": "openspec_manifest",
+          "title": "Kind",
+          "type": "string"
+        },
+        "profile": {
+          "const": "fission-ai.openspec/spec-driven@1",
+          "title": "Profile",
+          "type": "string"
+        },
+        "tested_against_version": {
+          "const": "1.6.0",
+          "title": "Tested Against Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "profile",
+        "tested_against_version",
+        "change_path",
+        "artifacts"
+      ],
+      "title": "OpenSpecManifest",
+      "type": "object"
+    },
+    "RelativeArtifactPath": {
+      "maxLength": 1024,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "$id": "urn:ucf:change-lifecycle:proposal:1.0.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "base_behavior": {
+      "$ref": "#/$defs/BehaviorDocumentRef"
+    },
+    "change_id": {
+      "$ref": "#/$defs/OpenSpecChangeId"
+    },
+    "change_lifecycle_version": {
+      "const": "1.0.0",
+      "title": "Change Lifecycle Version",
+      "type": "string"
+    },
+    "kind": {
+      "const": "change_proposal",
+      "title": "Kind",
+      "type": "string"
+    },
+    "openspec": {
+      "$ref": "#/$defs/OpenSpecManifest"
+    },
+    "schema_uri": {
+      "const": "urn:ucf:change-lifecycle:proposal:1.0.0",
+      "title": "Schema Uri",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "change_lifecycle_version",
+    "schema_uri",
+    "change_id",
+    "base_behavior",
+    "openspec"
+  ],
+  "title": "UCF change proposal profile 1.0.0",
+  "type": "object",
+  "x-ucf-change-lifecycle-version": "1.0.0",
+  "x-ucf-document-kind": "change_proposal",
+  "x-ucf-runtime-semantic-checks": [
+    "strict UTF-8 and duplicate-member JSON decoding",
+    "maximum JSON nesting depth 128",
+    "canonical RFC 4648 base64 with decoded artifact byte bound 262144",
+    "artifact byte SHA-256 matches decoded content",
+    "UTF-8 text content for every non-binary artifact media type",
+    "safe relative POSIX artifact paths without empty, dot, dot-dot, backslash, absolute, or NUL segments",
+    "canonical artifact path ordering and uniqueness",
+    "exact OpenSpec artifact role, path, and media-type correlation",
+    "one supported spec-driven profile declaration with unique YAML keys",
+    "canonical one-level delta-spec paths and base-spec-to-delta capability coverage",
+    "no OpenSpec artifact file/directory path-prefix collisions"
+  ]
+}

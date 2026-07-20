@@ -27,27 +27,55 @@ class ShortenUrlInterface(ABC, FrameworkActions):
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_create_short_link(self, original_url: Any, custom_code: Any) -> CreateShortLinkResult:
+    def action_create_short_link(
+        self,
+        original_url: Any,
+        custom_code: Any,
+    ) -> CreateShortLinkResult:
+        ...
+
+    @abstractmethod
+    def action_show_error(
+        self,
+        error: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_suggest_alternatives(
+        self,
+        requested_code: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_content_creator_receives_shortened_url(self) -> None:
+    def verify_content_creator_receives_shortened_url(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_shortened_url_is_ready_to_use_immediately(self) -> None:
+    def verify_shortened_url_is_ready_to_use_immediately(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_shortened_url_redirects_to_original_page(self) -> None:
+    def verify_shortened_url_redirects_to_original_page(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_creation_is_recorded_with_timestamp(self) -> None:
+    def verify_creation_is_recorded_with_timestamp(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

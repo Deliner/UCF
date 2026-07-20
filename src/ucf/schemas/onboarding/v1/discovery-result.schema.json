@@ -1,0 +1,780 @@
+{
+  "$comment": "Generated deterministically from UCF onboarding profile 1.0.0 models; do not edit by hand. Cross-document identity, reference, candidate, decision, materialization, trust, and summary checks remain runtime semantics.",
+  "$defs": {
+    "CandidateProposal": {
+      "additionalProperties": false,
+      "properties": {
+        "entities": {
+          "items": {
+            "$ref": "#/$defs/ProposalEntity"
+          },
+          "maxItems": 1024,
+          "minItems": 1,
+          "title": "Entities",
+          "type": "array"
+        },
+        "kind": {
+          "const": "candidate_proposal",
+          "title": "Kind",
+          "type": "string"
+        },
+        "root": {
+          "$ref": "#/$defs/ProposalEntityRef"
+        }
+      },
+      "required": [
+        "kind",
+        "root",
+        "entities"
+      ],
+      "title": "CandidateProposal",
+      "type": "object"
+    },
+    "CapabilitySelection": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "capability",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/QualifiedName"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "version"
+      ],
+      "title": "CapabilitySelection",
+      "type": "object"
+    },
+    "ConfidenceValue": {
+      "maxLength": 64,
+      "pattern": "^(?:0|1|0\\.[0-9]*[1-9])$",
+      "type": "string"
+    },
+    "Digest": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "sha-256",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "kind": {
+          "const": "digest",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/DigestValue"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm",
+        "value"
+      ],
+      "title": "Digest",
+      "type": "object"
+    },
+    "DigestValue": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "DiscoveryCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/InventoryConfidence"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/InventoryRecordRef"
+          },
+          "maxItems": 256,
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "id": {
+          "$ref": "#/$defs/DiscoveryCandidateId"
+        },
+        "kind": {
+          "const": "discovery_candidate",
+          "title": "Kind",
+          "type": "string"
+        },
+        "proposal": {
+          "$ref": "#/$defs/CandidateProposal"
+        },
+        "semantic_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "subject": {
+          "$ref": "#/$defs/InventoryRecordRef"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "semantic_digest",
+        "subject",
+        "evidence",
+        "confidence",
+        "proposal"
+      ],
+      "title": "DiscoveryCandidate",
+      "type": "object"
+    },
+    "DiscoveryCandidateId": {
+      "pattern": "^candidate\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "DiscoveryCoverage": {
+      "additionalProperties": false,
+      "properties": {
+        "eligible_subjects": {
+          "items": {
+            "$ref": "#/$defs/InventoryRecordRef"
+          },
+          "maxItems": 10000,
+          "title": "Eligible Subjects",
+          "type": "array"
+        },
+        "kind": {
+          "const": "discovery_coverage",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "complete",
+            "partial"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "uncovered_subjects": {
+          "items": {
+            "$ref": "#/$defs/InventoryRecordRef"
+          },
+          "maxItems": 10000,
+          "title": "Uncovered Subjects",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "status",
+        "eligible_subjects",
+        "uncovered_subjects"
+      ],
+      "title": "DiscoveryCoverage",
+      "type": "object"
+    },
+    "DiscoveryDiagnostic": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/QualifiedName"
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/InventoryRecordRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "id": {
+          "$ref": "#/$defs/DiscoveryDiagnosticId"
+        },
+        "kind": {
+          "const": "discovery_diagnostic",
+          "title": "Kind",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "warning",
+            "error"
+          ],
+          "title": "Severity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "severity",
+        "code",
+        "message",
+        "evidence"
+      ],
+      "title": "DiscoveryDiagnostic",
+      "type": "object"
+    },
+    "DiscoveryDiagnosticId": {
+      "pattern": "^diagnostic\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "type": "string"
+    },
+    "InventoryBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "inventory_version": {
+          "const": "1.0.0",
+          "title": "Inventory Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "inventory_binding",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:schema:inventory:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "source_revision": {
+          "$ref": "#/$defs/Digest"
+        },
+        "subject_uri": {
+          "$ref": "#/$defs/URI"
+        }
+      },
+      "required": [
+        "kind",
+        "schema_uri",
+        "inventory_version",
+        "subject_uri",
+        "source_revision",
+        "canonical_digest"
+      ],
+      "title": "InventoryBinding",
+      "type": "object"
+    },
+    "InventoryConfidence": {
+      "additionalProperties": false,
+      "properties": {
+        "basis": {
+          "$ref": "#/$defs/URI",
+          "pattern": "(?:[:/])(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)$"
+        },
+        "kind": {
+          "const": "confidence",
+          "title": "Kind",
+          "type": "string"
+        },
+        "scale": {
+          "const": "decimal-0-to-1",
+          "title": "Scale",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/ConfidenceValue"
+        }
+      },
+      "required": [
+        "kind",
+        "scale",
+        "value",
+        "basis"
+      ],
+      "title": "InventoryConfidence",
+      "type": "object"
+    },
+    "InventoryRecordId": {
+      "pattern": "^(?:api|diagnostic|entry|ignore|interface|manifest|provenance|test)\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "InventoryRecordKind": {
+      "enum": [
+        "api_description",
+        "build_manifest",
+        "inventory_diagnostic",
+        "inventory_ignore_match",
+        "inventory_provenance",
+        "public_interface",
+        "repository_entry",
+        "test_asset"
+      ],
+      "title": "InventoryRecordKind",
+      "type": "string"
+    },
+    "InventoryRecordRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "inventory_record_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/InventoryRecordId"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/InventoryRecordKind"
+        }
+      },
+      "required": [
+        "kind",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "InventoryRecordRef",
+      "type": "object"
+    },
+    "NormalizedVersion": {
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "type": "string"
+    },
+    "Port": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "port",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        },
+        "value_kind": {
+          "$ref": "#/$defs/ValueKind"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "value_kind",
+        "required"
+      ],
+      "title": "Port",
+      "type": "object"
+    },
+    "Producer": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "producer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/QualifiedName"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "version"
+      ],
+      "title": "Producer",
+      "type": "object"
+    },
+    "ProposalEntity": {
+      "discriminator": {
+        "mapping": {
+          "proposed_action": "#/$defs/ProposedAction",
+          "proposed_binding": "#/$defs/ProposedBinding",
+          "proposed_step": "#/$defs/ProposedStep",
+          "proposed_use_case": "#/$defs/ProposedUseCase"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ProposedAction"
+        },
+        {
+          "$ref": "#/$defs/ProposedBinding"
+        },
+        {
+          "$ref": "#/$defs/ProposedStep"
+        },
+        {
+          "$ref": "#/$defs/ProposedUseCase"
+        }
+      ]
+    },
+    "ProposalEntityKind": {
+      "enum": [
+        "proposed_action",
+        "proposed_binding",
+        "proposed_step",
+        "proposed_use_case"
+      ],
+      "title": "ProposalEntityKind",
+      "type": "string"
+    },
+    "ProposalEntityRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "proposal_entity_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "title": "Target Id",
+          "type": "string"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/ProposalEntityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "ProposalEntityRef",
+      "type": "object"
+    },
+    "ProposalPortRef": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "enum": [
+            "input",
+            "output"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "kind": {
+          "const": "proposal_port_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "owner": {
+          "$ref": "#/$defs/ProposalEntityRef"
+        }
+      },
+      "required": [
+        "kind",
+        "owner",
+        "direction",
+        "name"
+      ],
+      "title": "ProposalPortRef",
+      "type": "object"
+    },
+    "ProposedAction": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "input_ports": {
+          "items": {
+            "$ref": "#/$defs/Port"
+          },
+          "title": "Input Ports",
+          "type": "array"
+        },
+        "kind": {
+          "const": "proposed_action",
+          "title": "Kind",
+          "type": "string"
+        },
+        "output_ports": {
+          "items": {
+            "$ref": "#/$defs/Port"
+          },
+          "title": "Output Ports",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "input_ports",
+        "output_ports"
+      ],
+      "title": "ProposedAction",
+      "type": "object"
+    },
+    "ProposedBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "const": "proposed_binding",
+          "title": "Kind",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/ProposalPortRef"
+        },
+        "target": {
+          "$ref": "#/$defs/ProposalPortRef"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "target",
+        "source"
+      ],
+      "title": "ProposedBinding",
+      "type": "object"
+    },
+    "ProposedStep": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/ProposalEntityRef"
+        },
+        "bindings": {
+          "items": {
+            "$ref": "#/$defs/ProposalEntityRef"
+          },
+          "title": "Bindings",
+          "type": "array"
+        },
+        "id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "const": "proposed_step",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "action",
+        "bindings"
+      ],
+      "title": "ProposedStep",
+      "type": "object"
+    },
+    "ProposedUseCase": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "input_ports": {
+          "items": {
+            "$ref": "#/$defs/Port"
+          },
+          "title": "Input Ports",
+          "type": "array"
+        },
+        "kind": {
+          "const": "proposed_use_case",
+          "title": "Kind",
+          "type": "string"
+        },
+        "output_ports": {
+          "items": {
+            "$ref": "#/$defs/Port"
+          },
+          "title": "Output Ports",
+          "type": "array"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/ProposalEntityRef"
+          },
+          "maxItems": 256,
+          "minItems": 1,
+          "title": "Steps",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "input_ports",
+        "output_ports",
+        "steps"
+      ],
+      "title": "ProposedUseCase",
+      "type": "object"
+    },
+    "QualifiedName": {
+      "maxLength": 255,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*)+$",
+      "type": "string"
+    },
+    "URI": {
+      "maxLength": 2048,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9+.-]*:[^\\s]+$",
+      "type": "string"
+    },
+    "ValueKind": {
+      "enum": [
+        "null",
+        "boolean",
+        "string",
+        "integer",
+        "decimal",
+        "timestamp",
+        "list",
+        "record"
+      ],
+      "title": "ValueKind",
+      "type": "string"
+    }
+  },
+  "$id": "urn:ucf:adapter:discovery-result:1.0.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "candidates": {
+      "items": {
+        "$ref": "#/$defs/DiscoveryCandidate"
+      },
+      "maxItems": 10000,
+      "title": "Candidates",
+      "type": "array"
+    },
+    "capability": {
+      "$ref": "#/$defs/CapabilitySelection",
+      "properties": {
+        "name": {
+          "const": "org.ucf.adapter.discovery"
+        },
+        "version": {
+          "const": "1.0.0"
+        }
+      }
+    },
+    "coverage": {
+      "$ref": "#/$defs/DiscoveryCoverage"
+    },
+    "diagnostics": {
+      "items": {
+        "$ref": "#/$defs/DiscoveryDiagnostic"
+      },
+      "maxItems": 10000,
+      "title": "Diagnostics",
+      "type": "array"
+    },
+    "inventory_binding": {
+      "$ref": "#/$defs/InventoryBinding"
+    },
+    "kind": {
+      "const": "discovery_result_profile",
+      "title": "Kind",
+      "type": "string"
+    },
+    "onboarding_version": {
+      "const": "1.0.0",
+      "title": "Onboarding Version",
+      "type": "string"
+    },
+    "procedure_uri": {
+      "$ref": "#/$defs/URI",
+      "pattern": "(?:[:/])(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)$"
+    },
+    "producer": {
+      "$ref": "#/$defs/Producer"
+    },
+    "schema_uri": {
+      "const": "urn:ucf:adapter:discovery-result:1.0.0",
+      "title": "Schema Uri",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "onboarding_version",
+    "schema_uri",
+    "inventory_binding",
+    "producer",
+    "capability",
+    "procedure_uri",
+    "coverage",
+    "diagnostics",
+    "candidates"
+  ],
+  "title": "UCF discovery result profile 1.0.0",
+  "type": "object",
+  "x-ucf-document-kind": "discovery_result_profile",
+  "x-ucf-onboarding-version": "1.0.0",
+  "x-ucf-runtime-semantic-checks": [
+    "strict UTF-8 and duplicate-member JSON decoding",
+    "maximum JSON nesting depth 128",
+    "complete inventory canonical digest and source revision",
+    "exact discovery capability and profile coordinates",
+    "typed inventory reference resolution and target kinds",
+    "content-derived candidate and decision identities",
+    "canonical candidate, evidence, decision, and entity order",
+    "closed proposal graph topology and required input bindings",
+    "exact accepted, edited, rejected, uncertain decision coverage",
+    "stale discovery, candidate, and replacement rejection",
+    "accepted and edited materialization only",
+    "exact Behavior IR and Trust IR document binding",
+    "observed and declared claims without confidence promotion",
+    "derived baseline document, disposition, coverage, and claim summaries",
+    "maximum 10000 discovery candidates",
+    "maximum 10000 discovery diagnostics"
+  ]
+}

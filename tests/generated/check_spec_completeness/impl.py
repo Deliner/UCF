@@ -36,7 +36,6 @@ SPECS_DIR = Path(__file__).resolve().parents[3] / "specs"
 
 
 class CheckSpecCompletenessImpl(CheckSpecCompletenessInterface):
-
     def __init__(self) -> None:
         self._report: Any = None
 
@@ -61,7 +60,9 @@ class CheckSpecCompletenessImpl(CheckSpecCompletenessInterface):
 
     def action_analyze_partitions(self, registry: Any) -> AnalyzePartitionsResult:
         covs, findings = InputPartitionAnalyzer(registry).analyze()
-        return AnalyzePartitionsResult(partition_coverages=covs, partition_findings=findings)
+        return AnalyzePartitionsResult(
+            partition_coverages=covs, partition_findings=findings
+        )
 
     def action_analyze_states(self, registry: Any) -> AnalyzeStatesResult:
         graph, findings = StateCoverageAnalyzer(registry).analyze()
@@ -69,25 +70,33 @@ class CheckSpecCompletenessImpl(CheckSpecCompletenessInterface):
 
     def action_analyze_platform(self, registry: Any) -> AnalyzePlatformResult:
         scenarios, findings = PlatformBindingAnalyzer(registry).analyze()
-        return AnalyzePlatformResult(platform_scenarios=scenarios, platform_findings=findings)
+        return AnalyzePlatformResult(
+            platform_scenarios=scenarios, platform_findings=findings
+        )
 
     def action_analyze_invariants(self, registry: Any) -> AnalyzeInvariantsResult:
         covs, findings = InvariantNecessityAnalyzer(registry).analyze()
-        return AnalyzeInvariantsResult(invariant_coverages=covs, invariant_findings=findings)
+        return AnalyzeInvariantsResult(
+            invariant_coverages=covs, invariant_findings=findings
+        )
 
     def action_analyze_resources(self, registry: Any) -> AnalyzeResourcesResult:
         conflicts, findings = ResourceConflictAnalyzer(registry).analyze()
-        return AnalyzeResourcesResult(resource_conflicts=conflicts, resource_findings=findings)
+        return AnalyzeResourcesResult(
+            resource_conflicts=conflicts, resource_findings=findings
+        )
 
     def action_aggregate(self, registry: Any) -> AggregateResult:
         engine = CompletenessEngine(registry)
         self._report = engine.analyze()
         return AggregateResult(report=self._report)
 
-    def action_render_report(self, data: Any = None, format: Any = None) -> None:
+    def action_render_report(self, data: Any, format: Any) -> None:
         pass
 
-    def verify_developer_sees_a_completeness_report_identifying_behavioral(self) -> None:
+    def verify_developer_sees_a_completeness_report_identifying_behavioral(
+        self,
+    ) -> None:
         assert self._report is not None
         assert hasattr(self._report, "gap_count")
 
@@ -101,19 +110,25 @@ class CheckSpecCompletenessImpl(CheckSpecCompletenessInterface):
 
     def verify_every_error_has_alt_flow(self) -> None:
         assert self._report is not None
-        error_findings = [f for f in self._report.findings if f.category.value == "uncovered_error"]
+        error_findings = [
+            f for f in self._report.findings if f.category.value == "uncovered_error"
+        ]
         for f in error_findings:
             assert f.step_id, "uncovered_error finding must have a step_id"
             assert f.message, "uncovered_error finding must have a message"
 
     def verify_every_input_partition_covered(self) -> None:
         assert self._report is not None
-        partition_findings = [f for f in self._report.findings if f.category.value == "uncovered_input_partition"]
+        partition_findings = [
+            f
+            for f in self._report.findings
+            if f.category.value == "uncovered_input_partition"
+        ]
         for f in partition_findings:
             assert f.step_id, "uncovered_input_partition finding must have a step_id"
             assert f.message, "uncovered_input_partition finding must have a message"
 
-    def action_render_empty(self, **kwargs: Any) -> None:
+    def action_render_empty(self, data: Any, format: Any) -> None:
         empty_reg = SpecRegistry()
         engine = CompletenessEngine(empty_reg)
         report = engine.analyze()
@@ -122,8 +137,10 @@ class CheckSpecCompletenessImpl(CheckSpecCompletenessInterface):
 
     def verify_required_inputs_validated(self) -> None:
         from pydantic import ValidationError
+
         from ucf.models.action import ActionSpec
-        # Framework enforces required inputs via Pydantic: ActionSpec without metadata must fail
+
+        # Pydantic rejects ActionSpec without required metadata.
         with pytest.raises(ValidationError):
             ActionSpec.model_validate({})
 

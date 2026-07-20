@@ -36,31 +36,57 @@ class GenerateAltFlowVerificationInterface(ABC, FrameworkActions):
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_extract_error_code(self, alt_flow: Any) -> ExtractErrorCodeResult:
+    def action_extract_error_code(
+        self,
+        alt_flow: Any,
+    ) -> ExtractErrorCodeResult:
         ...
 
     @abstractmethod
-    def action_find_trigger_action(self, usecase_spec: Any, error_code: Any) -> FindTriggerActionResult:
+    def action_find_trigger_action(
+        self,
+        usecase_spec: Any,
+        error_code: Any,
+    ) -> FindTriggerActionResult:
         ...
 
     @abstractmethod
-    def action_generate_assertion(self, action_ref: Any, error_code: Any) -> GenerateAssertionResult:
+    def action_generate_assertion(
+        self,
+        action_ref: Any,
+        error_code: Any,
+    ) -> GenerateAssertionResult:
+        ...
+
+    @abstractmethod
+    def action_skip_verification(
+        self,
+        message: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_assertion_code_verifies_error_was_raised_by_correct_action(self) -> None:
+    def verify_assertion_code_verifies_error_was_raised_by_correct_action(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_assertion_is_inserted_into_generated_test(self) -> None:
+    def verify_assertion_is_inserted_into_generated_test(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_test_fails_if_trigger_action_not_called(self) -> None:
+    def verify_test_fails_if_trigger_action_not_called(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

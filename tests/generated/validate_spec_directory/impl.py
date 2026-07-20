@@ -11,20 +11,23 @@ from ucf.parser.loader import SpecLoader
 from ucf.parser.registry import SpecRegistry
 from ucf.validator.core import IssueSeverity, SpecValidator
 
-from .interface import LoaderContext, ValidateResult, ValidateSpecDirectoryInterface
-
-SPECS_DIR = Path(__file__).resolve().parents[3] / "specs"
+from .interface import (
+    LoaderContext,
+    ValidatePartialResult,
+    ValidateResult,
+    ValidateSpecDirectoryInterface,
+)
 
 
 class ValidateSpecDirectoryImpl(ValidateSpecDirectoryInterface):
-
     def __init__(self) -> None:
         self._registry: SpecRegistry | None = None
         self._issues: list[Any] = []
         self._loaded_count = 0
+        self._rendered: list[tuple[Any, Any]] = []
 
-    def setup_loader(self) -> LoaderContext:
-        loader = SpecLoader(SPECS_DIR)
+    def setup_loader(self, specs_dir: Any) -> LoaderContext:
+        loader = SpecLoader(Path(specs_dir))
         loaded, errors = loader.load_all_tolerant()
 
         self._registry = SpecRegistry()
@@ -53,7 +56,55 @@ class ValidateSpecDirectoryImpl(ValidateSpecDirectoryInterface):
         )
 
     def action_render_results(self, data: Any, format: Any) -> None:
-        pass
+        self._rendered.append((data, format))
+
+    def action_render_file_error(self, data: Any, format: Any) -> None:
+        assert data == {"message": "spec file not found"}
+        self.action_render_results(data, format)
+
+    def action_render_yaml_error(self, data: Any, format: Any) -> None:
+        assert data == {"message": "YAML syntax error in spec file"}
+        self.action_render_results(data, format)
+
+    def action_render_mapping_error(self, data: Any, format: Any) -> None:
+        assert data == {"message": "spec file root is not a YAML mapping"}
+        self.action_render_results(data, format)
+
+    def action_render_kind_missing(self, data: Any, format: Any) -> None:
+        assert data == {"message": "spec is missing required kind field"}
+        self.action_render_results(data, format)
+
+    def action_render_unknown_kind(self, data: Any, format: Any) -> None:
+        assert data == {"message": "spec has unrecognized kind value"}
+        self.action_render_results(data, format)
+
+    def action_render_validation_error(self, data: Any, format: Any) -> None:
+        assert data == {"message": "spec data fails schema validation"}
+        self.action_render_results(data, format)
+
+    def action_render_ref_error(self, data: Any, format: Any) -> None:
+        assert data == {"message": "referenced spec file not found"}
+        self.action_render_results(data, format)
+
+    def action_render_depth_error(self, data: Any, format: Any) -> None:
+        assert data == {"message": "ref resolution chain too deep"}
+        self.action_render_results(data, format)
+
+    def action_render_depth_invalid(self, data: Any, format: Any) -> None:
+        assert data == {"message": "ref resolution depth cannot be negative"}
+        self.action_render_results(data, format)
+
+    def action_render_errors(self, data: Any, format: Any) -> None:
+        assert "load_errors" in data
+        self.action_render_results(data, format)
+
+    def action_validate_partial(self, registry: Any) -> ValidatePartialResult:
+        result = self.action_validate(registry)
+        return ValidatePartialResult(issues=result.issues)
+
+    def action_render_partial_results(self, data: Any, format: Any) -> None:
+        assert "issues" in data
+        self.action_render_results(data, format)
 
     def verify_all_loaded_specs_have_been_validated(self) -> None:
         assert self._registry is not None
@@ -85,20 +136,27 @@ class ValidateSpecDirectoryImpl(ValidateSpecDirectoryInterface):
                 assert resolved is not None, f"Unresolvable ref: {step.use}"
 
     def verify_kind_determines_schema(self) -> None:
-        from ucf.models.action import ActionSpec
-        from ucf.models.usecase import UseCaseSpec
 
         assert self._registry is not None
         for spec in self._registry.all_specs():
-            assert spec.kind in ("action", "event", "component", "protocol", "usecase", "invariant")
+            assert spec.kind in (
+                "action",
+                "event",
+                "component",
+                "protocol",
+                "usecase",
+                "invariant",
+            )
 
     def verify_no_circular_refs(self) -> None:
         pass  # Enforced by ref resolution depth limit
 
     def verify_required_inputs_validated(self) -> None:
         from pydantic import ValidationError
+
         from ucf.models.action import ActionSpec
-        # Framework enforces required inputs via Pydantic: ActionSpec without metadata must fail
+
+        # Pydantic rejects ActionSpec without required metadata.
         with pytest.raises(ValidationError):
             ActionSpec.model_validate({})
 

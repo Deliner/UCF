@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import json
+
 from pydantic import ValidationError
 
 from ucf.models.action import ActionSpec
@@ -14,7 +16,9 @@ from ucf.models.invariant import InvariantSpec
 from ucf.models.protocol import ProtocolSpec
 from ucf.models.usecase import UseCaseSpec
 
-AnySpec = ActionSpec | EventSpec | ComponentSpec | ProtocolSpec | UseCaseSpec | InvariantSpec
+AnySpec = (
+    ActionSpec | EventSpec | ComponentSpec | ProtocolSpec | UseCaseSpec | InvariantSpec
+)
 
 _KIND_MAP: dict[str, type[AnySpec]] = {
     "action": ActionSpec,
@@ -41,7 +45,7 @@ def parse_spec(data: dict, *, source_path: str | None = None) -> AnySpec:
         )
     kind = data.get("kind")
     if kind is None:
-        raise SpecParseError(f"Missing 'kind' field", path=source_path)
+        raise SpecParseError("Missing 'kind' field", path=source_path)
 
     model_cls = _KIND_MAP.get(kind)
     if model_cls is None:
@@ -52,7 +56,20 @@ def parse_spec(data: dict, *, source_path: str | None = None) -> AnySpec:
         )
 
     try:
-        return model_cls.model_validate(data)
+        json_data = json.dumps(data, allow_nan=False)
+    except (TypeError, ValueError) as exc:
+        raise SpecParseError(
+            f"Spec contains a non-JSON value: {exc}",
+            path=source_path,
+        ) from exc
+
+    try:
+        return model_cls.model_validate_json(
+            json_data,
+            strict=True,
+            by_alias=True,
+            by_name=False,
+        )
     except ValidationError as exc:
         raise SpecParseError(
             f"Validation error in '{kind}' spec: {exc}",

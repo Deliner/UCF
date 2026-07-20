@@ -86,7 +86,9 @@ class SkeletonSpecGenerator:
         return result
 
     def _generate_action_spec(
-        self, func: FunctionInfo, out_dir: Path,
+        self,
+        func: FunctionInfo,
+        out_dir: Path,
     ) -> Path | None:
         kebab = _to_kebab(func.name)
         target = out_dir / f"{kebab}.yaml"
@@ -128,13 +130,17 @@ class SkeletonSpecGenerator:
             spec["metadata"]["description"] = func.docstring.split("\n")[0]
 
         target.write_text(
-            yaml.dump(spec, default_flow_style=False, sort_keys=False, allow_unicode=True),
+            yaml.dump(
+                spec, default_flow_style=False, sort_keys=False, allow_unicode=True
+            ),
             encoding="utf-8",
         )
         return target
 
     def _generate_component_spec(
-        self, cls: ClassInfo, out_dir: Path,
+        self,
+        cls: ClassInfo,
+        out_dir: Path,
     ) -> Path | None:
         if not cls.methods:
             return None
@@ -151,7 +157,9 @@ class SkeletonSpecGenerator:
                 continue
             provides[method.name] = {
                 "type": _map_type(method.return_type),
-                "description": method.docstring.split("\n")[0] if method.docstring else f"Result of {method.name}",
+                "description": method.docstring.split("\n")[0]
+                if method.docstring
+                else f"Result of {method.name}",
             }
 
         if not provides:
@@ -171,7 +179,9 @@ class SkeletonSpecGenerator:
             spec["metadata"]["description"] = cls.docstring.split("\n")[0]
 
         target.write_text(
-            yaml.dump(spec, default_flow_style=False, sort_keys=False, allow_unicode=True),
+            yaml.dump(
+                spec, default_flow_style=False, sort_keys=False, allow_unicode=True
+            ),
             encoding="utf-8",
         )
         return target

@@ -70,17 +70,21 @@ class SourceScanner:
         for line_no, line in enumerate(text.splitlines(), start=1):
             comment_match = _COMMENT_IMPLEMENTS_RE.search(line)
             if comment_match:
-                entries.append(ImplementationEntry(
-                    file_path=rel_path,
-                    spec_ref=comment_match.group(1),
-                    line_number=line_no,
-                ))
+                entries.append(
+                    ImplementationEntry(
+                        file_path=rel_path,
+                        spec_ref=comment_match.group(1),
+                        line_number=line_no,
+                    )
+                )
                 continue
             for m in _IMPLEMENTS_RE.finditer(line):
-                entries.append(ImplementationEntry(
-                    file_path=rel_path,
-                    spec_ref=m.group(1),
-                    line_number=line_no,
-                ))
+                entries.append(
+                    ImplementationEntry(
+                        file_path=rel_path,
+                        spec_ref=m.group(1),
+                        line_number=line_no,
+                    )
+                )
 
         return entries

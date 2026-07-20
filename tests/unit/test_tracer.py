@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from ucf.models.spec import parse_spec
 from ucf.parser.registry import SpecRegistry
 from ucf.tracer.context import FindingCategory, FindingSeverity
@@ -136,8 +134,11 @@ class TestDeadData:
         reg = _registry_with(ACTION_CREATE, ACTION_CONFIRM, uc)
         tracer = ContextTracer(reg)
         findings = tracer.trace_usecase(reg.usecases()[0])
-        dead = [f for f in findings
-                if f.category == FindingCategory.DEAD_DATA and "order_id" in f.message]
+        dead = [
+            f
+            for f in findings
+            if f.category == FindingCategory.DEAD_DATA and "order_id" in f.message
+        ]
         assert dead == []
 
 
@@ -169,8 +170,11 @@ class TestNestedReads:
         reg = _registry_with(ACTION_CREATE, ACTION_CONFIRM, uc)
         tracer = ContextTracer(reg)
         findings = tracer.trace_usecase(reg.usecases()[0])
-        dead_order = [f for f in findings
-                      if f.category == FindingCategory.DEAD_DATA and "order_id" in f.message]
+        dead_order = [
+            f
+            for f in findings
+            if f.category == FindingCategory.DEAD_DATA and "order_id" in f.message
+        ]
         assert dead_order == []
 
 
@@ -198,8 +202,9 @@ class TestOverwrite:
         reg = _registry_with(ACTION_CREATE, uc)
         tracer = ContextTracer(reg)
         findings = tracer.trace_usecase(reg.usecases()[0])
-        overwrites = [f for f in findings
-                      if f.category == FindingCategory.OVERWRITE_WARNING]
+        overwrites = [
+            f for f in findings if f.category == FindingCategory.OVERWRITE_WARNING
+        ]
         assert len(overwrites) >= 1
 
 
@@ -235,6 +240,9 @@ class TestAltFlowDeadData:
         reg = _registry_with(ACTION_CREATE, ACTION_CONFIRM, uc)
         tracer = ContextTracer(reg)
         findings = tracer.trace_usecase(reg.usecases()[0])
-        dead_order = [f for f in findings
-                      if f.category == FindingCategory.DEAD_DATA and "order_id" in f.message]
+        dead_order = [
+            f
+            for f in findings
+            if f.category == FindingCategory.DEAD_DATA and "order_id" in f.message
+        ]
         assert dead_order == []

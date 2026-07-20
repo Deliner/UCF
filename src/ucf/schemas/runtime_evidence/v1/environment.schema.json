@@ -1,0 +1,93 @@
+{
+  "$comment": "Generated deterministically from UCF runtime-evidence profile 1.0.0 models; do not edit by hand. Content identity, canonical order, exact external references, source integrity, negotiated capabilities, and observed-only projection remain runtime semantics.",
+  "$defs": {
+    "Digest": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "sha-256",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "kind": {
+          "const": "digest",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/DigestValue"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm",
+        "value"
+      ],
+      "title": "Digest",
+      "type": "object"
+    },
+    "DigestValue": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "URI": {
+      "maxLength": 2048,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9+.-]*:[^\\s]+$",
+      "type": "string"
+    }
+  },
+  "$id": "urn:ucf:runtime-evidence:environment:1.0.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "environment_uri": {
+      "$ref": "#/$defs/URI"
+    },
+    "kind": {
+      "const": "runtime_environment",
+      "title": "Kind",
+      "type": "string"
+    },
+    "revision": {
+      "$ref": "#/$defs/Digest"
+    },
+    "runtime_evidence_version": {
+      "const": "1.0.0",
+      "title": "Runtime Evidence Version",
+      "type": "string"
+    },
+    "schema_uri": {
+      "const": "urn:ucf:runtime-evidence:environment:1.0.0",
+      "title": "Schema Uri",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "runtime_evidence_version",
+    "schema_uri",
+    "environment_uri",
+    "revision"
+  ],
+  "title": "UCF runtime environment profile 1.0.0",
+  "type": "object",
+  "x-ucf-document-kind": "runtime_environment",
+  "x-ucf-runtime-evidence-version": "1.0.0",
+  "x-ucf-runtime-semantic-checks": [
+    "strict UTF-8 and duplicate-member JSON decoding",
+    "maximum JSON nesting depth 128",
+    "safe opaque and explicitly versioned identity URNs",
+    "exact Behavior document and observation slot resolution",
+    "exact environment document digest and revision",
+    "partial sampling without absence inference",
+    "canonical unique policy rules and selected rule references",
+    "content-derived result identity",
+    "exact echoed request and initialized producer",
+    "required verification and runtime profile capabilities",
+    "local source revision stability before and after import",
+    "code-only policy rejection without peer-authored prose",
+    "observed-only Trust projection from accepted policy rules",
+    "no raw recording or retained diagnostic bytes"
+  ]
+}

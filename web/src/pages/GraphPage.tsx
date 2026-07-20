@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as d3 from 'd3';
-import { api, type GraphData, type GraphNode, type GraphLink } from '../api/client';
+import { api, type GraphData, type GraphNode } from '../api/client';
 
 const KIND_COLORS: Record<string, string> = {
   action: '#ff8a65',

@@ -33,33 +33,53 @@ class GenerateTestCodeInterface(ABC, FrameworkActions):
     # ── State Setup (from requires) ──
 
     @abstractmethod
-    def setup_loader(self) -> LoaderContext:
+    def setup_loader(
+        self,
+        specs_dir: Any,
+    ) -> LoaderContext:
         ...
 
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_generate(self, usecase: Any, registry: Any, output_dir: Any) -> GenerateResult:
+    def action_generate(
+        self,
+        usecase: Any,
+        registry: Any,
+        output_dir: Any,
+    ) -> GenerateResult:
         ...
 
     @abstractmethod
-    def action_render_result(self, data: Any, format: Any) -> None:
+    def action_render_result(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_for_each_usecase_interface_py_test_orchestrator_py_are(self) -> None:
+    def verify_for_each_usecase_interface_py_test_orchestrator_py_are(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_impl_py_stubs_are_created_only_if_they_do_not_already_exist(self) -> None:
+    def verify_impl_py_stubs_are_created_only_if_they_do_not_already_exist(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_generated_code_is_deterministic_given_the_same_spec_input(self) -> None:
+    def verify_generated_code_is_deterministic_given_the_same_spec_input(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

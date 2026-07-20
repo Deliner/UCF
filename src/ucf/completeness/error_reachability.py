@@ -53,31 +53,35 @@ class ErrorReachabilityAnalyzer:
                 for uc in consuming_ucs:
                     for alt in uc.alternative_flows:
                         if self._alt_handles_error(alt, error.code, error.condition):
-                            cov.covered_by.append(
-                                f"{uc.metadata.name}:{alt.name}"
-                            )
+                            cov.covered_by.append(f"{uc.metadata.name}:{alt.name}")
 
                 coverages.append(cov)
 
                 if not cov.is_covered:
-                    findings.append(Finding(
-                        severity=FindingSeverity.WARNING,
-                        category=FindingCategory.UNCOVERED_ERROR,
-                        step_id=f"actions/{action.metadata.name}",
-                        message=(
-                            f"Error '{error.code}' (condition: {error.condition}) "
-                            f"is not handled by any use case alternative flow"
-                        ),
-                        suggestion=(
-                            f"Add an alternative_flow with handles_error: {error.code} "
-                            f"to a use case that references this action"
-                        ),
-                    ))
+                    findings.append(
+                        Finding(
+                            severity=FindingSeverity.WARNING,
+                            category=FindingCategory.UNCOVERED_ERROR,
+                            step_id=f"actions/{action.metadata.name}",
+                            message=(
+                                f"Error '{error.code}' (condition: {error.condition}) "
+                                f"is not handled by any use case alternative flow"
+                            ),
+                            suggestion=(
+                                "Add an alternative_flow with handles_error: "
+                                f"{error.code} "
+                                f"to a use case that references this action"
+                            ),
+                        )
+                    )
 
         return coverages, findings
 
     def _build_action_uc_map(self) -> dict[str, list[UseCaseSpec]]:
-        """Map action refs to all use cases that reference them (directly or via components)."""
+        (
+            "Map action refs to all use cases that reference them "
+            "(directly or via components)."
+        )
         comp_actions: dict[str, set[str]] = {}
         for comp in self.registry.components():
             actions: set[str] = set()
@@ -108,7 +112,10 @@ class ErrorReachabilityAnalyzer:
 
         condition_words = set(error_condition.lower().split())
         trigger_words = set(alt.trigger.lower().split())
-        if len(condition_words) >= 3 and len(condition_words & trigger_words) >= len(condition_words) * 0.6:
+        if (
+            len(condition_words) >= 3
+            and len(condition_words & trigger_words) >= len(condition_words) * 0.6
+        ):
             return True
 
         return False

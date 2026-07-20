@@ -42,35 +42,74 @@ class CreateShortUrlWithRetryInterface(ABC, FrameworkActions):
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_validate_url(self, url: Any) -> ValidateUrlResult:
+    def action_validate_url(
+        self,
+        url: Any,
+    ) -> ValidateUrlResult:
         ...
 
     @abstractmethod
-    def action_generate_slug(self, length: Any) -> GenerateSlugResult:
+    def action_generate_slug(
+        self,
+        length: Any,
+    ) -> GenerateSlugResult:
         ...
 
     @abstractmethod
-    def action_check_exists(self, slug: Any) -> CheckExistsResult:
+    def action_check_exists(
+        self,
+        slug: Any,
+    ) -> CheckExistsResult:
         ...
 
     @abstractmethod
-    def action_store_url(self, slug: Any, original_url: Any, created_by: Any) -> StoreUrlResult:
+    def action_store_url(
+        self,
+        slug: Any,
+        original_url: Any,
+        created_by: Any,
+    ) -> StoreUrlResult:
+        ...
+
+    @abstractmethod
+    def action_return_error(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_max_retries_exceeded_return_error(
+        self,
+        error_code: Any,
+        message: Any,
+        context: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_short_url_is_created_and_stored(self) -> None:
+    def verify_short_url_is_created_and_stored(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_short_url_uses_generated_slug(self) -> None:
+    def verify_short_url_uses_generated_slug(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_slug_is_unique_in_database(self) -> None:
+    def verify_slug_is_unique_in_database(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

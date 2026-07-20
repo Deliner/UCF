@@ -7,40 +7,47 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    CreateShortUrlWithRetryInterface,
-    ValidateUrlResult,
-    GenerateSlugResult,
-    CheckExistsResult,
-    StoreUrlResult,
+from .impl import (
+    create_short_url_with_retry_impl as create_short_url_with_retry_impl,
 )
-from .impl import create_short_url_with_retry_impl  # noqa: F401
+from .interface import CreateShortUrlWithRetryInterface
 
 
 @pytest.fixture
-def uc(create_short_url_with_retry_impl: CreateShortUrlWithRetryInterface) -> CreateShortUrlWithRetryInterface:
-    return create_short_url_with_retry_impl
+def uc(request: pytest.FixtureRequest) -> CreateShortUrlWithRetryInterface:
+    return request.getfixturevalue("create_short_url_with_retry_impl")
 
 
 class TestHappyPath:
 
     def test_create_short_url_with_retry_completes_successfully(
         self, uc: CreateShortUrlWithRetryInterface,
+        inputs: dict[str, object],
     ) -> None:
 
-        validate_url = uc.action_validate_url(url=inputs.get('original_url'))
+        uc.action_validate_url(
+            url=inputs['original_url'],
+        )
 
-        generate_slug = uc.action_generate_slug(length=8)
+        generate_slug = uc.action_generate_slug(
+            length=8,
+        )
 
-        check_exists = uc.action_check_exists(slug=generate_slug.slug)
+        uc.action_check_exists(
+            slug=generate_slug.slug,
+        )
 
-        store_url = uc.action_store_url(slug=generate_slug.slug, original_url=inputs.get('original_url'), created_by=inputs.get('created_by'))
+        uc.action_store_url(
+            slug=generate_slug.slug,
+            original_url=inputs['original_url'],
+            created_by=inputs['created_by'],
+        )
 
 
-        uc.verify_short_url_is_created_and_stored()
-        uc.verify_short_url_uses_generated_slug()
-        uc.verify_slug_is_unique_in_database()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_short_url_is_created_and_stored()
+        _ = uc.verify_short_url_uses_generated_slug()
+        _ = uc.verify_slug_is_unique_in_database()
+        _ = uc.verify_required_inputs_validated()
 
 
 class TestAltInvalidUrl:
@@ -49,7 +56,12 @@ class TestAltInvalidUrl:
         self, uc: CreateShortUrlWithRetryInterface,
     ) -> None:
 
-        return_error = uc.action_return_error(data={'error': 'invalid URL format'}, format='json')
+        uc.action_return_error(
+            data={
+                'error': 'invalid URL format',
+            },
+            format='json',
+        )
 
 
 
@@ -59,7 +71,13 @@ class TestAltMaxRetriesExceeded:
         self, uc: CreateShortUrlWithRetryInterface,
     ) -> None:
 
-        return_error = uc.action_return_error(error_code='MAX_RETRIES_EXCEEDED', message='could not generate unique slug', context={'max_attempts': 5})
+        uc.action_max_retries_exceeded_return_error(
+            error_code='MAX_RETRIES_EXCEEDED',
+            message='could not generate unique slug',
+            context={
+                'max_attempts': 5,
+            },
+        )
 
 
 

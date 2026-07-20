@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-import warnings
+from pathlib import Path
 
 import pytest
 
 from ucf.models.action import ActionSpec
 from ucf.models.component import ComponentSpec
-from ucf.models.invariant import InvariantSpec
 from ucf.models.spec import parse_spec
 from ucf.models.usecase import UseCaseSpec
-from ucf.parser.registry import SpecRegistry
+from ucf.parser.registry import DuplicateSpecError, SpecRegistry
 
 
 def _action(name: str = "my-action") -> ActionSpec:
@@ -50,14 +49,21 @@ class TestSpecRegistry:
         assert r.resolve_ref("use-cases/x") is not None
         assert r.resolve_ref("usecase/x") is not None
 
-    def test_duplicate_warns(self):
+    def test_duplicate_is_rejected_without_overwriting_first_definition(self):
         r = SpecRegistry()
-        r.register(_action("dup"))
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            r.register(_action("dup"))
-            assert len(w) == 1
-            assert "Duplicate" in str(w[0].message)
+        first = _action("dup")
+        second = _action("dup")
+        r.register(first, Path("first.yaml"))
+
+        with pytest.raises(DuplicateSpecError) as exc_info:
+            r.register(second, Path("second.yaml"))
+
+        message = str(exc_info.value)
+        assert "action/dup" in message
+        assert "first.yaml" in message
+        assert "second.yaml" in message
+        assert r.get("action", "dup") is first
+        assert r.get_path("actions/dup") == Path("first.yaml")
 
     def test_all_specs(self):
         r = SpecRegistry()

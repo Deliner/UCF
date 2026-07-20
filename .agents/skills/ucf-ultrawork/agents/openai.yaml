@@ -1,0 +1,4 @@
+interface:
+  display_name: "UCF Ultrawork"
+  short_description: "Autonomous, evidence-driven UCF delivery loop"
+  default_prompt: "Use $ucf-ultrawork to continue UCF from the current automation state until verified completion or a decision gate."

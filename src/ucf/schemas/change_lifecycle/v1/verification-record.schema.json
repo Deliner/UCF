@@ -1,0 +1,190 @@
+{
+  "$comment": "Generated deterministically from UCF change-lifecycle profile 1.0.0 models; do not edit by hand. The x-ucf-runtime-semantic-checks annotation names only the additional runtime checks for this document kind.",
+  "$defs": {
+    "DeltaSubjectRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "delta_subject_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "operation": {
+          "enum": [
+            "added",
+            "modified",
+            "removed"
+          ],
+          "title": "Operation",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/EntityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "operation",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "DeltaSubjectRef",
+      "type": "object"
+    },
+    "Digest": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "sha-256",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "kind": {
+          "const": "digest",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/DigestValue"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm",
+        "value"
+      ],
+      "title": "Digest",
+      "type": "object"
+    },
+    "DigestValue": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "EntityKind": {
+      "enum": [
+        "action",
+        "use_case",
+        "step",
+        "binding",
+        "effect",
+        "observation",
+        "invariant",
+        "provenance",
+        "verification_evidence",
+        "capability_requirement"
+      ],
+      "title": "EntityKind",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "type": "string"
+    },
+    "ImplementationRecordRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "change_id": {
+          "$ref": "#/$defs/OpenSpecChangeId"
+        },
+        "change_lifecycle_version": {
+          "const": "1.0.0",
+          "title": "Change Lifecycle Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "implementation_record_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:change-lifecycle:implementation-record:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "change_lifecycle_version",
+        "schema_uri",
+        "change_id",
+        "canonical_digest"
+      ],
+      "title": "ImplementationRecordRef",
+      "type": "object"
+    },
+    "OpenSpecChangeId": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "type": "string"
+    }
+  },
+  "$id": "urn:ucf:change-lifecycle:verification-record:1.0.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "change_id": {
+      "$ref": "#/$defs/OpenSpecChangeId"
+    },
+    "change_lifecycle_version": {
+      "const": "1.0.0",
+      "title": "Change Lifecycle Version",
+      "type": "string"
+    },
+    "implementation": {
+      "$ref": "#/$defs/ImplementationRecordRef"
+    },
+    "kind": {
+      "const": "verification_record",
+      "title": "Kind",
+      "type": "string"
+    },
+    "outcome": {
+      "const": "accepted",
+      "title": "Outcome",
+      "type": "string"
+    },
+    "schema_uri": {
+      "const": "urn:ucf:change-lifecycle:verification-record:1.0.0",
+      "title": "Schema Uri",
+      "type": "string"
+    },
+    "subjects": {
+      "items": {
+        "$ref": "#/$defs/DeltaSubjectRef"
+      },
+      "maxItems": 256,
+      "minItems": 1,
+      "title": "Subjects",
+      "type": "array"
+    }
+  },
+  "required": [
+    "kind",
+    "change_lifecycle_version",
+    "schema_uri",
+    "change_id",
+    "implementation",
+    "outcome",
+    "subjects"
+  ],
+  "title": "UCF change verification record profile 1.0.0",
+  "type": "object",
+  "x-ucf-change-lifecycle-version": "1.0.0",
+  "x-ucf-document-kind": "verification_record",
+  "x-ucf-runtime-semantic-checks": [
+    "strict UTF-8 and duplicate-member JSON decoding",
+    "maximum JSON nesting depth 128",
+    "exact implementation record, task graph, behavior delta, and proposal context",
+    "passed evidence only before verification acceptance",
+    "verification subjects exactly match accepted implementation evidence"
+  ]
+}

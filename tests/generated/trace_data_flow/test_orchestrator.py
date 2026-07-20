@@ -7,35 +7,45 @@ from __future__ import annotations
 
 import pytest
 
-from .interface import (
-    TraceDataFlowInterface,
-    LoaderContext,
-    TraceResult,
+from .impl import (
+    trace_data_flow_impl as trace_data_flow_impl,
 )
-from .impl import trace_data_flow_impl  # noqa: F401
+from .interface import TraceDataFlowInterface
 
 
 @pytest.fixture
-def uc(trace_data_flow_impl: TraceDataFlowInterface) -> TraceDataFlowInterface:
-    return trace_data_flow_impl
+def uc(request: pytest.FixtureRequest) -> TraceDataFlowInterface:
+    return request.getfixturevalue("trace_data_flow_impl")
 
 
 class TestHappyPath:
 
     def test_trace_data_flow_completes_successfully(
         self, uc: TraceDataFlowInterface,
+        inputs: dict[str, object],
     ) -> None:
-        loader = uc.setup_loader()
+        loader = uc.setup_loader(
+            specs_dir=inputs['specs_dir'],
+        )
 
-        trace = uc.action_trace(usecase=inputs.get('target_usecase'), registry=loader.registry)
+        trace = uc.action_trace(
+            usecase=inputs['target_usecase'],
+            registry=loader.registry,
+        )
 
-        render_trace = uc.action_render_trace(data={'findings': trace.findings, 'context': trace.final_context}, format='tree')
+        uc.action_render_trace(
+            data={
+                'findings': trace.findings,
+                'context': trace.final_context,
+            },
+            format='tree',
+        )
 
 
-        uc.verify_every_step_in_the_use_case_has_been_traced()
-        uc.verify_data_gaps_and_dead_data_are_reported()
-        uc.verify_branch_divergences_between_happy_path_and_alt_flows_are()
-        uc.verify_refs_resolvable()
-        uc.verify_required_inputs_validated()
+        _ = uc.verify_every_step_in_the_use_case_has_been_traced()
+        _ = uc.verify_data_gaps_and_dead_data_are_reported()
+        _ = uc.verify_branch_divergences_between_happy_path_and_alt_flows_are()
+        _ = uc.verify_refs_resolvable()
+        _ = uc.verify_required_inputs_validated()
 
 

@@ -71,7 +71,9 @@ def init_registry(registry: SpecRegistry, graph: DependencyGraph) -> None:
 
 
 @router.get("/specs", response_model=SpecCatalogResponse)
-def list_specs(kind: str | None = None, search: str | None = None) -> SpecCatalogResponse:
+def list_specs(
+    kind: str | None = None, search: str | None = None
+) -> SpecCatalogResponse:
     assert _registry is not None
     specs = _registry.all_specs()
 
@@ -166,19 +168,27 @@ def get_spec_relationships(kind: str, name: str) -> SpecRelationshipsResponse:
             parts = succ.split("/", 1)
             data = g.edges[node_id, succ]
             if len(parts) == 2:
-                upstream.append(RelationshipEdge(
-                    ref=succ, kind=parts[0], name=parts[1],
-                    edge_type=data.get("type", "depends_on"),
-                ))
+                upstream.append(
+                    RelationshipEdge(
+                        ref=succ,
+                        kind=parts[0],
+                        name=parts[1],
+                        edge_type=data.get("type", "depends_on"),
+                    )
+                )
 
         for pred in g.predecessors(node_id):
             parts = pred.split("/", 1)
             data = g.edges[pred, node_id]
             if len(parts) == 2:
-                downstream.append(RelationshipEdge(
-                    ref=pred, kind=parts[0], name=parts[1],
-                    edge_type=data.get("type", "depends_on"),
-                ))
+                downstream.append(
+                    RelationshipEdge(
+                        ref=pred,
+                        kind=parts[0],
+                        name=parts[1],
+                        edge_type=data.get("type", "depends_on"),
+                    )
+                )
 
     return SpecRelationshipsResponse(
         upstream=upstream,
@@ -196,20 +206,24 @@ def get_graph() -> GraphResponse:
     for node_id, data in g.nodes(data=True):
         kind = data.get("kind", "unknown")
         name = data.get("name", node_id)
-        nodes.append(GraphNode(
-            id=node_id,
-            kind=kind,
-            name=name,
-            group=_KIND_GROUP.get(kind, 6),
-        ))
+        nodes.append(
+            GraphNode(
+                id=node_id,
+                kind=kind,
+                name=name,
+                group=_KIND_GROUP.get(kind, 6),
+            )
+        )
 
     links = []
     for src, tgt, data in g.edges(data=True):
-        links.append(GraphLink(
-            source=src,
-            target=tgt,
-            edge_type=data.get("type", "depends_on"),
-        ))
+        links.append(
+            GraphLink(
+                source=src,
+                target=tgt,
+                edge_type=data.get("type", "depends_on"),
+            )
+        )
 
     return GraphResponse(
         nodes=nodes,

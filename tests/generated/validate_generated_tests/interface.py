@@ -40,45 +40,82 @@ class ValidateGeneratedTestsInterface(ABC, FrameworkActions):
     # ── State Setup (from requires) ──
 
     @abstractmethod
-    def setup_loader(self) -> LoaderContext:
+    def setup_loader(
+        self,
+        specs_dir: Any,
+    ) -> LoaderContext:
         ...
 
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_generate(self, usecase: Any, registry: Any, output_dir: Any) -> GenerateResult:
+    def action_generate(
+        self,
+        usecase: Any,
+        registry: Any,
+        output_dir: Any,
+    ) -> GenerateResult:
         ...
 
     @abstractmethod
-    def action_validate(self, interface_code: Any, orchestrator_code: Any, impl_code: Any) -> ValidateResult:
+    def action_validate(
+        self,
+        interface_code: Any,
+        orchestrator_code: Any,
+        impl_code: Any,
+    ) -> ValidateResult:
         ...
 
     @abstractmethod
-    def action_render_results(self, data: Any, format: Any) -> None:
+    def action_render_results(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_failures(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_generated_interface_py_compiles_without_syntaxerror(self) -> None:
+    def verify_generated_interface_py_compiles_without_syntaxerror(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_generated_test_orchestrator_py_compiles_without_syntaxerror(self) -> None:
+    def verify_generated_test_orchestrator_py_compiles_without_syntaxerror(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_orchestrator_does_not_reference_undefined_variables(self) -> None:
+    def verify_orchestrator_does_not_reference_undefined_variables(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_nested_dict_inputs_are_passed_as_single_dict_arguments(self) -> None:
+    def verify_nested_dict_inputs_are_passed_as_single_dict_arguments(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_verify_method_names_are_readable_and_not_truncated_mid_word(self) -> None:
+    def verify_verify_method_names_are_readable_and_not_truncated_mid_word(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

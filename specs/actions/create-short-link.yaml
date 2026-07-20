@@ -61,12 +61,3 @@ platform:
   http:
     method: POST
     path: /api/shorten
-    request:
-      body:
-        url: $input.original_url
-        custom: $input.custom_code
-    response:
-      status: 201
-      body:
-        short_url: $output.url
-        code: $output.code

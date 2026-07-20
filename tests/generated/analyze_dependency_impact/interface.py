@@ -41,49 +41,77 @@ class AnalyzeDependencyImpactInterface(ABC, FrameworkActions):
     # ── State Setup (from requires) ──
 
     @abstractmethod
-    def setup_loader(self) -> LoaderContext:
+    def setup_loader(
+        self,
+        specs_dir: Any,
+    ) -> LoaderContext:
         ...
 
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_build_graph(self, registry: Any) -> BuildGraphResult:
+    def action_build_graph(
+        self,
+        registry: Any,
+    ) -> BuildGraphResult:
         ...
 
     @abstractmethod
-    def action_impact(self, graph: Any, target: Any) -> ImpactResult:
+    def action_impact(
+        self,
+        graph: Any,
+        target: Any,
+    ) -> ImpactResult:
         ...
 
     @abstractmethod
-    def action_render_impact(self, data: Any, format: Any) -> None:
+    def action_render_impact(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_all_direct_and_transitive_dependents_of_target_are_listed(self) -> None:
+    def verify_all_direct_and_transitive_dependents_of_target_are_listed(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_constraining_invariants_are_listed(self) -> None:
+    def verify_constraining_invariants_are_listed(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_resource_conflicts_are_listed(self) -> None:
+    def verify_resource_conflicts_are_listed(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_total_impact_count_is_reported(self) -> None:
+    def verify_total_impact_count_is_reported(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_graph_node_count_and_edge_count_reflect_the_full_registry(self) -> None:
+    def verify_graph_node_count_and_edge_count_reflect_the_full_registry(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_graph_acyclic(self) -> None:
+    def verify_graph_acyclic(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

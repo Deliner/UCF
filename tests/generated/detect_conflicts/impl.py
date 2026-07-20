@@ -18,18 +18,15 @@ from .interface import (
     LoaderContext,
 )
 
-EXAMPLES_DIR = Path(__file__).resolve().parents[3] / "examples" / "specs"
-
 
 class DetectConflictsImpl(DetectConflictsInterface):
-
     def __init__(self) -> None:
         self._registry: SpecRegistry | None = None
         self._graph: DependencyGraph | None = None
         self._conflicts: list[tuple[str, str, str]] = []
 
-    def setup_loader(self) -> LoaderContext:
-        loader = SpecLoader(EXAMPLES_DIR)
+    def setup_loader(self, specs_dir: Any) -> LoaderContext:
+        loader = SpecLoader(Path(specs_dir))
         loaded, errors = loader.load_all_tolerant()
 
         self._registry = SpecRegistry()
@@ -82,8 +79,10 @@ class DetectConflictsImpl(DetectConflictsInterface):
 
     def verify_required_inputs_validated(self) -> None:
         from pydantic import ValidationError
+
         from ucf.models.action import ActionSpec
-        # Framework enforces required inputs via Pydantic: ActionSpec without metadata must fail
+
+        # Pydantic rejects ActionSpec without required metadata.
         with pytest.raises(ValidationError):
             ActionSpec.model_validate({})
 

@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
-import pytest
-
 from ucf.models.action import ActionSpec, HttpBinding, Platform
-from ucf.models.base import ErrorDef, FieldDef, FieldType, Metadata, ResourceWrite, MutationType
+from ucf.models.base import (
+    ErrorDef,
+    FieldDef,
+    FieldType,
+    Metadata,
+    ResourceWrite,
+)
 from ucf.models.component import StepDef
 from ucf.models.invariant import AppliesTo, InvariantSpec, InvariantType
 from ucf.models.usecase import AlternativeFlow, ConcurrencyDef, UseCaseSpec
@@ -27,7 +31,10 @@ def _action(
         input={k: FieldDef(**v) for k, v in (inputs or {}).items()},
         platform=platform,
         writes=[ResourceWrite(**w) for w in (writes or [])],
-        reads=[{"resource": r["resource"], "fields": r.get("fields", [])} for r in (reads or [])],
+        reads=[
+            {"resource": r["resource"], "fields": r.get("fields", [])}
+            for r in (reads or [])
+        ],
     )
 
 
@@ -41,13 +48,15 @@ def _uc(
     concurrency: list[dict] | None = None,
 ) -> UseCaseSpec:
     alts = []
-    for af in (alt_flows or []):
-        alts.append(AlternativeFlow(
-            name=af["name"],
-            trigger=af["trigger"],
-            handles_error=af.get("handles_error"),
-            steps=[StepDef(**s) for s in af.get("steps", [])],
-        ))
+    for af in alt_flows or []:
+        alts.append(
+            AlternativeFlow(
+                name=af["name"],
+                trigger=af["trigger"],
+                handles_error=af.get("handles_error"),
+                steps=[StepDef(**s) for s in af.get("steps", [])],
+            )
+        )
     return UseCaseSpec(
         metadata=Metadata(name=name, version="0.1.0"),
         steps=[StepDef(**s) for s in (steps or [])],
@@ -77,19 +86,33 @@ def _invariant(
 
 
 class TestErrorReachability:
-
     def test_covered_by_handles_error(self):
         from ucf.completeness.error_reachability import ErrorReachabilityAnalyzer
 
         reg = SpecRegistry()
-        action = _action("get-item", errors=[
-            {"status": 404, "code": "ITEM_NOT_FOUND", "condition": "item does not exist"},
-        ])
-        uc = _uc("fetch-item", steps=[
-            {"id": "s1", "use": "actions/get-item", "input": {}},
-        ], alt_flows=[
-            {"name": "not-found", "trigger": "item missing", "handles_error": "ITEM_NOT_FOUND"},
-        ])
+        action = _action(
+            "get-item",
+            errors=[
+                {
+                    "status": 404,
+                    "code": "ITEM_NOT_FOUND",
+                    "condition": "item does not exist",
+                },
+            ],
+        )
+        uc = _uc(
+            "fetch-item",
+            steps=[
+                {"id": "s1", "use": "actions/get-item", "input": {}},
+            ],
+            alt_flows=[
+                {
+                    "name": "not-found",
+                    "trigger": "item missing",
+                    "handles_error": "ITEM_NOT_FOUND",
+                },
+            ],
+        )
         reg.register(action)
         reg.register(uc)
 
@@ -102,14 +125,25 @@ class TestErrorReachability:
         from ucf.completeness.error_reachability import ErrorReachabilityAnalyzer
 
         reg = SpecRegistry()
-        action = _action("get-item", errors=[
-            {"status": 404, "code": "ITEM_NOT_FOUND", "condition": "item does not exist"},
-        ])
-        uc = _uc("fetch-item", steps=[
-            {"id": "s1", "use": "actions/get-item", "input": {}},
-        ], alt_flows=[
-            {"name": "item-not-found", "trigger": "the item was not found"},
-        ])
+        action = _action(
+            "get-item",
+            errors=[
+                {
+                    "status": 404,
+                    "code": "ITEM_NOT_FOUND",
+                    "condition": "item does not exist",
+                },
+            ],
+        )
+        uc = _uc(
+            "fetch-item",
+            steps=[
+                {"id": "s1", "use": "actions/get-item", "input": {}},
+            ],
+            alt_flows=[
+                {"name": "item-not-found", "trigger": "the item was not found"},
+            ],
+        )
         reg.register(action)
         reg.register(uc)
 
@@ -120,12 +154,22 @@ class TestErrorReachability:
         from ucf.completeness.error_reachability import ErrorReachabilityAnalyzer
 
         reg = SpecRegistry()
-        action = _action("get-item", errors=[
-            {"status": 404, "code": "ITEM_NOT_FOUND", "condition": "item does not exist"},
-        ])
-        uc = _uc("fetch-item", steps=[
-            {"id": "s1", "use": "actions/get-item", "input": {}},
-        ])
+        action = _action(
+            "get-item",
+            errors=[
+                {
+                    "status": 404,
+                    "code": "ITEM_NOT_FOUND",
+                    "condition": "item does not exist",
+                },
+            ],
+        )
+        uc = _uc(
+            "fetch-item",
+            steps=[
+                {"id": "s1", "use": "actions/get-item", "input": {}},
+            ],
+        )
         reg.register(action)
         reg.register(uc)
 
@@ -138,9 +182,12 @@ class TestErrorReachability:
         from ucf.completeness.error_reachability import ErrorReachabilityAnalyzer
 
         reg = SpecRegistry()
-        action = _action("orphan-action", errors=[
-            {"status": 500, "code": "INTERNAL", "condition": "unexpected"},
-        ])
+        action = _action(
+            "orphan-action",
+            errors=[
+                {"status": 500, "code": "INTERNAL", "condition": "unexpected"},
+            ],
+        )
         reg.register(action)
 
         covs, findings = ErrorReachabilityAnalyzer(reg).analyze()
@@ -164,7 +211,6 @@ class TestErrorReachability:
 
 
 class TestInputPartitions:
-
     def test_derive_string_partitions(self):
         from ucf.completeness.input_partitions import derive_partitions
 
@@ -216,10 +262,15 @@ class TestInputPartitions:
         from ucf.completeness.input_partitions import InputPartitionAnalyzer
 
         reg = SpecRegistry()
-        action = _action("search", inputs={"query": {"type": "string", "required": True}})
-        uc = _uc("do-search", steps=[
-            {"id": "s1", "use": "actions/search", "input": {"query": "test"}},
-        ])
+        action = _action(
+            "search", inputs={"query": {"type": "string", "required": True}}
+        )
+        uc = _uc(
+            "do-search",
+            steps=[
+                {"id": "s1", "use": "actions/search", "input": {"query": "test"}},
+            ],
+        )
         reg.register(action)
         reg.register(uc)
 
@@ -232,11 +283,17 @@ class TestInputPartitions:
         from ucf.completeness.input_partitions import InputPartitionAnalyzer
 
         reg = SpecRegistry()
-        action = _action("search", inputs={"query": {"type": "string", "required": True}})
+        action = _action(
+            "search", inputs={"query": {"type": "string", "required": True}}
+        )
         reg.register(action)
 
         covs, findings = InputPartitionAnalyzer(reg).analyze()
-        uncovered = [f for f in findings if f.category == FindingCategory.UNCOVERED_INPUT_PARTITION]
+        uncovered = [
+            f
+            for f in findings
+            if f.category == FindingCategory.UNCOVERED_INPUT_PARTITION
+        ]
         assert len(uncovered) > 0
 
 
@@ -244,14 +301,17 @@ class TestInputPartitions:
 
 
 class TestStateCoverage:
-
     def test_initial_to_state(self):
         from ucf.completeness.state_coverage import StateCoverageAnalyzer
 
         reg = SpecRegistry()
-        uc = _uc("setup", steps=[
-            {"id": "s1", "use": "actions/init", "input": {}},
-        ], postconditions=["system initialized"])
+        uc = _uc(
+            "setup",
+            steps=[
+                {"id": "s1", "use": "actions/init", "input": {}},
+            ],
+            postconditions=["system initialized"],
+        )
         reg.register(uc)
 
         graph, findings = StateCoverageAnalyzer(reg).analyze()
@@ -262,9 +322,14 @@ class TestStateCoverage:
         from ucf.completeness.state_coverage import StateCoverageAnalyzer
 
         reg = SpecRegistry()
-        uc = _uc("needs-setup", steps=[
-            {"id": "s1", "use": "actions/run", "input": {}},
-        ], preconditions=["admin logged in"], postconditions=["report generated"])
+        uc = _uc(
+            "needs-setup",
+            steps=[
+                {"id": "s1", "use": "actions/run", "input": {}},
+            ],
+            preconditions=["admin logged in"],
+            postconditions=["report generated"],
+        )
         reg.register(uc)
 
         graph, findings = StateCoverageAnalyzer(reg).analyze()
@@ -277,30 +342,47 @@ class TestStateCoverage:
         from ucf.completeness.state_coverage import StateCoverageAnalyzer
 
         reg = SpecRegistry()
-        uc1 = _uc("step-one", steps=[
-            {"id": "s1", "use": "actions/a", "input": {}},
-        ], postconditions=["step one complete"])
-        uc2 = _uc("step-two", steps=[
-            {"id": "s2", "use": "actions/b", "input": {}},
-        ], preconditions=["step one complete"], postconditions=["step two complete"])
+        uc1 = _uc(
+            "step-one",
+            steps=[
+                {"id": "s1", "use": "actions/a", "input": {}},
+            ],
+            postconditions=["step one complete"],
+        )
+        uc2 = _uc(
+            "step-two",
+            steps=[
+                {"id": "s2", "use": "actions/b", "input": {}},
+            ],
+            preconditions=["step one complete"],
+            postconditions=["step two complete"],
+        )
         reg.register(uc1)
         reg.register(uc2)
 
         graph, findings = StateCoverageAnalyzer(reg).analyze()
-        unreachable = [f for f in findings if f.category == FindingCategory.UNREACHABLE_STATE]
+        unreachable = [
+            f for f in findings if f.category == FindingCategory.UNREACHABLE_STATE
+        ]
         assert len(unreachable) == 0
 
     def test_dead_end_state(self):
         from ucf.completeness.state_coverage import StateCoverageAnalyzer
 
         reg = SpecRegistry()
-        uc = _uc("terminal", steps=[
-            {"id": "s1", "use": "actions/done", "input": {}},
-        ], postconditions=["all done"])
+        uc = _uc(
+            "terminal",
+            steps=[
+                {"id": "s1", "use": "actions/done", "input": {}},
+            ],
+            postconditions=["all done"],
+        )
         reg.register(uc)
 
         graph, findings = StateCoverageAnalyzer(reg).analyze()
-        dead_ends = [f for f in findings if f.category == FindingCategory.DEAD_END_STATE]
+        dead_ends = [
+            f for f in findings if f.category == FindingCategory.DEAD_END_STATE
+        ]
         assert len(dead_ends) >= 1
 
 
@@ -308,17 +390,22 @@ class TestStateCoverage:
 
 
 class TestPlatformBinding:
-
     def test_http_success_covered(self):
         from ucf.completeness.platform_binding import PlatformBindingAnalyzer
 
         reg = SpecRegistry()
-        action = _action("get-items", platform=Platform(
-            http=HttpBinding(method="GET", path="/items"),
-        ))
-        uc = _uc("browse", steps=[
-            {"id": "s1", "use": "actions/get-items", "input": {}},
-        ])
+        action = _action(
+            "get-items",
+            platform=Platform(
+                http=HttpBinding(method="GET", path="/items"),
+            ),
+        )
+        uc = _uc(
+            "browse",
+            steps=[
+                {"id": "s1", "use": "actions/get-items", "input": {}},
+            ],
+        )
         reg.register(action)
         reg.register(uc)
 
@@ -331,14 +418,21 @@ class TestPlatformBinding:
         from ucf.completeness.platform_binding import PlatformBindingAnalyzer
 
         reg = SpecRegistry()
-        action = _action("get-items", platform=Platform(
-            http=HttpBinding(method="GET", path="/items"),
-        ), errors=[
-            {"status": 404, "code": "NOT_FOUND", "condition": "resource missing"},
-        ])
-        uc = _uc("browse", steps=[
-            {"id": "s1", "use": "actions/get-items", "input": {}},
-        ])
+        action = _action(
+            "get-items",
+            platform=Platform(
+                http=HttpBinding(method="GET", path="/items"),
+            ),
+            errors=[
+                {"status": 404, "code": "NOT_FOUND", "condition": "resource missing"},
+            ],
+        )
+        uc = _uc(
+            "browse",
+            steps=[
+                {"id": "s1", "use": "actions/get-items", "input": {}},
+            ],
+        )
         reg.register(action)
         reg.register(uc)
 
@@ -362,16 +456,18 @@ class TestPlatformBinding:
 
 
 class TestInvariantNecessity:
-
     def test_invariant_with_exercising_uc(self):
         from ucf.completeness.invariant_necessity import InvariantNecessityAnalyzer
 
         reg = SpecRegistry()
         inv = _invariant("no-dupes", applies_to=[{"action": "actions/create-item"}])
         action = _action("create-item")
-        uc = _uc("add-item", steps=[
-            {"id": "s1", "use": "actions/create-item", "input": {}},
-        ])
+        uc = _uc(
+            "add-item",
+            steps=[
+                {"id": "s1", "use": "actions/create-item", "input": {}},
+            ],
+        )
         reg.register(inv)
         reg.register(action)
         reg.register(uc)
@@ -397,9 +493,13 @@ class TestInvariantNecessity:
 
         reg = SpecRegistry()
         inv = _invariant("my-rule")
-        uc = _uc("some-uc", steps=[
-            {"id": "s1", "use": "actions/x", "input": {}},
-        ], invariants=[{"$ref": "invariants/my-rule"}])
+        uc = _uc(
+            "some-uc",
+            steps=[
+                {"id": "s1", "use": "actions/x", "input": {}},
+            ],
+            invariants=[{"$ref": "invariants/my-rule"}],
+        )
         reg.register(inv)
         reg.register(uc)
 
@@ -411,13 +511,15 @@ class TestInvariantNecessity:
 
 
 class TestResourceConflicts:
-
     def test_shared_resource_unguarded(self):
         from ucf.completeness.resource_conflicts import ResourceConflictAnalyzer
 
         reg = SpecRegistry()
         a1 = _action("writer-a", writes=[{"resource": "orders", "mutation": "create"}])
-        a2 = _action("writer-b", writes=[{"resource": "orders", "mutation": "set", "by": "status"}])
+        a2 = _action(
+            "writer-b",
+            writes=[{"resource": "orders", "mutation": "set", "by": "status"}],
+        )
         reg.register(a1)
         reg.register(a2)
 
@@ -431,7 +533,10 @@ class TestResourceConflicts:
 
         reg = SpecRegistry()
         a1 = _action("writer-a", writes=[{"resource": "orders", "mutation": "create"}])
-        a2 = _action("writer-b", writes=[{"resource": "orders", "mutation": "set", "by": "status"}])
+        a2 = _action(
+            "writer-b",
+            writes=[{"resource": "orders", "mutation": "set", "by": "status"}],
+        )
         inv = _invariant("order-guard", applies_to=[{"resource": "orders"}])
         reg.register(a1)
         reg.register(a2)
@@ -446,10 +551,16 @@ class TestResourceConflicts:
 
         reg = SpecRegistry()
         a1 = _action("writer-a", writes=[{"resource": "orders", "mutation": "create"}])
-        a2 = _action("writer-b", writes=[{"resource": "orders", "mutation": "set", "by": "status"}])
-        uc = _uc("process-order", concurrency=[
-            {"conflict": "orders", "strategy": "optimistic-lock"},
-        ])
+        a2 = _action(
+            "writer-b",
+            writes=[{"resource": "orders", "mutation": "set", "by": "status"}],
+        )
+        uc = _uc(
+            "process-order",
+            concurrency=[
+                {"conflict": "orders", "strategy": "optimistic-lock"},
+            ],
+        )
         reg.register(a1)
         reg.register(a2)
         reg.register(uc)
@@ -472,17 +583,24 @@ class TestResourceConflicts:
 
 
 class TestCompletenessEngine:
-
     def test_full_analysis(self):
         from ucf.completeness.engine import CompletenessEngine
 
         reg = SpecRegistry()
-        action = _action("get-item", errors=[
-            {"status": 404, "code": "NOT_FOUND", "condition": "item missing"},
-        ], inputs={"id": {"type": "string", "required": True}})
-        uc = _uc("fetch", steps=[
-            {"id": "s1", "use": "actions/get-item", "input": {"id": "123"}},
-        ], postconditions=["item retrieved"])
+        action = _action(
+            "get-item",
+            errors=[
+                {"status": 404, "code": "NOT_FOUND", "condition": "item missing"},
+            ],
+            inputs={"id": {"type": "string", "required": True}},
+        )
+        uc = _uc(
+            "fetch",
+            steps=[
+                {"id": "s1", "use": "actions/get-item", "input": {"id": "123"}},
+            ],
+            postconditions=["item retrieved"],
+        )
         reg.register(action)
         reg.register(uc)
 

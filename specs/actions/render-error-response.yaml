@@ -1,0 +1,31 @@
+kind: action
+metadata:
+  name: render-error-response
+  version: 0.1.0
+  owner: ucf-core
+  tags: [error-handling, framework]
+
+input:
+  error_code:
+    type: string
+    required: true
+    description: stable machine-readable error code
+  message:
+    type: string
+    required: true
+    description: human-readable error message
+  context:
+    type: object
+    required: false
+    description: structured details safe to include in the response
+
+output:
+  rendered:
+    type: boolean
+
+preconditions:
+  - error_code is not empty
+  - message is not empty
+
+postconditions:
+  - a structured error response is rendered

@@ -6,8 +6,8 @@ from pathlib import Path
 
 import yaml
 
-from ucf.scaffold.scanner import ASTScanner, FunctionInfo, ClassInfo
 from ucf.scaffold.generator import SkeletonSpecGenerator, _to_kebab
+from ucf.scaffold.scanner import ASTScanner, ClassInfo, FunctionInfo
 
 
 class TestToKebab:
@@ -53,8 +53,7 @@ class TestASTScanner:
         src = tmp_path / "src"
         src.mkdir()
         (src / "mod.py").write_text(
-            "def _hidden():\n    pass\n"
-            "def __dunder():\n    pass\n",
+            "def _hidden():\n    pass\ndef __dunder():\n    pass\n",
             encoding="utf-8",
         )
         scanner = ASTScanner(src)
@@ -114,8 +113,12 @@ class TestASTScanner:
     def test_custom_patterns(self, tmp_path: Path):
         src = tmp_path / "src"
         src.mkdir()
-        (src / "module.py").write_text("def found() -> None:\n    pass\n", encoding="utf-8")
-        (src / "script.txt").write_text("def not_found() -> None:\n    pass\n", encoding="utf-8")
+        (src / "module.py").write_text(
+            "def found() -> None:\n    pass\n", encoding="utf-8"
+        )
+        (src / "script.txt").write_text(
+            "def not_found() -> None:\n    pass\n", encoding="utf-8"
+        )
         scanner = ASTScanner(src, patterns=["*.py"])
         result = scanner.scan()
         assert len(result.functions) == 1
@@ -134,14 +137,16 @@ class TestASTScanner:
 class TestSkeletonSpecGenerator:
     def test_generates_action_from_function(self, tmp_path: Path):
         gen = SkeletonSpecGenerator(tmp_path)
-        funcs = [FunctionInfo(
-            name="create_order",
-            params=[],
-            return_type="str",
-            docstring="Create a new order.",
-            file_path="orders.py",
-            line=1,
-        )]
+        funcs = [
+            FunctionInfo(
+                name="create_order",
+                params=[],
+                return_type="str",
+                docstring="Create a new order.",
+                file_path="orders.py",
+                line=1,
+            )
+        ]
         result = gen.generate(funcs, [])
         assert result.specs_written == 1
         assert len(result.action_specs) == 1
@@ -153,17 +158,20 @@ class TestSkeletonSpecGenerator:
 
     def test_generates_component_from_class(self, tmp_path: Path):
         from ucf.scaffold.scanner import MethodInfo as ScannerMethodInfo
+
         gen = SkeletonSpecGenerator(tmp_path)
-        classes = [ClassInfo(
-            name="PaymentProcessor",
-            methods=[
-                ScannerMethodInfo(name="charge", return_type="dict"),
-                ScannerMethodInfo(name="refund", return_type="bool"),
-            ],
-            docstring="Handles payments.",
-            file_path="payments.py",
-            line=1,
-        )]
+        classes = [
+            ClassInfo(
+                name="PaymentProcessor",
+                methods=[
+                    ScannerMethodInfo(name="charge", return_type="dict"),
+                    ScannerMethodInfo(name="refund", return_type="bool"),
+                ],
+                docstring="Handles payments.",
+                file_path="payments.py",
+                line=1,
+            )
+        ]
         result = gen.generate([], classes)
         assert result.specs_written == 1
         assert len(result.component_specs) == 1
@@ -188,17 +196,20 @@ class TestSkeletonSpecGenerator:
 
     def test_maps_python_types_to_ucf(self, tmp_path: Path):
         from ucf.scaffold.scanner import ParamInfo
+
         gen = SkeletonSpecGenerator(tmp_path)
-        funcs = [FunctionInfo(
-            name="process",
-            params=[
-                ParamInfo(name="name", annotation="str"),
-                ParamInfo(name="count", annotation="int"),
-                ParamInfo(name="active", annotation="bool"),
-                ParamInfo(name="items", annotation="list"),
-            ],
-            return_type="dict",
-        )]
+        funcs = [
+            FunctionInfo(
+                name="process",
+                params=[
+                    ParamInfo(name="name", annotation="str"),
+                    ParamInfo(name="count", annotation="int"),
+                    ParamInfo(name="active", annotation="bool"),
+                    ParamInfo(name="items", annotation="list"),
+                ],
+                return_type="dict",
+            )
+        ]
         result = gen.generate(funcs, [])
         spec_path = Path(result.action_specs[0])
         data = yaml.safe_load(spec_path.read_text())
@@ -210,12 +221,14 @@ class TestSkeletonSpecGenerator:
 
     def test_skips_class_without_public_methods(self, tmp_path: Path):
         gen = SkeletonSpecGenerator(tmp_path)
-        classes = [ClassInfo(
-            name="Empty",
-            methods=[],
-            file_path="empty.py",
-            line=1,
-        )]
+        classes = [
+            ClassInfo(
+                name="Empty",
+                methods=[],
+                file_path="empty.py",
+                line=1,
+            )
+        ]
         result = gen.generate([], classes)
         assert result.specs_written == 0
         assert len(result.component_specs) == 0

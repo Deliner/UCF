@@ -1,0 +1,81 @@
+name: Quality gates
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Full repository contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
+        with:
+          version: "0.11.29"
+          enable-cache: true
+
+      - name: Install Python
+        run: uv python install 3.12
+
+      - name: Install checksum-verified Go
+        env:
+          GO_VERSION: "1.26.5"
+          GO_ARCHIVE_SHA256: "5c2c3b16caefa1d968a94c1daca04a7ca301a496d9b086e17ad77bb81393f053"
+        run: |
+          archive="$RUNNER_TEMP/go${GO_VERSION}.linux-amd64.tar.gz"
+          install_root="$RUNNER_TEMP/ucf-go-toolchain"
+          curl --fail --location --silent --show-error \
+            --proto '=https' --tlsv1.2 \
+            "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" \
+            --output "$archive"
+          printf '%s  %s\n' "$GO_ARCHIVE_SHA256" "$archive" \
+            | sha256sum --check --strict
+          mkdir --parents "$install_root"
+          tar --extract --gzip --file "$archive" \
+            --directory "$install_root" --no-same-owner
+          go_bin="$install_root/go/bin/go"
+          test "$("$go_bin" version)" = \
+            "go version go${GO_VERSION} linux/amd64"
+          printf 'UCF_GO_BIN=%s\n' "$go_bin" >> "$GITHUB_ENV"
+
+      - name: Install Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22.22.3"
+          cache: npm
+          cache-dependency-path: |
+            adapters/typescript-fastify/package-lock.json
+            tests/fixtures/brownfield/typescript_fastify_legacy_quote/package-lock.json
+            web/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix web
+
+      - name: Run observable quality gates
+        run: >-
+          python3 tools/quality_gates.py
+          --profile all
+          --log-dir .artifacts/quality/ci
+
+      - name: Retain gate evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: quality-gate-evidence
+          path: .artifacts/quality/ci
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14

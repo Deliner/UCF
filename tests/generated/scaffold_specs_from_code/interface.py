@@ -26,6 +26,13 @@ class GenerateResult:
     specs_written: int
 
 
+@dataclass(frozen=True)
+class ScanDefaultsResult:
+    functions: list[Any]
+    classes: list[Any]
+    scanned_count: int
+
+
 class ScaffoldSpecsFromCodeInterface(ABC, FrameworkActions):
     """Interface with framework-provided actions inherited from FrameworkActions."""
 
@@ -34,39 +41,79 @@ class ScaffoldSpecsFromCodeInterface(ABC, FrameworkActions):
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_scan(self, source_dir: Any, patterns: Any) -> ScanResult:
+    def action_scan(
+        self,
+        source_dir: Any,
+        patterns: Any,
+    ) -> ScanResult:
         ...
 
     @abstractmethod
-    def action_generate(self, functions: Any, classes: Any, output_dir: Any) -> GenerateResult:
+    def action_generate(
+        self,
+        functions: Any,
+        classes: Any,
+        output_dir: Any,
+    ) -> GenerateResult:
         ...
 
     @abstractmethod
-    def action_render_results(self, data: Any, format: Any) -> None:
+    def action_render_results(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_scan_defaults(
+        self,
+        source_dir: Any,
+    ) -> ScanDefaultsResult:
+        ...
+
+    @abstractmethod
+    def action_render_empty(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_every_public_function_in_the_source_directory_has_a(self) -> None:
+    def verify_every_public_function_in_the_source_directory_has_a(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_every_class_with_public_methods_has_a_corresponding(self) -> None:
+    def verify_every_class_with_public_methods_has_a_corresponding(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_generated_specs_are_valid_yaml_that_passes_ucf_validate(self) -> None:
+    def verify_generated_specs_are_valid_yaml_that_passes_ucf_validate(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_existing_specs_are_never_overwritten(self) -> None:
+    def verify_existing_specs_are_never_overwritten(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_output_reports_the_number_of_files_scanned_and_specs(self) -> None:
+    def verify_output_reports_the_number_of_files_scanned_and_specs(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...

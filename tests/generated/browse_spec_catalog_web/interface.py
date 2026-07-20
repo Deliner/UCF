@@ -36,59 +36,149 @@ class NavigateToSpecResult:
     navigated: bool
 
 
+@dataclass(frozen=True)
+class ListAllResult:
+    specs: list[Any]
+    total_count: int
+    kind_counts: Any
+
+
+@dataclass(frozen=True)
+class ShowAllResult:
+    filtered_view: bool
+
+
 class BrowseSpecCatalogWebInterface(ABC, FrameworkActions):
     """Interface with framework-provided actions inherited from FrameworkActions."""
 
     # ── State Setup (from requires) ──
 
     @abstractmethod
-    def setup_loader(self) -> LoaderContext:
+    def setup_loader(
+        self,
+        specs_dir: Any,
+    ) -> LoaderContext:
         ...
 
     # ── Actions (from steps) ──
 
     @abstractmethod
-    def action_list_specs(self, registry: Any, kind_filter: Any, search_query: Any) -> ListSpecsResult:
+    def action_list_specs(
+        self,
+        registry: Any,
+        kind_filter: Any,
+        search_query: Any,
+    ) -> ListSpecsResult:
         ...
 
     @abstractmethod
-    def action_render_results(self, data: Any, format: Any) -> None:
+    def action_render_results(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
         ...
 
     @abstractmethod
-    def action_filter_by_kind(self, kind: Any, search_text: Any) -> FilterByKindResult:
+    def action_filter_by_kind(
+        self,
+        kind: Any,
+        search_text: Any,
+    ) -> FilterByKindResult:
         ...
 
     @abstractmethod
-    def action_navigate_to_spec(self, spec_kind: Any, spec_name: Any) -> NavigateToSpecResult:
+    def action_navigate_to_spec(
+        self,
+        spec_kind: Any,
+        spec_name: Any,
+    ) -> NavigateToSpecResult:
+        ...
+
+    @abstractmethod
+    def action_list_all(
+        self,
+        registry: Any,
+    ) -> ListAllResult:
+        ...
+
+    @abstractmethod
+    def action_render_all(
+        self,
+        data: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_empty(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_registry_error(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_render_kind_error(
+        self,
+        data: Any,
+        format: Any,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def action_show_all(
+        self,
+    ) -> ShowAllResult:
         ...
 
     # ── Verifications (from postconditions + invariants) ──
 
     @abstractmethod
-    def verify_developer_receives_a_list_of_specs_matching_the_filter(self) -> None:
+    def verify_developer_receives_a_list_of_specs_matching_the_filter(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_spec_counts_per_kind_are_reported(self) -> None:
+    def verify_spec_counts_per_kind_are_reported(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_empty_result_shows_a_clear_message(self) -> None:
+    def verify_empty_result_shows_a_clear_message(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_clicking_a_kind_tab_filters_the_spec_table(self) -> None:
+    def verify_clicking_a_kind_tab_filters_the_spec_table(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_clicking_a_spec_row_navigates_to_its_detail_page(self) -> None:
+    def verify_clicking_a_spec_row_navigates_to_its_detail_page(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_search_input_filters_specs_by_name_match(self) -> None:
+    def verify_search_input_filters_specs_by_name_match(
+        self,
+    ) -> None:
         ...
 
     @abstractmethod
-    def verify_required_inputs_validated(self) -> None:
+    def verify_required_inputs_validated(
+        self,
+    ) -> None:
         ...
