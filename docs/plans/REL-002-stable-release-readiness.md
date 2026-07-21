@@ -196,6 +196,13 @@ resumed without broadening the accepted preview boundary.
   explicit revision-bound evidence plus all eight gates and a physical clean
   clone on the resulting exact revision, obtain final independent acceptance,
   and mark REL-002 verified without broadening the preview claim.
+- [x] 2026-07-21: Reject a final all-profile run after the public README change
+  made the checked REL-001 wheel identity stale. Preserve the exact identity
+  check instead of weakening the replay projection, regenerate the report only
+  through the three-repetition benchmark runner, and confirm that the sole
+  non-runtime change is wheel SHA-256
+  `5cefc153b94b52292d58ff0c3768500ea91621017a5867bd0f1ec2191dedd160`;
+  static validation and a second complete three-repetition replay pass.
 
 ## Surprises & Discoveries
 
@@ -316,6 +323,14 @@ that branch cannot pass because the endpoint fails; exact branch identity is
 therefore the direct nonempty proof, while cached size remains nonnegative
 telemetry. The failed aggregate left no final evidence file.
 
+The first all-profile replay after final public-claim editing then rejected
+`published_report_drift`. The structural and lifecycle digests, fixtures,
+toolchains, dependency lock, and all measured outcomes were unchanged; the only
+non-runtime difference was the wheel digest because README content is embedded
+in wheel metadata. Regenerating the canonical report through its executable
+runner and replaying it three more times closed the drift without excluding
+artifact identity from verification.
+
 ## Decision Log
 
 - **2026-07-21 — do not broaden product capability during release closure.**
@@ -375,6 +390,14 @@ telemetry. The failed aggregate left no final evidence file.
   public repository, enabled Issues/PVR, a present well-formed `main`, and exact
   local/remote revision equality. Cached size is recorded but cannot veto that
   stronger direct proof.
+
+- **2026-07-21 — keep exact wheel identity in the published benchmark.**
+  Author: root agent. Final README changes legitimately alter packaged wheel
+  metadata, so a prior checked wheel digest cannot remain accepted. Do not
+  ignore wheel identity as volatile and do not hand-edit generated benchmark
+  JSON. Preserve the failed all-profile replay, regenerate the complete report
+  through the benchmark runner, require that every non-runtime field except the
+  expected wheel digest is unchanged, and rerun the full installed replay.
 
 - **2026-07-21 — make the create-only evidence link the publication commit
   point.** Author: root agent. A device/inode `stat` cannot make a later
@@ -517,6 +540,9 @@ replay is under `.artifacts/agents/rel002-final-clean-source/`. These paths
 carry the final revision and changing artifact identities without embedding a
 self-invalidating commit hash in this plan. Independent final reviews accept
 the release evidence, dependency order, diff, and public-claim boundary.
+The final all-profile attempt first caught one honest REL-001 wheel-identity
+drift after README metadata changed; its RED and the generated-report replay
+GREEN are retained alongside the accepted aggregate rather than hidden.
 
 The implementation's rejected name-based rollback history remains documented.
 The accepted publisher uses an anonymous staged inode and no name-based

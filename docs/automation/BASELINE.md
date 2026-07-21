@@ -24,6 +24,16 @@ The authoritative ignored evidence is:
 - the final independent claims, dependency-order, and release-readiness audits
   under `.artifacts/agents/rel002-final-*/`.
 
+The immediately preceding all-profile attempt is retained as
+`quality-gates-all-final-benchmark-drift-red.log`: seven gates passed, while
+the REL-001 replay correctly rejected a stale checked wheel digest after final
+README metadata changed the wheel. The report was regenerated only by the
+three-repetition runner; every non-runtime field except wheel SHA-256 remained
+identical, static validation passed, and
+`rel001-verify-after-refresh.log` records a second complete green replay. The
+accepted wheel identity is
+`5cefc153b94b52292d58ff0c3768500ea91621017a5867bd0f1ec2191dedd160`.
+
 The earlier strict governance candidate is retained at
 `.artifacts/quality/rel002-final-20260721/release-evidence-governance-candidate-0f10681.json`.
 It passed with exact local/remote revision `0f10681`, a 1,050-file selected
