@@ -625,10 +625,11 @@ They are release blockers to remove or explicitly decide, not allowed failures:
   `automation`, `affected`, and `all`; public docs/version/owner metadata are
   not yet synchronized or machine-checked.
 
-The active ExecPlan records the required human decisions for project license
-and licensor identity, confidential security/public support channels, and the
-stable version/support/deprecation promise. Automation state remains
-`blocked_on_decision` until the project owner supplies them.
+The active ExecPlan records the project owner's accepted decisions: Apache-2.0
+under `Copyright 2026 Deliner`; bounded `0.1.x` production preview with
+CPython 3.12/Linux x86_64 support and no SLA; and repository-hosted private
+vulnerability reporting plus public Issues at `github.com/Deliner/UCF`.
+Automation resumed; every technical red observation above remains to close.
 
 ## Baseline update rule
 

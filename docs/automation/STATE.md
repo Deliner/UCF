@@ -4,18 +4,19 @@ project: ucf
 target_state: docs/automation/TARGET_STATE.md
 active_work_package: REL-002
 active_exec_plan: docs/plans/REL-002-stable-release-readiness.md
-status: blocked_on_decision
+status: in_progress
 last_updated: 2026-07-21
 ---
 
 # Automation handoff state
 
-REL-001 is verified. The REL-002 foundational release-surface inventory is
-complete and found a bounded technical closure path, but production edits are
-blocked on three project-owner decisions: license/licensor identity, stable
-release/deprecation commitment, and authorized confidential security/public
-support channels. Exact options, consequences, evidence, and recommendations
-are in the active ExecPlan. No stable release claim has been made.
+REL-001 is verified. REL-002 is active after the project owner resolved all
+three foundation decision gates: Apache-2.0 under `Copyright 2026 Deliner`, a
+bounded `0.1.x` production preview rather than a stable-API claim, and
+repository-hosted security/support through `https://github.com/Deliner/UCF`
+with `Deliner` responsible. The immediate work is strict RGR closure of release
+inventory, metadata/license, sdist, dependency/advisory, policy/claims, and
+clean-distribution gates.
 
 ## Resume instruction
 
@@ -151,30 +152,29 @@ Evidence is retained under `.artifacts/quality/rel002-start-20260721/` and:
 - `.artifacts/agents/rel002-packaging-ci/audit-summary.md`;
 - `.artifacts/agents/rel002-policy-claims/report.md`.
 
-## Pending human decisions
+## Accepted REL-002 owner decisions
 
-The active ExecPlan is authoritative. The recommended combined choice is:
+The active ExecPlan contains the complete alternatives and consequences. The
+binding selections made by project owner `Deliner` are:
 
-1. Apache-2.0, with owner-confirmed contribution rights and exact copyright
-   holder/year.
-2. Release bounded control-plane `1.0.0`: supported CPython 3.12 on
-   Linux/x86_64, exact documented contracts/install paths, external adapters
-   still experimental; SemVer; no SLA; deprecations retained for at least one
-   minor and 180 days and removed only in a major with migration, except an
-   explicitly documented urgent security withdrawal.
-3. Supply a canonical public repository URL, enable its private vulnerability
-   reporting, use its Issues/Discussions for public support, and name the
-   responsible maintainer/entity. Alternatively provide dedicated private
-   security and public support addresses.
+1. Apache-2.0 with exact project notice `Copyright 2026 Deliner`. Preserve all
+   third-party notices in their artifact boundaries.
+2. Keep package `0.1.x` as a production preview. Supported tier is CPython 3.12
+   on Linux/x86_64 with no SLA; exact published artifacts/contracts are
+   immutable; ordinary deprecation lasts at least one subsequent minor preview
+   and 90 days with migration guidance. External adapters remain experimental.
+   `1.0.0` stable-API promotion is explicitly deferred and owned by `Deliner`.
+3. Canonical repository `https://github.com/Deliner/UCF`, responsible
+   maintainer `Deliner`, GitHub private vulnerability reporting for confidential
+   intake, and GitHub Issues for public support without an SLA.
 
-Do not infer the licensor, expose the local Git email, create a hosted
-repository, enable external features, or select weaker/different terms.
+Do not expose the local Git email, silently promote the preview to stable,
+broaden adapter support, or select weaker/different terms.
 
 ## Immediate execution sequence
 
-1. Obtain and record the project owner's answers to DG-REL002-001 through 003
-   in the active ExecPlan; set `status: in_progress` only after all required
-   coordinates are concrete.
+1. Configure and verify the canonical local Git remote and selected GitHub
+   security/support surfaces without publishing a release.
 2. Proceed one acceptance behavior at a time through strict
    Red-Green-Refactor: release inventory/check, license+metadata, sdist closure,
    dependency/advisory closure, policy/docs/version synchronization, and clean

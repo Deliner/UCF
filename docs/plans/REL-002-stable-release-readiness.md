@@ -86,6 +86,12 @@ metadata implementation; technical blockers remain ordered work after resume.
 - [x] 2026-07-21: Record the license/identity, security/support-channel, and
   release/deprecation human decision gates; set automation state to
   `blocked_on_decision` before production edits.
+- [x] 2026-07-21: Record the project owner's selections: Apache-2.0 with
+  copyright holder `Deliner`; bounded `0.1.x` production preview rather than a
+  stable-API claim; canonical repository `https://github.com/Deliner/UCF` with
+  `Deliner` responsible, GitHub private vulnerability reporting, and Issues
+  support without an SLA. Resume REL-002 without changing the requested
+  evidence bar or promoting experimental adapters.
 - [ ] Add one failing release-readiness contract at a time, implement the
   smallest closure, and keep each focused slice green through refactoring.
 - [ ] Publish and machine-check compatibility, migration, security, privacy,
@@ -158,7 +164,7 @@ evidence that REL-001 failed.
   blocker.
 
 - **2026-07-21 — DG-REL002-001: project license and licensor identity.** Status:
-  awaiting project owner. There is no root license, package SPDX expression,
+  accepted by project owner. There is no root license, package SPDX expression,
   license file in the wheel, or demonstrated grant to copy/modify/redistribute
   UCF. The owner must also confirm authority over the current contributions and
   provide the exact copyright holder/year. Options:
@@ -180,8 +186,14 @@ evidence that REL-001 failed.
   guidance. This recommendation is engineering/product guidance, not legal
   advice.
 
+  **Owner decision:** select Apache-2.0. Use `Copyright 2026 Deliner` as the
+  exact project notice. The owner's statement that this is their repository,
+  made while selecting the license, is the authorization basis recorded for
+  the current contribution set. Add the canonical license and notice to every
+  supported source/wheel distribution while preserving third-party notices.
+
 - **2026-07-21 — DG-REL002-002: stable release and deprecation promise.**
-  Status: awaiting project owner. Package `0.1.0` cannot simultaneously follow
+  Status: accepted by project owner. Package `0.1.0` cannot simultaneously follow
   SemVer and represent a stable public API: SemVer reserves major zero for
   initial development. Options:
 
@@ -206,8 +218,20 @@ evidence that REL-001 failed.
   3.12/Linux support tier; untested future Python versions are unqualified, not
   promised. Exact corrected dependency floors still need automated proof.
 
+  **Owner decision:** select option 2 and keep the package in the `0.1.x`
+  production-preview line. Do not describe UCF itself or its public API as
+  stable. REL-002 proves that this preview is reproducibly releasable and usable
+  in the exact supported scope; promotion to `1.0.0` remains an explicit future
+  owner decision and an honest limitation owned by `Deliner`. Support is
+  CPython 3.12 on Linux/x86_64 with no SLA. Exact published artifacts and wire
+  versions are immutable; normal deprecations remain available for at least one
+  subsequent minor preview and 90 days before removal, with migration guidance.
+  An urgent security withdrawal may be faster only through a published advisory
+  naming the affected versions and replacement. External adapters and frozen
+  ecosystem profiles remain experimental exact proofs.
+
 - **2026-07-21 — DG-REL002-003: confidential security intake and public support
-  route.** Status: awaiting project owner. No Git remote, project URL, public
+  route.** Status: accepted by project owner. No Git remote, project URL, public
   maintainer identity, or authorized confidential address is configured. Do
   not publish the local Git email or invent a hosted service. Options:
 
@@ -225,15 +249,22 @@ evidence that REL-001 failed.
   owner/admin and provides a private structured report path; enabling it is an
   external state change that is not authorized implicitly by this task.
 
+  **Owner decision:** use `https://github.com/Deliner/UCF` as the canonical
+  repository, `Deliner` as responsible maintainer, GitHub private vulnerability
+  reporting for confidential intake, and GitHub Issues for public support with
+  no SLA. The repository was supplied in direct response to this gate, so local
+  remote configuration and verification of these selected repository-hosted
+  channels are authorized. Do not publish the local Git email.
+
 ## Outcomes & Retrospective
 
-The foundational milestone is complete and REL-002 is blocked only on the
-three recorded owner decisions before production edits. The bounded technical
-path remains viable: no core redesign or new production dependency is needed.
-After the owner responds, work resumes with sdist closure, dependency/advisory
-updates, release metadata/policies, exact version/support inventory, and an
-executable release profile, followed by independent review and clean release
-replay. No stable release claim has been made.
+The foundational milestone and all three owner decisions are complete. REL-002
+has resumed with a bounded technical path: no core redesign or new production
+dependency is needed. The selected result is a reproducibly releasable `0.1.x`
+production preview, not a stable-API claim. Work now proceeds through sdist
+closure, dependency/advisory updates, license and release metadata/policies,
+exact version/support inventory, and an executable release profile, followed by
+independent review and clean release replay.
 
 ## Context and Orientation
 
