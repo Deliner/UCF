@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strconv"
 	"strings"
 	"sync"
@@ -379,53 +380,49 @@ printf 'READY http://%s\n' '` + listener.Addr().String() + `'
 }
 
 func TestVerificationCleanupDoesNotRepeatGracefulTermination(t *testing.T) {
-	root := t.TempDir()
-	readyPath := root + "/ready.fifo"
-	termPath := root + "/term.fifo"
-	releasePath := root + "/release.fifo"
-	for _, path := range []string{readyPath, termPath, releasePath} {
-		if err := syscall.Mkfifo(path, 0600); err != nil {
-			t.Fatal(err)
-		}
+	if os.Getenv("UCF_GRACEFUL_TERMINATION_HELPER") == "1" {
+		runGracefulTerminationHelper(t)
+		os.Exit(0)
+		return
 	}
-	ready, err := os.OpenFile(readyPath, os.O_RDWR, 0600)
+
+	ready, readyWriter, err := os.Pipe()
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer ready.Close()
-	term, err := os.OpenFile(termPath, os.O_RDWR, 0600)
+	term, termWriter, err := os.Pipe()
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer term.Close()
-	release, err := os.OpenFile(releasePath, os.O_RDWR, 0600)
+	releaseReader, release, err := os.Pipe()
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer release.Close()
 
-	scriptPath := root + "/graceful-verification"
-	script := `#!/bin/sh
-root="${0%/*}"
-trap '
-    printf "term\n" >"$root/term.fifo"
-    trap "exit 23" TERM
-    read marker <"$root/release.fifo"
-    exit 0
-' TERM
-printf 'ready\n' >"$root/ready.fifo"
-read marker <"$root/release.fifo"
-exit 24
-`
-	if err := os.WriteFile(scriptPath, []byte(script), 0700); err != nil {
-		t.Fatal(err)
-	}
-	command := exec.Command(scriptPath)
+	command := exec.Command(
+		os.Args[0],
+		"-test.run=^TestVerificationCleanupDoesNotRepeatGracefulTermination$",
+	)
+	command.Env = append(
+		os.Environ(),
+		"UCF_GRACEFUL_TERMINATION_HELPER=1",
+		"GORACE=atexit_sleep_ms=0",
+	)
+	command.ExtraFiles = []*os.File{readyWriter, termWriter, releaseReader}
 	command.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	owner, err := startVerificationProcess(command)
+	readyWriter.Close()
+	termWriter.Close()
+	releaseReader.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() {
+		_ = syscall.Kill(-command.Process.Pid, syscall.SIGKILL)
+	})
 	waited := make(chan error, 1)
 	go func() {
 		waited <- command.Wait()
@@ -435,22 +432,51 @@ exit 24
 		t.Fatalf("verification readiness = %q, %v", line, err)
 	}
 
+	terminationGrace := 20 * verificationCleanupPollInterval
+	cleanupDeadline := 100 * verificationCleanupPollInterval
 	stopped := make(chan error, 1)
 	go func() {
 		stopped <- stopVerificationProcessWithinOwned(
 			command,
 			waited,
 			owner,
-			20*verificationCleanupPollInterval,
-			100*verificationCleanupPollInterval,
+			terminationGrace,
+			cleanupDeadline,
 		)
 	}()
-	if line, err := bufio.NewReader(term).ReadString('\n'); err != nil ||
-		line != "term\n" {
-		t.Fatalf("verification termination marker = %q, %v", line, err)
+	type markerResult struct {
+		line string
+		err  error
+	}
+	terminated := make(chan markerResult, 1)
+	go func() {
+		line, readErr := bufio.NewReader(term).ReadString('\n')
+		terminated <- markerResult{line: line, err: readErr}
+	}()
+	select {
+	case result := <-terminated:
+		if result.err != nil || result.line != "term\n" {
+			t.Fatalf(
+				"verification termination marker = %q, %v",
+				result.line,
+				result.err,
+			)
+		}
+	case err := <-stopped:
+		t.Fatalf(
+			"verification cleanup returned before termination marker: %v",
+			err,
+		)
+	case <-time.After(cleanupDeadline + terminationGrace):
+		t.Fatal("verification termination marker was not bounded")
 	}
 	timer := time.NewTimer(4 * verificationCleanupPollInterval)
-	<-timer.C
+	select {
+	case <-timer.C:
+	case err := <-stopped:
+		timer.Stop()
+		t.Fatalf("verification cleanup returned before release: %v", err)
+	}
 	if _, err := release.WriteString("release\n"); err != nil {
 		t.Fatal(err)
 	}
@@ -462,6 +488,34 @@ exit 24
 		}
 	case <-time.After(time.Second):
 		t.Fatal("graceful verification cleanup did not return")
+	}
+}
+
+func runGracefulTerminationHelper(t *testing.T) {
+	ready := os.NewFile(3, "ready")
+	term := os.NewFile(4, "term")
+	release := os.NewFile(5, "release")
+	if ready == nil || term == nil || release == nil {
+		t.Fatal("graceful termination helper pipe is unavailable")
+	}
+	defer ready.Close()
+	defer term.Close()
+	defer release.Close()
+
+	terminated := make(chan os.Signal, 1)
+	signal.Notify(terminated, syscall.SIGTERM)
+	if _, err := ready.WriteString("ready\n"); err != nil {
+		t.Fatal(err)
+	}
+	<-terminated
+	signal.Stop(terminated)
+	signal.Reset(syscall.SIGTERM)
+	if _, err := term.WriteString("term\n"); err != nil {
+		t.Fatal(err)
+	}
+	line, err := bufio.NewReader(release).ReadString('\n')
+	if err != nil || line != "release\n" {
+		t.Fatalf("graceful termination helper release = %q, %v", line, err)
 	}
 }
 

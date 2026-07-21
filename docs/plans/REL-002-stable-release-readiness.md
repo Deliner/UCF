@@ -203,6 +203,16 @@ resumed without broadening the accepted preview boundary.
   non-runtime change is wheel SHA-256
   `5cefc153b94b52292d58ff0c3768500ea91621017a5867bd0f1ec2191dedd160`;
   static validation and a second complete three-repetition replay pass.
+- [x] 2026-07-21: Reject the next full profile when the Go adapter's
+  `TestVerificationCleanupDoesNotRepeatGracefulTermination` blocks for its
+  ten-minute package timeout. Preserve the timeout trace, prove that production
+  cleanup and `Wait` had already returned, and fix only the test harness: use a
+  self-executing Go signal helper with directional pipes, close inherited ends,
+  and bound marker waits against cleanup completion. Do not retry, enlarge a
+  cleanup deadline, or alter production signalling. The focused test passes 100
+  normal repetitions and 20 race-instrumented repetitions; the whole Go package
+  passes 20 repetitions, Go vet passes, and all 54 affected Go ecosystem tests
+  pass. A fresh three-run benchmark has an identical non-runtime projection.
 
 ## Surprises & Discoveries
 
@@ -331,6 +341,16 @@ in wheel metadata. Regenerating the canonical report through its executable
 runner and replaying it three more times closed the drift without excluding
 artifact identity from verification.
 
+The subsequent full Python suite exposed an unrelated intermittent deadlock in
+a Go test harness. Its parent opened marker FIFOs `O_RDWR`, then waited
+synchronously for a termination marker before observing that both the helper
+and bounded cleanup goroutines had already exited. The parent's own FIFO writer
+prevented EOF forever. Production cleanup remained bounded and sent the root
+graceful signal only once. Directional anonymous pipes, a self-executing Go
+signal helper, and marker waits selected against cleanup completion remove the
+deadlock and shell scheduling dependency without changing a protocol,
+production timeout, or retry policy.
+
 ## Decision Log
 
 - **2026-07-21 — do not broaden product capability during release closure.**
@@ -398,6 +418,16 @@ artifact identity from verification.
   JSON. Preserve the failed all-profile replay, regenerate the complete report
   through the benchmark runner, require that every non-runtime field except the
   expected wheel digest is unchanged, and rerun the full installed replay.
+
+- **2026-07-21 — correct the Go cleanup test harness, not production cleanup.**
+  Author: root agent after independent diagnosis and direct stack-trace review.
+  The timeout showed no live production cleanup or `Wait` goroutine; only the
+  test remained blocked on a FIFO whose parent-held writer suppressed EOF.
+  Preserve the existing graceful/absolute deadlines and signal semantics.
+  Replace the shell/FIFO fixture with a self-executing Go helper and directional
+  pipes, close unused endpoints, and select every marker wait against the
+  bounded cleanup result. A missing marker now fails promptly and cannot turn
+  into a ten-minute suite hang.
 
 - **2026-07-21 — make the create-only evidence link the publication commit
   point.** Author: root agent. A device/inode `stat` cannot make a later
@@ -543,6 +573,9 @@ the release evidence, dependency order, diff, and public-claim boundary.
 The final all-profile attempt first caught one honest REL-001 wheel-identity
 drift after README metadata changed; its RED and the generated-report replay
 GREEN are retained alongside the accepted aggregate rather than hidden.
+The next attempt caught and retained the Go harness deadlock. Its correction is
+test-only, survives normal and race-instrumented stress, and leaves the complete
+REL-001 non-runtime report projection unchanged.
 
 The implementation's rejected name-based rollback history remains documented.
 The accepted publisher uses an anonymous staged inode and no name-based

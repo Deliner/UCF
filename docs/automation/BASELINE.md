@@ -34,6 +34,18 @@ identical, static validation passed, and
 accepted wheel identity is
 `5cefc153b94b52292d58ff0c3768500ea91621017a5867bd0f1ec2191dedd160`.
 
+`quality-gates-all-final-go-harness-red.log` retains the next rejected full
+profile: the Go cleanup unit fixture waited ten minutes on a parent-held
+`O_RDWR` FIFO after its helper and bounded cleanup had already returned. It was
+not treated as a retryable flake. The test-only correction uses directional
+pipes and a self-executing signal helper, retains the existing production
+deadlines and signal behavior, and bounds marker waits against cleanup
+completion. Evidence includes 100 focused normal repetitions, 20 focused
+race-instrumented repetitions, 20 complete Go-package repetitions, Go vet, and
+54 affected ecosystem tests. A fresh three-repetition REL-001 run has an exact
+match for every non-runtime report field, so no benchmark identity was hidden
+or manually rewritten.
+
 The earlier strict governance candidate is retained at
 `.artifacts/quality/rel002-final-20260721/release-evidence-governance-candidate-0f10681.json`.
 It passed with exact local/remote revision `0f10681`, a 1,050-file selected
