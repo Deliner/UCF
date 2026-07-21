@@ -190,6 +190,10 @@ published, and no claim exceeds its evidence level.
 
 ### REL-002 — Stable release readiness
 
+This dependency ID and title are historical. Its accepted deliverable is a
+bounded `0.1.x` production preview, not a stable API; a future `1.0.0` decision
+is outside this backlog.
+
 Finalize compatibility, migrations, security, packaging, licensing, support,
 and deprecation policy. Remove or explicitly defer all critical blockers.
 

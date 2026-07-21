@@ -10,7 +10,7 @@ reports follow the root [SECURITY.md](../../SECURITY.md), never a public issue.
 
 | Surface | Status | Exact boundary |
 |---|---|---|
-| Python control plane | supported preview | CPython 3.12 on Linux/x86_64, installed from the release wheel or source distribution and exercised by the release checklist |
+| Python control plane | supported preview | CPython 3.12 on Linux/x86_64, installed from the release wheel, including the wheel built from the source distribution by the release checklist |
 | serialized UCF resources | supported preview | only the exact schema URIs/versions implemented and shipped by that release; strict rejection and deprecation policies apply |
 | source YAML and legacy in-process features | supported preview only where capability rows say `implemented` | executable evidence and limitations in [docs/CAPABILITIES.md](../CAPABILITIES.md) control |
 | Python, TypeScript/Fastify, and Go adapters | experimental | exact fixture, adapter, toolchain, OS/architecture, capability, and procedure proofs named in the matrix; not general ecosystem support |
@@ -22,6 +22,14 @@ than CPython 3.12, PyPy, arbitrary Node/Go versions, hosted brokers, unlisted
 frameworks, unreviewed adapters, and arbitrary legacy applications are
 explicitly not supported. Successful installation or a passing narrow fixture elsewhere does
 not promote that environment to support.
+
+The operator must apply all available vendor security updates for CPython 3.12,
+the Linux distribution, OpenSSL, and the installation toolchain. The upstream
+`major.minor.patch` string alone cannot prove whether a distribution has
+backported a security fix. Release evidence therefore records the actual Python
+implementation/version detail, compiler, kernel, machine, and OpenSSL
+coordinate used for ordinary and supported-floor installs. An end-of-life or
+known-unpatched runtime is not supported even when it reports `3.12`.
 
 ## Issue handling
 

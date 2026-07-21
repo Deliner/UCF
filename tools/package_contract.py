@@ -161,6 +161,7 @@ TYPESCRIPT_FASTIFY_ADAPTER_BIN = "ucf-typescript-fastify-adapter"
 TYPESCRIPT_FASTIFY_NODE_VERSION = "v22.22.3"
 TYPESCRIPT_FASTIFY_NPM_VERSION = "10.9.8"
 MAX_TYPESCRIPT_FASTIFY_TARBALL_BYTES = 2 * 1024 * 1024
+PROJECT_LICENSE_FILES = ("LICENSE", "NOTICE")
 MAX_INSTALLED_RATCHET_DOCUMENT_BYTES = 1024 * 1024
 MAX_INSTALLED_REL001_EVIDENCE_BYTES = 16 * 1024 * 1024
 REL001_LANE_EVIDENCE_KEYS = frozenset(
@@ -2590,11 +2591,45 @@ def _copy_go_stdlib_notices(
             )
 
 
-def _assert_go_stdlib_distribution_tree(root: Path) -> None:
+def _copy_project_license_files(
+    *, repository_root: Path, distribution_root: Path
+) -> dict[str, str]:
+    digests: dict[str, str] = {}
+    for name in PROJECT_LICENSE_FILES:
+        source = repository_root / name
+        destination = distribution_root / name
+        if source.is_symlink() or not source.is_file() or destination.exists():
+            raise PackageContractError(
+                f"project license input is not one regular source file: {name}"
+            )
+        shutil.copyfile(source, destination)
+        destination.chmod(0o644)
+        source_digest = _sha256(source)
+        if _sha256(destination) != source_digest:
+            raise PackageContractError(
+                f"distributed project license differs: {name}"
+            )
+        digests[name] = source_digest
+    return digests
+
+
+def _assert_go_stdlib_distribution_tree(
+    root: Path, *, project_license_digests: dict[str, str]
+) -> None:
     manifest = _tree_manifest(root)
     actual = {entry[0]: (entry[1], entry[2], entry[4]) for entry in manifest}
     expected = {
         ".": ("directory", 0o755, None),
+        "LICENSE": (
+            "file",
+            0o644,
+            project_license_digests["LICENSE"],
+        ),
+        "NOTICE": (
+            "file",
+            0o644,
+            project_license_digests["NOTICE"],
+        ),
         "third_party": ("directory", 0o755, None),
         "third_party/go": ("directory", 0o755, None),
         "third_party/go/LICENSE": (
@@ -2738,7 +2773,14 @@ def _prepare_installed_go_stdlib_adapter(
             adapter_root=adapter_root,
             distribution_root=distribution_root,
         )
-        _assert_go_stdlib_distribution_tree(distribution_root)
+        project_license_digests = _copy_project_license_files(
+            repository_root=repository_root,
+            distribution_root=distribution_root,
+        )
+        _assert_go_stdlib_distribution_tree(
+            distribution_root,
+            project_license_digests=project_license_digests,
+        )
         _assert_go_stdlib_build_info(
             go_bin=go_bin,
             entry=adapter_entry,
@@ -2881,6 +2923,8 @@ def _expected_typescript_fastify_tar_members(
         )
     return frozenset(
         {
+            "package/LICENSE",
+            "package/NOTICE",
             "package/README.md",
             "package/package.json",
             *generated,
@@ -2980,7 +3024,8 @@ def _read_typescript_fastify_tarball(
         package.get("name") != TYPESCRIPT_FASTIFY_ADAPTER_NAME
         or package.get("version") != TYPESCRIPT_FASTIFY_ADAPTER_VERSION
         or package.get("private") is not True
-        or package.get("files") != ["dist"]
+        or package.get("license") != "Apache-2.0"
+        or package.get("files") != ["dist", "LICENSE", "NOTICE"]
         or package.get("bin") != {TYPESCRIPT_FASTIFY_ADAPTER_BIN: "dist/main.js"}
     ):
         raise PackageContractError(
@@ -3159,6 +3204,10 @@ def _prepare_installed_typescript_fastify_adapter(
         raise PackageContractError(
             "TypeScript/Fastify adapter source changed during external build"
         )
+    _copy_project_license_files(
+        repository_root=repository_root,
+        distribution_root=adapter_root,
+    )
 
     tar_directories = (
         distribution / "npm-pack-a",

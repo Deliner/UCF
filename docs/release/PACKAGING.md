@@ -24,33 +24,49 @@ to remove manually from generated output.
 ## Installation boundary
 
 The supported control-plane installation is a clean environment using CPython
-3.12 on Linux/x86_64. The release checklist installs the built wheel and source
-distribution outside the checkout, executes the installed CLI and public
-resources, and runs the exact smoke/behavior procedures named in the checklist.
+3.12 on Linux/x86_64. The release checklist inspects the source distribution,
+builds a wheel from the source distribution and installs that wheel outside the
+checkout, executes the installed CLI and public resources, and runs the exact
+smoke/behavior procedures named in the checklist. A direct installer frontend
+invocation on the `.tar.gz` is not a separate support claim; the proved source
+artifact boundary is its isolated standards-based wheel build and installation.
 `uv.lock` pins repository development/release verification; published runtime
 dependency constraints are package metadata and must pass their separately
 checked supported-floor scenario.
 
 Node, npm, TypeScript/Fastify, and Go binaries used by exact ecosystem fixtures
 are not bundled as general UCF runtime support. Standalone adapter distributions
-carry their own manifest, hashes, upstream license/notices, and exact toolchain
-qualification. Those adapters remain experimental exact proofs.
+carry root UCF `LICENSE`/`NOTICE`, applicable upstream license/notices, package
+metadata where applicable, and exact toolchain qualification. Release evidence records
+their exact manifest and SHA-256; the hash record is not claimed to be
+an embedded artifact member. Those adapters remain experimental exact proofs.
 
 ## Executable release acceptance
 
-The canonical distribution and policy check is:
+The canonical distribution and policy check during development/CI is:
 
 ```bash
 uv run --locked python tools/release_check.py
 ```
 
+Final retained acceptance additionally uses an absent evidence path:
+
+```bash
+uv run --locked python tools/release_check.py \
+  --evidence .artifacts/quality/rel002-final-20260721/release-evidence.json
+```
+
 It must reproduce dependency-populated and source-only distributions, build the
 wheel from the source distribution, install it in ordinary and supported-floor
 environments, run `ucf --version`, `ucf --help`, and the installed package
-contract, audit the exact Python/npm/Go dependency and license inventories with
-zero known advisories, and verify the canonical GitHub repository, Issues, and
-GitHub Private Vulnerability Reporting. A failed phase publishes no release
-evidence. The complete repository acceptance command remains:
+contract, audit both actual installed Python environments plus the exact locked
+Python/npm/Go dependency and license inventories with zero known advisories,
+and verify the canonical GitHub repository, Issues, and GitHub Private Vulnerability Reporting.
+A final evidence run additionally exports exact raw blobs from a captured clean
+commit, binds its tree and selected manifest to the artifacts, and requires its
+HEAD to equal nonempty remote `main` before atomic evidence publication. A
+failed phase leaves no evidence at the requested path. The complete repository
+acceptance command remains:
 
 ```bash
 python3 tools/quality_gates.py --profile all
@@ -65,8 +81,9 @@ clean result or waiver.
 UCF project code is licensed under Apache-2.0, with `Copyright 2026 Deliner` in
 `NOTICE`. Distributors must comply with `LICENSE`, preserve `NOTICE`, mark
 modified files as required by Apache-2.0, and preserve applicable third-party
-copyright, license, patent, and attribution notices. The project license does
-not relicense dependencies, adapters, generated user code, or inspected legacy
+copyright, license, patent, and attribution notices. UCF-authored adapters are
+Apache-2.0 project code. The project license does not relicense dependencies,
+third-party adapter implementations, generated user code, or inspected legacy
 projects.
 
 Every release must inventory direct and transitive Python, frontend, adapter,

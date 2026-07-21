@@ -55,6 +55,10 @@ This is not general Fastify support.
 
 The checked runtime has no third-party dependencies. TypeScript `7.0.2` and
 Node declarations `22.20.1` are exact build-only development dependencies.
+The standalone private npm tarball declares `Apache-2.0` and carries the root
+UCF `LICENSE` and `NOTICE`; those terms cover UCF project code and do not
+relicense Node.js, build dependencies, generated output, or inspected legacy
+projects.
 The canonical status and limitation claim is
 [`docs/CAPABILITIES.md`](../../docs/CAPABILITIES.md).
 

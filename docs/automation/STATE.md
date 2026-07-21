@@ -12,14 +12,26 @@ last_updated: 2026-07-21
 
 REL-001 is verified. REL-002 remains active after completing its owner
 decisions, policy set, release metadata, local distribution boundary,
-dependency/advisory remediation, and executable release checker. Fresh local
-Python, lint, specification, frontend, wheel/sdist, supported-floor, installed
-three-stack, dependency, and license evidence is green. The aggregate checker
-fails only because GitHub reports Private Vulnerability Reporting disabled for
-`https://github.com/Deliner/UCF`; the failure correctly publishes no final
-release evidence. Continue local integration and independent review, then
-repeat the aggregate and clean-source acceptance as soon as the repository
-owner enables that selected confidential reporting surface.
+dependency/advisory remediation, and executable release checker. The owner has
+now enabled GitHub Private Vulnerability Reporting. Three independent
+pre-acceptance audits rejected the first release-check implementation on exact
+Git-index bytes, stale/non-atomic evidence, unaudited installed environments,
+unsafe dependency floors, missing standalone-adapter license files, unbounded
+sdist expansion, and an unpopulated remote repository. The first follow-up
+re-audit then exposed smudge-filtered index export, late artifact-to-HEAD
+binding, directory/PAX archive amplification, scoped evidence publication, and
+a symlink/TOCTOU collision. The second follow-up found three remaining
+fail-open paths: dependency audits read the mutable checkout, tar parsing did
+not drain concatenated/corrupt gzip members, and hidden inventory mode could
+preserve stale final evidence. Every accepted finding now has a retained
+focused RED and local correction. The final atomicity pass additionally moved
+temporary-source cleanup before publication and made post-link failure roll
+back only this publisher's matching inode; a concurrent replacement regression
+is now retained. Current evidence is 128 affected and 187 automation tests plus
+Ruff green. The source is not yet committed or
+published, so final
+acceptance re-audit, aggregate evidence, CAP-214, all-profile, and physical
+clean-source acceptance remain pending.
 
 ## Resume instruction
 
@@ -34,7 +46,8 @@ execution mode.
 
 ## Current truth
 
-- Active package: `REL-002 — Stable release readiness`.
+- Active package: historical `REL-002 — Stable release readiness`; the accepted
+  result is a bounded `0.1.x` production preview, not a stable API.
 - Active plan: `docs/plans/REL-002-stable-release-readiness.md`.
 - Verified dependency order: `FND-001`, `FND-002`, `FND-003`, `IR-001`,
   `IR-002`, `ADP-001`, `ADP-002`, `BRN-001`, `BRN-002`, `BRN-003`,
@@ -45,6 +58,10 @@ execution mode.
   and deprecation policy; critical-blocker disposition; release checklist;
   clean wheel/source-distribution scenarios; honest public claims; all gates;
   independent review; and physical clean-source evidence.
+- Canonical branch is local `main`; `origin` is
+  `https://github.com/Deliner/UCF.git`. The hosted repository is public, Issues
+  and Private Vulnerability Reporting are enabled, but no source revision has
+  yet been published to remote `main`.
 
 ## Binding Ratchet decision
 
@@ -101,52 +118,55 @@ is binding:
   The reproducible wheel SHA-256 is
   `17cc39364e513d1f0cf6f5d94508146de8da5748ee7928d11e8dd2d8cd105489`.
 
-## REL-002 accepted foundation evidence
+## REL-002 activation foundation evidence — historical
 
-Root and three independent audits agree that no core redesign or new production
-dependency is required, but the current tree is not release-ready:
+At activation, root and three independent audits agreed that no core redesign
+or new production dependency was required. The observations below describe the
+2026-07-21 activation snapshot, not the current tree; their dispositions are in
+the implementation milestone and independent-audit sections that follow:
 
-- No root license, SPDX project metadata, license-bearing wheel member,
-  authorized security intake, public support channel, or aggregate release
-  policy exists. These owner-controlled choices are decision gates.
-- Building from the dependency-populated clean-status checkout reproducibly
-  yields a 30,144,882-byte sdist with 6,655 members, 5,617 below
+- The repository had no root license, SPDX project metadata, license-bearing
+  wheel member, authorized security intake, public support channel, or
+  aggregate release policy. Those owner-controlled choices were decision gates.
+- A build from the dependency-populated clean-status checkout reproducibly
+  yielded a 30,144,882-byte sdist with 6,655 members, 5,617 below
   `node_modules`. A clean Git snapshot yields about 1.4 MB/1,038 members. The
-  sdist requires an explicit allowlist and equality gate.
-- On CPython 3.12.3 the declared `PyYAML==6.0` floor fails to build. With
-  `6.0.1`, the declared `typer==0.12.0` floor installs but `ucf --help` fails
-  on `pathlib.Path | None`. Supported floors must be corrected and tested.
-- Fresh npm audit evidence for `web/package-lock.json` is 10 findings: 7 high,
-  1 moderate, and 2 low; the runtime-only tree has 2 high React Router
-  findings. The TypeScript adapter and frozen fixture locks each have zero.
-  Every web finding reports a fix; update or prove exact non-impact.
-- The current wheel/package contract remains green and reproducible at SHA-256
+  sdist therefore required an explicit allowlist and equality gate.
+- On CPython 3.12.3 the declared `PyYAML==6.0` floor failed to build. With
+  `6.0.1`, the declared `typer==0.12.0` floor installed but `ucf --help` failed
+  on `pathlib.Path | None`; the supported floors required correction and proof.
+- Fresh npm audit evidence for `web/package-lock.json` reported 10 findings: 7
+  high, 1 moderate, and 2 low; the runtime-only tree had 2 high React Router
+  findings. The TypeScript adapter and frozen fixture locks each had zero.
+  Every web finding reported a fix.
+- The then-current wheel/package contract was green and reproducible at SHA-256
   `17cc39364e513d1f0cf6f5d94508146de8da5748ee7928d11e8dd2d8cd105489`.
-  Clean-snapshot sdist installation, CLI, and schema smoke also pass.
-- `.github/workflows/quality.yml` currently proves one Ubuntu/Linux job with
+  A clean-snapshot sdist was inspected and built into a wheel; that wheel's CLI
+  and schema smoke also passed.
+- `.github/workflows/quality.yml` proved one Ubuntu/Linux job with
   pinned Python/Node/Go setup. Hosted patch-label drift, other operating
   systems/architectures, signing, sdist behavior, and registry publication are
-  not yet accepted.
-- `tools/quality_gates.py` exposes `automation`, `affected`, and `all`; the
-  initial ExecPlan's assumed `package` profile does not exist and was corrected.
-  There is no executable release checklist yet.
-- README and Ratchet guidance are stale relative to CAP-212/CAP-213 and the
-  accepted v2 migration. Four `0.1.0` literals lack a synchronization check;
-  root CLI has no `--version`; only 2/28 capability rows name an owner.
-- The adapter protocol/conformance kit and ecosystem profiles remain labeled
+  outside the accepted boundary.
+- `tools/quality_gates.py` exposed `automation`, `affected`, and `all`; the
+  initial ExecPlan's assumed `package` profile did not exist and was corrected.
+  No executable release checklist existed.
+- README and Ratchet guidance were stale relative to CAP-212/CAP-213 and the
+  accepted v2 migration. Four `0.1.0` literals lacked a synchronization check;
+  the root CLI had no `--version`; only 2/28 capability rows named an owner.
+- The adapter protocol/conformance kit and ecosystem profiles were labeled
   experimental. Support is limited to exact frozen fixtures, versions,
   capabilities, procedures, Linux/x86_64, and the recorded toolchains.
-- Generation is proved only for the documented direct Python/pytest function
+- Generation was proved only for the documented direct Python/pytest function
   profile. TypeScript/Go generation and broader backend semantics are
-  unsupported, not implied.
-- `stale_mappings` exists as a drift concept but is not populated. Runtime
-  authenticity, producer identity, and the accepted ratchet tip remain
+  unsupported and were not implied.
+- `stale_mappings` existed as a drift concept but was not populated. Runtime
+  authenticity, producer identity, and the accepted ratchet tip remained
   caller/VCS/CI trust anchors rather than signed services.
-- External adapters, hooks, and generated commands run as the current user;
-  they are not hostile-process sandboxes. Runtime evidence has an explicit
+- External adapters, hooks, and generated commands ran as the current user;
+  they were not hostile-process sandboxes. Runtime evidence had an explicit
   allowlist/redaction/no-raw-retention boundary but does not promise universal
   sensitive-data detection.
-- No fixture produces a formal `verified` claim. Public wording must keep
+- No fixture produced a formal `verified` claim. Public wording had to keep
   `observed`, `declared`, `mapped`, `tested`, and `verified` distinct.
 
 Evidence is retained under `.artifacts/quality/rel002-start-20260721/` and:
@@ -181,21 +201,27 @@ broaden adapter support, or select weaker/different terms.
   privacy, packaging, support, and versioning policies are implemented and
   machine-checked.
 - `tools/release_check.py` is the packaging gate. It selects release source from
-  the Git index, builds source-only and dependency-populated sdists, requires
-  identical exact manifests/bytes, builds the wheel from the extracted sdist,
-  installs it ordinarily and at exact supported floors, checks `ucf --version`
-  and `--help`, and runs the existing installed package contract from the
-  extracted source distribution.
+  the exact Git-index object bytes, builds source-only and
+  dependency-populated sdists, requires identical exact manifests/bytes and
+  bounded compressed/member/uncompressed sizes, builds the wheel from the
+  extracted sdist, proves the wheel built from the source distribution at
+  ordinary and exact supported floors,
+  checks `ucf --version` and `--help`, and runs the existing installed package
+  contract from the extracted source distribution.
 - The bounded sdist is about 1.46 MB with 1,050 members rather than the rejected
   30.1 MB/6,655-member dependency-contaminated artifact. Exact digests must be
   refreshed after the final documentation/state commit and are not yet release
   claims.
-- Runtime/release-tool and build Python coordinates are audited and matched to
-  installed license inventories; web full/runtime, TypeScript adapter, and
-  TypeScript fixture locks are audited separately; the Go boundary confirms
-  zero external modules and exact upstream LICENSE/PATENTS. Current counts are
-  zero known advisories with no skip, waiver, severity threshold, or baseline
-  reset. The discovered pytest 9.0.2 advisory was removed by qualifying 9.1.1.
+- The checker is wired to audit runtime/release-tool, build, ordinary-install,
+  and supported-floor Python coordinates and match them to exact installed
+  license/environment inventories; it also separates web full/runtime,
+  TypeScript adapter, TypeScript fixture, and zero-external-module Go review.
+  The corrected post-fix distribution run captured and installation-tested both
+  actual environment inventories; the fresh revision-bound aggregate audit remains pending.
+  No current post-fix zero-advisory result is claimed here.
+  The accepted floors are `pydantic>=2.4.0`, `jinja2>=3.1.6`,
+  `pyyaml>=6.0.1`, and the previously accepted Typer floor; the locked pytest
+  coordinate was raised from the advisory-bearing 9.0.2 to 9.1.1.
 - React Router and Vite were upgraded through their exact locks. Frontend
   `npm ci`, full/runtime audits, build, and lint are green.
 - Package, root CLI, web metadata, adapter producer, generation environment,
@@ -205,32 +231,117 @@ broaden adapter support, or select weaker/different terms.
   private-key, keystore, cache, build, and dependency-tree state while retaining
   `.env.example`; the archived manifest must still match every selected source
   byte, so exclusions cannot conceal a tracked required release file.
-- Fresh evidence under `.artifacts/quality/rel002-rgr-20260721/` includes 2,107
-  passing Python tests at 90% coverage before the final documentation-only
-  test, 169 current automation tests, clean Ruff, 113 specs with zero errors or
-  warnings, frontend build/lint, distribution-only proof, full dependency and
-  license audits, and the aggregate pre-PVR failure. The requested
+- Standalone TypeScript and Go adapter artifacts now carry the root Apache-2.0
+  `LICENSE` and `NOTICE`; the Go artifact separately preserves upstream Go
+  `LICENSE`/`PATENTS`. The complete current package contract passes with
+  deterministic evidence SHA-256
+  `87c7012fc84bd4f8f81ef7996514403778d990a63a2e797d8c71320301108894`.
+- The 2,107-test Python run, 169-test automation run, distribution-only proof,
+  dependency/license output, and aggregate pre-PVR run under
+  `.artifacts/quality/rel002-rgr-20260721/` are pre-audit and superseded; they
+  remain diagnostics, not proof of the corrected path. Focused RED/GREEN logs
+  and the corrected package-contract result are current, while aggregate,
+  all-profile, and clean-source acceptance remain pending. The requested final
   `full-release-evidence.json` is absent by design.
-- GitHub API verifies the exact public repository, default `main` branch, and
-  enabled Issues. It reports Private Vulnerability Reporting disabled. This is
-  the only known release-check failure and must not be downgraded to a warning.
+- GitHub API now verifies the exact public repository, default `main`, enabled
+  Issues, and enabled Private Vulnerability Reporting. Final evidence also
+  requires a clean committed checkout whose local HEAD exactly equals remote
+  `main`; that condition intentionally remains red until the corrected source
+  is committed and pushed.
+
+## Independent pre-acceptance audit findings
+
+The contract/claims, packaging/CI, and security/licensing reviewers rejected
+the first locally green release checker. The accepted findings and dispositions
+are:
+
+- source-only builds listed the index but copied mutable working-tree bytes;
+  source export now reads raw Git blobs and has adversarial staged/unstaged and
+  clean/smudge-filter regressions;
+- the first correction still used `checkout-index`, which applies filters, and
+  final HEAD binding happened only after artifacts were built; development
+  checks now snapshot raw index object IDs, while final evidence snapshots raw
+  objects from one clean commit tree, builds from that snapshot, records its
+  object/source manifests, and revalidates the same HEAD/tree before publish;
+- failed runs could leave old evidence and successful publication was not
+  atomic/create-only; a run invalidates its target before work and publishes an
+  exact JSON file through an atomic hard-link transaction;
+- the locked verification environment was audited instead of the two
+  environments users actually install; ordinary and supported-floor exact
+  inventories are now captured and installation-tested, and the aggregate
+  checker requires their independent advisory/license alignment. Fresh
+  revision-bound aggregate execution remains pending;
+- `pydantic==2.0` and `jinja2==3.1.0` were known-vulnerable supported floors;
+  floors were raised to the first accepted safe versions and locked tests cover
+  the policy;
+- standalone TypeScript/Go artifacts omitted project licensing; exact artifact
+  tree tests now require the project license/notice alongside upstream notices;
+- compressed-size checks did not bound archive expansion; per-member and total
+  uncompressed limits now fail closed. Follow-up review found directories were
+  not counted and parsing occurred before the limit; streaming inspection now
+  bounds every member, raw/canonical path, file sizes, and the decompressed tar
+  stream before extraction;
+- an empty GitHub repository could satisfy the hosted check; final evidence now
+  requires nonempty remote `main` at the exact clean local source revision;
+- historical “stable release” wording overstated the accepted `0.1.x`
+  production preview and the source-install wording overstated direct archive
+  installation; both claims are narrowed and machine-checked.
+- scoped `--distribution-only` runs could publish an unqualified passed JSON;
+  retained final evidence is now forbidden for that scope;
+- dependency audits read mutable checkout locks after artifact construction;
+  final audit inputs are now materialized from the same captured commit blobs;
+- tar iteration stopped at the first tar end marker without consuming later
+  gzip members; inspection now drains the complete gzip stream through the
+  decompression bound and rejects corrupt trailers;
+- hidden installed-inventory mode returned before stale evidence invalidation;
+  every requested evidence path is invalidated first and incompatible scoped
+  modes then fail closed;
+- temporary-snapshot cleanup and post-link durability failure could happen
+  after this invocation's final marker became visible; cleanup now precedes
+  hosted/final publication, and publisher rollback removes only a destination
+  created by the failing invocation while preserving identical concurrent
+  evidence;
+- boolean rollback ownership still allowed a destination replaced after link
+  to be deleted; rollback now captures the created device/inode and performs a
+  no-follow regular-file identity check before unlinking;
+- evidence collision verification followed a path after `lstat`, and stale
+  symlinks survived invalidation; invalidation now unlinks non-directory entries
+  without following them, and collision comparison uses `O_NOFOLLOW`, an open
+  descriptor, inode recheck, file/directory fsync, and create-only linking;
+- historical BASELINE text, source-install wording, remote-write authority,
+  adapter-license scope, embedded-hash wording, and root ignore coverage were
+  contradictory; cross-document tests now enforce the corrected boundary.
+
+Focused RED/GREEN logs are under
+`.artifacts/quality/rel002-rgr-20260721/`. The earlier aggregate green file was
+pre-audit and is superseded; it must not be used as final release evidence.
+The latest affected contract is 128/128, the complete automation suite is
+187/187, Ruff is clean, and
+`distribution-raw-index-streaming-green.log` proves the corrected staged-source
+distribution path. The later `distribution-third-reaudit-green.log` repeats it
+after complete-gzip and commit-bound dependency-source hardening. The current
+`distribution-final-precommit-green.log` repeats the staged path after the
+atomicity corrections: both 1,050-member sdists are byte-identical and both
+ordinary and supported-floor installations pass. Exact evolving pre-commit
+digests remain in retained command output rather than becoming self-referential
+source claims. Independent acceptance re-audit remains required.
 
 ## Immediate execution sequence
 
-1. Finish the current documentation-hardening affected suite, review and commit
-   the coherent local release-boundary milestone, and rename the local branch
-   from `master` to the repository's canonical `main` before publication.
-2. Complete independent read-only contract/claims, security/privacy/licensing,
-   and packaging/clean-install audits; reproduce and close every accepted
-   finding through retained RED/GREEN evidence.
-3. When GitHub Private Vulnerability Reporting is enabled, rerun the aggregate
-   release checker with explicit evidence output, all eight gates, and a
-   physical clean-source/clean-distribution replay. Then update CAP-214,
-   BACKLOG, BASELINE, this state, and every final public claim from fresh output.
-4. Inspect the complete diff and source manifests, commit final closure, rename
-   or confirm `main`, and push only the verified history to the configured
-   canonical repository. Do not create a package release/tag until the checked
-   release artifacts and hashes are the ones being published.
+1. Run the corrected affected suite and distribution proof, inspect the full
+   diff, commit the audit closure on local `main`, and push it to canonical
+   remote `main`.
+2. Run the aggregate checker with explicit evidence so it proves PVR and exact
+   local/remote revision equality; then request independent read-only re-audits
+   of contracts/claims, security/licensing, and packaging/clean install.
+3. Close every accepted re-audit finding through retained RED/GREEN evidence.
+   Then update CAP-214, BACKLOG, BASELINE, this state, every ExecPlan outcome,
+   and all final public claims from fresh output; commit and push that closure.
+4. From the final remote revision, repeat explicit release evidence, all eight
+   gates, and a physical clean-source/clean-distribution replay. Inspect the
+   complete final diff, manifests, Git status, and remote revision. Do not create
+   a package release/tag until the checked artifact bytes and hashes are the
+   ones being published.
 5. If a new production dependency, wire reinterpretation, weaker gate,
    destructive migration, hosted write, or broader support promise appears,
    open a new explicit decision gate before acting.

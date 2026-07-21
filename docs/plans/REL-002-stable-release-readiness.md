@@ -1,5 +1,9 @@
 # REL-002 Stable Release Readiness
 
+The filename and work-package title are historical. The owner accepted a
+bounded `0.1.x` production preview, not a stable API; this plan does not promote
+the package to `1.0.0` or broaden its support promise.
+
 This ExecPlan is a living document. `Progress`, `Surprises & Discoveries`,
 `Decision Log`, and `Outcomes & Retrospective` must always reflect current
 repository evidence. Maintain it according to `PLANS.md`.
@@ -57,7 +61,8 @@ support promise is a human decision gate under `AGENTS.md`.
 Result: partly confirmed and partly falsified. Root and three independent
 read-only audits found no hidden core redesign or required production
 dependency. The current wheel and package contract are reproducible and green,
-and a clean Git snapshot produces an installable reproducible sdist. However,
+and a clean Git snapshot produces a reproducible sdist whose isolated wheel
+build and installation succeed. However,
 the ordinary dependency-populated checkout produces an environment-dependent
 30,144,882-byte sdist with 6,655 members, including 5,617 `node_modules`
 members; the package has no license grant or release metadata; declared
@@ -103,12 +108,49 @@ resumed without broadening the accepted preview boundary.
   three-stack package scenarios, strict dependency/license audits, actionable
   install guidance, and credential-aware ignore/exclusion policy. Retain every
   focused RED and GREEN under `.artifacts/quality/rel002-rgr-20260721/`.
+- [x] 2026-07-21: Complete three independent pre-acceptance audits and accept
+  their exact-index-byte, evidence-publication, installed-environment audit,
+  vulnerable-floor, standalone-adapter licensing, archive-expansion, remote
+  source-binding, and preview-wording findings. Reproduce every accepted issue
+  with a focused RED and implement the smallest correction. The corrected
+  installed package contract is green; aggregate and re-audit remain pending.
+- [x] 2026-07-21: Run the first independent follow-up re-audit. Reject the
+  still-unsound boundary on filtered `checkout-index` bytes, late HEAD binding,
+  uncounted directory/PAX expansion, scoped passed evidence, evidence-path
+  races, stale/contradictory claims, and missing audit-validator defense in
+  depth. Preserve the new REDs, replace checkout export with raw commit/index
+  blobs, stream-bound the archive, bind final artifacts to a revalidated commit
+  tree, harden evidence publication, reconcile the policy/state baseline, and
+  rerun 121 affected plus 180 automation tests and Ruff green.
+- [x] 2026-07-21: Run the second independent follow-up re-audit. Reject three
+  remaining fail-open paths: dependency audits reading the mutable checkout,
+  tar parsing that did not drain concatenated/corrupt gzip members, and hidden
+  inventory mode preserving stale final evidence. Add four focused REDs,
+  materialize audit inputs from captured commit blobs, drain and validate the
+  complete bounded gzip stream, reject conflicting evidence scope, and
+  reconcile historical/pending claims. Rerun 124 affected and 183 automation
+  tests plus Ruff green, then repeat the complete staged distribution path with
+  byte-identical 1,050-member sdists and both install profiles green. Final
+  acceptance re-audit remains pending.
+- [x] 2026-07-21: Continue the release atomicity audit and reject publication
+  before temporary-snapshot cleanup plus post-link failures that left this
+  invocation's evidence marker behind. Add three fault-injection regressions,
+  finish commit-snapshot cleanup before hosted/final publication, roll back
+  only a destination created by the failing publisher, and preserve an
+  identical concurrent publisher's file. Rerun 127 affected and 186 automation
+  tests plus Ruff green.
+- [x] 2026-07-21: Recheck rollback identity and reject its boolean-only
+  ownership flag: a concurrent replacement between link and failure could be
+  deleted. Add a failing replacement race, bind rollback to the created
+  regular-file device/inode with a no-follow recheck, and rerun 128 affected
+  and 187 automation tests plus Ruff green.
 - [ ] Prove wheel and source-distribution builds, clean installation, installed
-  schemas/CLIs, dependency/advisory policy, and the complete release checklist.
-  The local portion passes; GitHub Private Vulnerability Reporting is the only
-  failing hosted surface and therefore prevents release evidence publication.
+  schemas/CLIs, dependency/advisory policy, exact published source revision,
+  and the complete release checklist. GitHub Private Vulnerability Reporting
+  is enabled, but remote `main` is empty until the corrected commit is pushed.
 - [ ] Complete independent contract/claims, security/privacy/licensing, and
-  packaging/clean-install reviews; close accepted findings with retained REDs.
+  packaging/clean-install re-audits; close any accepted findings with retained
+  RED/GREEN evidence.
 - [ ] Run affected suites and all eight gates, inspect the complete diff, repeat
   physical clean-source and clean-distribution scenarios, update automation
   state/baseline, and record the final outcome.
@@ -167,13 +209,60 @@ fresh Python advisory output identified `pytest 9.0.2` as affected by
 to `9.1.1`. The resulting Python, npm, and Go audits report zero known
 advisories without skips or waivers.
 
-The full release checker now passes both sdist builds, wheel-from-sdist,
+The first full release checker passed both sdist builds, wheel-from-sdist,
 ordinary and minimum-floor installation, the complete installed package
-contract, all three ecosystem lanes, and dependency/license inventories. It
-then fails exactly at the selected hosted security surface because GitHub's API
-reports Private Vulnerability Reporting disabled. The failure correctly leaves
-the requested final evidence path absent; CAP-214 cannot advance while this
-owner-controlled repository setting is false.
+contract, all three ecosystem lanes, and its dependency/license inventories.
+Independent review nevertheless rejected it: it copied working-tree bytes
+after selecting index paths, could leave stale evidence, audited the locked
+tool environment instead of both installed environments, admitted vulnerable
+Pydantic/Jinja floors, omitted UCF licensing from standalone adapter artifacts,
+did not bound uncompressed sdist expansion, and accepted an empty hosted
+repository. That earlier green result is superseded rather than grandfathered.
+
+The owner subsequently enabled GitHub Private Vulnerability Reporting. Focused
+RED/GREEN slices now export exact index objects, invalidate then atomically
+create evidence, capture both actual install inventories and environment
+coordinates, and require the aggregate checker to audit them independently.
+They use `pydantic>=2.4.0` and `jinja2>=3.1.6`, package UCF
+`LICENSE`/`NOTICE` with TypeScript and Go artifacts, bound per-member and total
+sdist expansion, and require final evidence source HEAD to equal nonempty
+remote `main`. Final aggregate evidence remains deliberately unavailable until
+the corrected committed revision is pushed and rechecked.
+
+The first follow-up re-audit falsified two of those corrections: Git
+`checkout-index` may apply clean/smudge/EOL conversion, and a late clean-HEAD
+check does not bind an earlier mutable index export. It also demonstrated more
+than 3,000 directory headers bypassing the file-only member limit, a scoped
+distribution command publishing top-level passed evidence, a collision
+`lstat`/read race, and several cross-document contradictions. Raw blob export,
+commit-tree snapshots, streaming all-member/tar-byte limits, final-scope-only
+evidence, descriptor-bound publication, and executable claim consistency now
+replace the rejected design. The earlier green is again superseded rather than
+treated as debt.
+
+The second follow-up re-audit found that a clean final HEAD check still did not
+bind dependency audits that read the mutable checkout, tar iteration stopped at
+the first end marker without draining later gzip members, and hidden inventory
+mode returned before stale final evidence was invalidated. Dependency review
+now runs against a source tree materialized from the captured commit blobs, the
+bounded reader consumes and validates the complete gzip stream, and every mode
+invalidates then rejects an incompatible final-evidence request. The associated
+four REDs, 124 affected tests, 183 automation tests, and Ruff result are retained
+under `.artifacts/quality/rel002-rgr-20260721/`.
+
+The final atomicity pass then showed that temporary-snapshot cleanup and a
+post-link directory durability failure could occur after final evidence became
+visible. Local snapshot verification now exits its managed directory before
+hosted/final publication, and the create-only publisher rolls back only the
+destination inode created by its own failed call. Fault-injection tests preserve
+an identical concurrent publisher's file while guaranteeing that this
+invocation's failed marker is absent.
+
+Independent recheck then replaced the newly linked entry before an injected
+durability failure and proved that boolean ownership was insufficient: rollback
+deleted the replacement. Publication now captures the created file identity
+and only unlinks a no-follow regular-file entry whose device/inode still match;
+the concurrent replacement regression preserves the other publisher's link.
 
 ## Decision Log
 
@@ -208,14 +297,30 @@ owner-controlled repository setting is false.
   Author: root agent, implementing DG-REL002-003. The release checker verifies
   the exact public repository, default `main` branch, enabled Issues, and
   enabled GitHub Private Vulnerability Reporting through GitHub's API. Policy
-  prose cannot substitute for the selected confidential route; the current
-  disabled result is a hard release failure and publishes no acceptance file.
+  prose cannot substitute for the selected confidential route. The owner
+  enabled it on 2026-07-21; final acceptance must still bind that hosted result
+  to the exact clean source revision published on remote `main`.
+
+- **2026-07-21 — reject the first green release result after independent
+  audit.** Author: root agent. A passing aggregate command is insufficient when
+  its source, dependency, publication, archive, or hosted-revision boundary is
+  unsound. The pre-audit evidence is retained as historical diagnostic output
+  but is superseded and cannot support CAP-214. Every accepted finding receives
+  a focused failing test, minimal correction, affected suite, and independent
+  re-audit before release acceptance.
+
+- **2026-07-21 — bind final release evidence to published committed source.**
+  Author: root agent. An explicit evidence run requires no tracked staged or
+  unstaged differences and exact equality between local HEAD and canonical
+  remote `main`. Ordinary CI/PR checks may validate a non-main revision without
+  publishing final evidence, but they record that it is not the published
+  revision. An empty repository or missing/malformed branch fails closed.
 
 - **2026-07-21 — DG-REL002-001: project license and licensor identity.** Status:
-  accepted by project owner. There is no root license, package SPDX expression,
-  license file in the wheel, or demonstrated grant to copy/modify/redistribute
-  UCF. The owner must also confirm authority over the current contributions and
-  provide the exact copyright holder/year. Options:
+  accepted by project owner. At the decision gate there was no root license,
+  package SPDX expression, license file in the wheel, or demonstrated grant to
+  copy/modify/redistribute UCF. The owner also had to confirm authority over the
+  current contributions and provide the exact copyright holder/year. Options:
 
   1. **Apache-2.0 (recommended):** permissive source/binary use with explicit
      contributor patent terms, well suited to a multi-vendor adapter/protocol
@@ -308,21 +413,21 @@ owner-controlled repository setting is false.
 
 The foundation, all three owner decisions, policy set, local distribution
 closure, dependency/advisory remediation, release metadata, exact version
-diagnostic, and executable release profile are complete. Fresh local evidence
-includes 2,107 passing Python tests at 90% coverage before the final
-documentation-only test, 169 current automation tests, clean
-Ruff/spec/frontend checks, an
-identical bounded sdist pair, wheel-from-sdist installation at current and
-supported dependency floors, and complete installed Python/TypeScript/Go
-scenarios. The selected result remains a bounded `0.1.x` production preview,
-not a stable-API claim.
+diagnostic, and executable release profile are implemented. Independent review
+materially strengthened their trust boundaries; its accepted findings and
+focused corrections are recorded above. The selected result remains a bounded
+`0.1.x` production preview, not a stable API.
 
-REL-002 is not accepted yet. GitHub Private Vulnerability Reporting remains
-disabled, so the aggregate checker stops after all local work and deliberately
-publishes no final evidence. After that owner-controlled setting becomes true,
-the remaining work is a fresh aggregate replay, independent final audits,
-physical clean-source verification, complete diff/claim review, CAP-214 and
-baseline/state closure, and the final commit/push sequence.
+REL-002 is not accepted yet. PVR is enabled and the corrected package contract
+passes; 128 affected and 187 complete automation tests plus Ruff pass. The
+staged `distribution-final-precommit-green.log` proves byte-identical sdists and
+both installation profiles, and `release-atomicity-final-green.log` proves the
+publication/cleanup fault paths. `release-rollback-race-green.log` additionally
+proves that rollback preserves a replaced destination. The revised source is
+not yet committed or published to remote `main`. Remaining work is final independent acceptance,
+fresh aggregate replay against that exact remote revision, full and physical
+clean-source verification, complete diff/claim review, CAP-214 and
+baseline/state closure, and a final commit/push/replay cycle.
 
 ## Context and Orientation
 
@@ -352,8 +457,9 @@ misleading within its claimed scope.
 ## Plan of Work
 
 First, snapshot the release surfaces and run the cheapest falsification. Build
-both wheel and source distribution, inspect their metadata and file manifests,
-install each into a clean environment, inventory dependency advisories/licenses
+the wheel and source distribution, inspect both metadata/file manifests, then
+install the direct wheel and the separately built wheel from the source
+distribution in clean environments. Inventory dependency advisories/licenses
 from locked inputs, inspect CI/toolchain and platform claims, and trace every
 public capability statement to a test or checked report. Record findings before
 changing behavior.
@@ -432,8 +538,9 @@ REL-002 is accepted only when fresh executable evidence proves:
    boundaries, with every critical advisory resolved or explicitly deferred by
    an authorized decision and non-misleading support status;
 3. wheel and supported source distribution include required schemas, metadata,
-   license/notices, and documentation, install in clean environments, and run
-   the advertised CLI and release scenarios without checkout imports;
+   license/notices, and documentation; the release wheel and wheel built from the source distribution
+   install in clean environments and run the advertised
+   CLI and release scenarios without checkout imports;
 4. dependency and license inventories are derived from exact locks/artifacts,
    and every production or bundled dependency has an accepted disposition;
 5. support and deprecation policies define supported Python, Node, Go, OS/
@@ -446,8 +553,8 @@ REL-002 is accepted only when fresh executable evidence proves:
    and release policy agree; CAP-214 changes from `planned` only to the exact
    status proved by the final gates;
 8. all eight quality gates, affected suites, independent audits, complete diff
-   review, physical clean-source replay, and clean wheel/sdist release scenarios
-   pass from fresh locked installs.
+   review, physical clean-source replay, and clean direct-wheel plus
+   wheel-built-from-sdist release scenarios pass from fresh locked installs.
 
 ## Idempotence and Recovery
 
@@ -492,8 +599,11 @@ tests, and clean-distribution checks. The exact shape remains contingent on the
 foundation probe; avoid a serialized product resource unless a real consumer
 requires one.
 
-No new production dependency, license, hosted service, signing identity,
-registry publication, tag, or remote write is authorized by this plan. The
-project owner must decide any such gate. Build and audit tools used only in
-isolated verification must be exact-versioned or otherwise captured in command
-evidence and must not silently enter the runtime dependency set.
+The owner's accepted repository decision authorizes root to push the verified history
+to `https://github.com/Deliner/UCF.git`; push to remote `main` is authorized.
+No new production dependency, different license, hosted service, signing
+identity, registry publication, tag/release creation, or other remote write is
+authorized by this plan. The project owner must decide any such gate. Build and
+audit tools used only in isolated verification must be exact-versioned or
+otherwise captured in command evidence and must not silently enter the runtime
+dependency set.

@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import json
 import os
+import platform
 import re
 import shlex
 import shutil
+import ssl
+import stat
 import subprocess
 import sys
 import tarfile
@@ -15,17 +19,23 @@ import tomllib
 import zipfile
 from collections import Counter
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from email.message import Message
 from email.parser import BytesParser
 from email.policy import default
 from importlib.metadata import distributions
 from pathlib import Path, PurePosixPath
+from typing import BinaryIO
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 MAX_SDIST_BYTES = 5 * 1024 * 1024
 MAX_SDIST_MEMBERS = 2_000
+MAX_SDIST_MEMBER_BYTES = 5 * 1024 * 1024
+MAX_SDIST_UNCOMPRESSED_BYTES = 25 * 1024 * 1024
+MAX_SDIST_TAR_STREAM_BYTES = 32 * 1024 * 1024
+MAX_ARCHIVE_MEMBER_NAME_BYTES = 4096
 
 REQUIRED_SDIST_MEMBERS = frozenset(
     {
@@ -131,9 +141,9 @@ EXPECTED_PROJECT_URLS = frozenset(
 
 EXPECTED_RUNTIME_REQUIREMENTS = frozenset(
     {
-        "jinja2>=3.1",
+        "jinja2>=3.1.6",
         "networkx>=3.0",
-        "pydantic>=2.0",
+        "pydantic>=2.4.0",
         "pyyaml>=6.0.1",
         "rich>=13.0",
         "typer>=0.16.0",
@@ -203,10 +213,54 @@ MAX_HOSTED_RESPONSE_BYTES = 1024 * 1024
 MINIMUM_REQUIREMENT = re.compile(
     r"^(?P<name>[A-Za-z0-9][A-Za-z0-9._-]*)>=(?P<version>[A-Za-z0-9][A-Za-z0-9._+-]*)$"
 )
+GIT_OBJECT_ID = re.compile(r"[0-9a-f]{40}(?:[0-9a-f]{24})?")
+GIT_REGULAR_FILE_MODES = frozenset({"100644", "100755"})
 
 
 class ReleaseCheckError(RuntimeError):
     """Raised when a releasable distribution invariant is false."""
+
+
+@dataclass(frozen=True)
+class GitBlobEntry:
+    mode: str
+    object_id: str
+    path: PurePosixPath
+
+
+@dataclass(frozen=True)
+class GitSourceSnapshot:
+    entries: tuple[GitBlobEntry, ...]
+    kind: str
+    revision: str | None = None
+    tree: str | None = None
+
+
+class _ByteLimitReader:
+    def __init__(self, stream: BinaryIO, *, limit: int, label: str) -> None:
+        self._stream = stream
+        self._limit = limit
+        self._label = label
+        self.bytes_read = 0
+
+    def read(self, size: int = -1) -> bytes:
+        remaining_with_probe = self._limit - self.bytes_read + 1
+        requested = remaining_with_probe if size < 0 else min(
+            size, remaining_with_probe
+        )
+        try:
+            chunk = self._stream.read(requested)
+        except (EOFError, gzip.BadGzipFile) as exc:
+            raise ReleaseCheckError(
+                f"{self._label} has an invalid gzip stream"
+            ) from exc
+        self.bytes_read += len(chunk)
+        if self.bytes_read > self._limit:
+            raise ReleaseCheckError(
+                f"{self._label} exceeds decompressed stream limit: "
+                f"{self.bytes_read} > {self._limit}"
+            )
+        return chunk
 
 
 def dependency_audit_commands(
@@ -357,6 +411,7 @@ def validate_python_audit_report(
             f"{label} Python audit report has no dependencies list"
         )
     vulnerable: dict[str, list[str]] = {}
+    skipped: dict[str, str] = {}
     coordinates: set[str] = set()
     for dependency in dependencies:
         if not isinstance(dependency, Mapping):
@@ -382,6 +437,9 @@ def validate_python_audit_report(
                 f"{label} Python audit report duplicates {coordinate}"
             )
         coordinates.add(coordinate)
+        skip_reason = dependency.get("skip_reason")
+        if skip_reason is not None and skip_reason != "":
+            skipped[coordinate] = str(skip_reason)
         if vulnerabilities:
             vulnerable[coordinate] = [
                 str(item.get("id", "unknown"))
@@ -392,6 +450,10 @@ def validate_python_audit_report(
     if vulnerable:
         raise ReleaseCheckError(
             f"{label} Python dependencies have known vulnerabilities: {vulnerable}"
+        )
+    if skipped:
+        raise ReleaseCheckError(
+            f"{label} Python audit has skipped dependencies: {skipped}"
         )
     return {
         "dependency_count": len(coordinates),
@@ -460,9 +522,29 @@ def _installed_python_license_inventory() -> dict[str, object]:
     if not inventory:
         raise ReleaseCheckError("installed Python dependency inventory is empty")
     inventory.sort(key=lambda item: item["name"])
+    environment = {
+        "implementation": platform.python_implementation(),
+        "machine": platform.machine(),
+        "openssl": ssl.OPENSSL_VERSION,
+        "platform_release": platform.release(),
+        "platform_system": platform.system(),
+        "python_compiler": platform.python_compiler(),
+        "python_version": platform.python_version(),
+        "python_version_detail": sys.version,
+    }
+    if (
+        environment["implementation"] != "CPython"
+        or not str(environment["python_version"]).startswith("3.12.")
+        or environment["platform_system"] != "Linux"
+        or environment["machine"] not in {"AMD64", "x86_64"}
+    ):
+        raise ReleaseCheckError(
+            f"installed Python environment is outside support: {environment}"
+        )
     return {
         "dependencies": inventory,
         "dependency_count": len(inventory),
+        "environment": environment,
         "status": "reviewed",
     }
 
@@ -478,6 +560,10 @@ def _write_installed_python_license_inventory(output_path: Path) -> None:
 def validate_github_release_surfaces(
     repository: Mapping[str, object],
     private_reporting: Mapping[str, object],
+    branch: Mapping[str, object],
+    *,
+    local_revision: str,
+    require_published_source: bool,
 ) -> dict[str, object]:
     expected = {
         "default_branch": GITHUB_DEFAULT_BRANCH,
@@ -494,6 +580,33 @@ def validate_github_release_surfaces(
         raise ReleaseCheckError(
             f"canonical GitHub repository surface differs: {mismatches}"
         )
+    repository_size = repository.get("size")
+    if (
+        isinstance(repository_size, bool)
+        or not isinstance(repository_size, int)
+        or repository_size <= 0
+    ):
+        raise ReleaseCheckError("canonical GitHub repository is empty")
+    commit = branch.get("commit")
+    remote_revision = commit.get("sha") if isinstance(commit, Mapping) else None
+    if (
+        branch.get("name") != GITHUB_DEFAULT_BRANCH
+        or not isinstance(remote_revision, str)
+        or re.fullmatch(r"[0-9a-f]{40}", remote_revision) is None
+    ):
+        raise ReleaseCheckError(
+            f"canonical GitHub main branch is malformed: {branch}"
+        )
+    if re.fullmatch(r"[0-9a-f]{40}", local_revision) is None:
+        raise ReleaseCheckError(
+            f"local source revision is malformed: {local_revision!r}"
+        )
+    source_published = remote_revision == local_revision
+    if require_published_source and not source_published:
+        raise ReleaseCheckError(
+            "local release source is not published to canonical main: "
+            f"local={local_revision}, remote={remote_revision}"
+        )
     if private_reporting.get("enabled") is not True:
         raise ReleaseCheckError(
             "GitHub Private Vulnerability Reporting is not enabled"
@@ -502,25 +615,69 @@ def validate_github_release_surfaces(
         "default_branch": GITHUB_DEFAULT_BRANCH,
         "issues": "enabled",
         "private_vulnerability_reporting": "enabled",
+        "remote_main_revision": remote_revision,
         "repository": GITHUB_REPOSITORY,
+        "source_published_to_main": source_published,
+        "source_revision": local_revision,
         "visibility": "public",
     }
 
 
 def _safe_member_path(raw_path: str) -> PurePosixPath:
+    try:
+        encoded_length = len(raw_path.encode("utf-8"))
+    except UnicodeEncodeError as exc:
+        raise ReleaseCheckError(
+            f"unsafe archive member: {raw_path!r}"
+        ) from exc
     path = PurePosixPath(raw_path)
     if (
         not raw_path
+        or encoded_length > MAX_ARCHIVE_MEMBER_NAME_BYTES
         or "\\" in raw_path
         or path.is_absolute()
         or any(part in {"", ".", ".."} for part in path.parts)
+        or path.as_posix() != raw_path
     ):
         raise ReleaseCheckError(f"unsafe archive member: {raw_path!r}")
     return path
 
 
+def _validate_sdist_relative_path(
+    path: PurePosixPath, *, raw_path: str, is_directory: bool
+) -> None:
+    if not path.parts or path.parts[0] not in ALLOWED_SDIST_ROOTS:
+        raise ReleaseCheckError(
+            f"sdist has an unapproved root member: {raw_path}"
+        )
+    checked_parts = path.parts if is_directory else path.parts[:-1]
+    forbidden_directory = next(
+        (
+            part
+            for part in checked_parts
+            if part in FORBIDDEN_DIRECTORY_NAMES
+            or part.endswith(".egg-info")
+        ),
+        None,
+    )
+    if forbidden_directory is not None:
+        raise ReleaseCheckError(
+            "sdist contains forbidden directory "
+            f"{forbidden_directory!r}: {raw_path}"
+        )
+    if not is_directory and (
+        path.name == ".coverage" or path.suffix in {".pyc", ".pyo"}
+    ):
+        raise ReleaseCheckError(
+            f"sdist contains generated local state: {raw_path}"
+        )
+
+
 def validate_sdist_member_paths(
-    relative_paths: Sequence[str], *, archive_size: int
+    relative_paths: Sequence[str],
+    *,
+    archive_size: int,
+    member_sizes: Mapping[str, int] | None = None,
 ) -> None:
     if archive_size > MAX_SDIST_BYTES:
         raise ReleaseCheckError(
@@ -540,32 +697,44 @@ def validate_sdist_member_paths(
             f"sdist has duplicate archive members: {duplicates}"
         )
 
+    if member_sizes is not None:
+        if set(member_sizes) != set(relative_paths):
+            raise ReleaseCheckError(
+                "sdist uncompressed-size inventory differs from file members"
+            )
+        invalid_sizes = {
+            path: size
+            for path, size in member_sizes.items()
+            if isinstance(size, bool) or not isinstance(size, int) or size < 0
+        }
+        if invalid_sizes:
+            raise ReleaseCheckError(
+                f"sdist has invalid uncompressed member sizes: {invalid_sizes}"
+            )
+        oversized = {
+            path: size
+            for path, size in member_sizes.items()
+            if size > MAX_SDIST_MEMBER_BYTES
+        }
+        if oversized:
+            raise ReleaseCheckError(
+                "sdist exceeds uncompressed member size limit: "
+                f"{oversized}"
+            )
+        uncompressed_size = sum(member_sizes.values())
+        if uncompressed_size > MAX_SDIST_UNCOMPRESSED_BYTES:
+            raise ReleaseCheckError(
+                "sdist exceeds total uncompressed size limit: "
+                f"{uncompressed_size} > {MAX_SDIST_UNCOMPRESSED_BYTES}"
+            )
+
     normalized_paths: set[str] = set()
     for raw_path in relative_paths:
         path = _safe_member_path(raw_path)
         normalized_paths.add(path.as_posix())
-        if path.parts[0] not in ALLOWED_SDIST_ROOTS:
-            raise ReleaseCheckError(
-                f"sdist has an unapproved root member: {raw_path}"
-            )
-        forbidden_directory = next(
-            (
-                part
-                for part in path.parts[:-1]
-                if part in FORBIDDEN_DIRECTORY_NAMES
-                or part.endswith(".egg-info")
-            ),
-            None,
+        _validate_sdist_relative_path(
+            path, raw_path=raw_path, is_directory=False
         )
-        if forbidden_directory is not None:
-            raise ReleaseCheckError(
-                "sdist contains forbidden directory "
-                f"{forbidden_directory!r}: {raw_path}"
-            )
-        if path.name == ".coverage" or path.suffix in {".pyc", ".pyo"}:
-            raise ReleaseCheckError(
-                f"sdist contains generated local state: {raw_path}"
-            )
 
     missing = sorted(REQUIRED_SDIST_MEMBERS - normalized_paths)
     if missing:
@@ -680,82 +849,162 @@ def _source_file_manifest(source_root: Path) -> dict[str, str]:
     return manifest
 
 
-def _sdist_source_manifest(
-    archive_path: Path, *, expected_version: str
-) -> dict[str, str]:
-    manifest: dict[str, str] = {}
-    with tarfile.open(archive_path, "r:gz") as archive:
-        files = [member for member in archive.getmembers() if member.isfile()]
-        _, relative_paths = _strip_sdist_root(
-            [member.name for member in files],
-            expected_version=expected_version,
-        )
-        for member, relative_path in zip(files, relative_paths, strict=True):
-            if relative_path == "PKG-INFO":
-                continue
-            stream = archive.extractfile(member)
-            if stream is None:
-                raise ReleaseCheckError(
-                    f"cannot read sdist source member: {member.name}"
-                )
-            manifest[relative_path] = _sha256_bytes(stream.read())
-    return manifest
+def _canonical_tar_member_path(member: tarfile.TarInfo) -> PurePosixPath:
+    raw_path = member.name
+    if member.isdir() and raw_path.endswith("/"):
+        raw_path = raw_path[:-1]
+    return _safe_member_path(raw_path)
 
 
-def _strip_sdist_root(
-    member_names: Sequence[str], *, expected_version: str
-) -> tuple[str, tuple[str, ...]]:
-    safe_names = tuple(_safe_member_path(name) for name in member_names)
-    roots = {path.parts[0] for path in safe_names}
-    if len(roots) != 1:
+def _read_tar_member(
+    archive: tarfile.TarFile, member: tarfile.TarInfo
+) -> bytes:
+    stream = archive.extractfile(member)
+    if stream is None:
+        raise ReleaseCheckError(f"cannot read sdist member: {member.name}")
+    chunks: list[bytes] = []
+    bytes_read = 0
+    while bytes_read < member.size:
+        chunk = stream.read(min(1024 * 1024, member.size - bytes_read))
+        if not chunk:
+            break
+        chunks.append(chunk)
+        bytes_read += len(chunk)
+    if bytes_read != member.size:
         raise ReleaseCheckError(
-            f"sdist must have one archive root, found: {sorted(roots)}"
+            f"sdist member is truncated: {member.name}: "
+            f"{bytes_read} != {member.size}"
         )
-    [root] = roots
+    return b"".join(chunks)
+
+
+def _inspect_sdist_contents(
+    archive_path: Path, *, expected_version: str
+) -> tuple[dict[str, object], dict[str, str]]:
+    archive_size = archive_path.stat().st_size
+    if archive_size > MAX_SDIST_BYTES:
+        raise ReleaseCheckError(
+            f"sdist exceeds size limit: {archive_size} > {MAX_SDIST_BYTES}"
+        )
+
     expected_root = f"ucf-{expected_version}"
-    if root != expected_root:
-        raise ReleaseCheckError(f"unexpected sdist archive root: {root!r}")
-    return root, tuple(
-        PurePosixPath(*path.parts[1:]).as_posix() for path in safe_names
+    canonical_members: set[str] = set()
+    relative_files: list[str] = []
+    member_sizes: dict[str, int] = {}
+    source_manifest: dict[str, str] = {}
+    metadata_payloads: list[bytes] = []
+    member_count = 0
+    directory_count = 0
+    uncompressed_file_bytes = 0
+    largest_member = 0
+
+    with gzip.open(archive_path, "rb") as compressed:
+        bounded = _ByteLimitReader(
+            compressed,
+            limit=MAX_SDIST_TAR_STREAM_BYTES,
+            label="sdist tar stream",
+        )
+        with tarfile.open(fileobj=bounded, mode="r|") as archive:
+            for member in archive:
+                member_count += 1
+                if member_count > MAX_SDIST_MEMBERS:
+                    raise ReleaseCheckError(
+                        "sdist exceeds member limit: "
+                        f"{member_count} > {MAX_SDIST_MEMBERS}"
+                    )
+                if not (member.isfile() or member.isdir()):
+                    raise ReleaseCheckError(
+                        "sdist contains a link or special file: "
+                        f"{member.name}"
+                    )
+
+                path = _canonical_tar_member_path(member)
+                canonical_name = path.as_posix()
+                if canonical_name in canonical_members:
+                    raise ReleaseCheckError(
+                        f"sdist has duplicate archive member: {member.name}"
+                    )
+                canonical_members.add(canonical_name)
+                if path.parts[0] != expected_root:
+                    raise ReleaseCheckError(
+                        f"unexpected sdist archive root: {path.parts[0]!r}"
+                    )
+
+                relative = PurePosixPath(*path.parts[1:])
+                if not relative.parts:
+                    if not member.isdir():
+                        raise ReleaseCheckError(
+                            "sdist archive root must be a directory"
+                        )
+                    directory_count += 1
+                    continue
+                relative_name = relative.as_posix()
+                _validate_sdist_relative_path(
+                    relative,
+                    raw_path=relative_name,
+                    is_directory=member.isdir(),
+                )
+                if member.isdir():
+                    if member.size != 0:
+                        raise ReleaseCheckError(
+                            f"sdist directory has content size: {member.name}"
+                        )
+                    directory_count += 1
+                    continue
+
+                if member.size < 0 or member.size > MAX_SDIST_MEMBER_BYTES:
+                    raise ReleaseCheckError(
+                        "sdist exceeds uncompressed member size limit: "
+                        f"{relative_name}={member.size}"
+                    )
+                uncompressed_file_bytes += member.size
+                if uncompressed_file_bytes > MAX_SDIST_UNCOMPRESSED_BYTES:
+                    raise ReleaseCheckError(
+                        "sdist exceeds total uncompressed size limit: "
+                        f"{uncompressed_file_bytes} > "
+                        f"{MAX_SDIST_UNCOMPRESSED_BYTES}"
+                    )
+                largest_member = max(largest_member, member.size)
+                payload = _read_tar_member(archive, member)
+                relative_files.append(relative_name)
+                member_sizes[relative_name] = member.size
+                if relative_name == "PKG-INFO":
+                    metadata_payloads.append(payload)
+                else:
+                    source_manifest[relative_name] = _sha256_bytes(payload)
+        while bounded.read(1024 * 1024):
+            pass
+
+    validate_sdist_member_paths(
+        relative_files,
+        archive_size=archive_size,
+        member_sizes=member_sizes,
     )
+    if len(metadata_payloads) != 1:
+        raise ReleaseCheckError(
+            f"sdist must contain one PKG-INFO member: {len(metadata_payloads)}"
+        )
+    metadata = BytesParser(policy=default).parsebytes(metadata_payloads[0])
+    validate_core_metadata(metadata, expected_version=expected_version)
+    evidence = {
+        "bytes": archive_size,
+        "directory_members": directory_count,
+        "file_members": len(relative_files),
+        "largest_uncompressed_member_bytes": largest_member,
+        "member_count": member_count,
+        "sha256": _sha256(archive_path),
+        "uncompressed_file_bytes": uncompressed_file_bytes,
+    }
+    return evidence, source_manifest
 
 
 def inspect_sdist(
     archive_path: Path, *, expected_version: str
 ) -> dict[str, object]:
-    with tarfile.open(archive_path, "r:gz") as archive:
-        members = archive.getmembers()
-        unsupported = [
-            member.name
-            for member in members
-            if not (member.isfile() or member.isdir())
-        ]
-        if unsupported:
-            raise ReleaseCheckError(
-                f"sdist contains links or special files: {unsupported}"
-            )
-        files = [member for member in members if member.isfile()]
-        _, relative_paths = _strip_sdist_root(
-            [member.name for member in files],
-            expected_version=expected_version,
-        )
-        validate_sdist_member_paths(
-            relative_paths, archive_size=archive_path.stat().st_size
-        )
-        [metadata_member] = [
-            member for member in files if member.name.endswith("/PKG-INFO")
-        ]
-        metadata_stream = archive.extractfile(metadata_member)
-        if metadata_stream is None:
-            raise ReleaseCheckError("cannot read sdist PKG-INFO")
-        metadata = BytesParser(policy=default).parsebytes(metadata_stream.read())
-        validate_core_metadata(metadata, expected_version=expected_version)
-
-    return {
-        "bytes": archive_path.stat().st_size,
-        "file_members": len(relative_paths),
-        "sha256": _sha256(archive_path),
-    }
+    evidence, _ = _inspect_sdist_contents(
+        archive_path, expected_version=expected_version
+    )
+    return evidence
 
 
 def inspect_wheel(
@@ -901,20 +1150,43 @@ def _excluded_source_names(
     ]
 
 
+def _configured_sdist_inputs_from_bytes(payload: bytes) -> tuple[str, ...]:
+    try:
+        configuration = tomllib.loads(payload.decode("utf-8"))
+    except (UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
+        raise ReleaseCheckError(
+            f"cannot read source-distribution configuration: {exc}"
+        ) from exc
+    try:
+        configured_inputs = configuration["tool"]["hatch"]["build"][
+            "targets"
+        ]["sdist"]["only-include"]
+    except (KeyError, TypeError) as exc:
+        raise ReleaseCheckError(
+            "source-distribution configuration has no only-include list"
+        ) from exc
+    if not isinstance(configured_inputs, list) or not all(
+        isinstance(value, str) for value in configured_inputs
+    ):
+        raise ReleaseCheckError(
+            "source-distribution only-include must be a string list"
+        )
+    selected = tuple(
+        dict.fromkeys([".gitignore", "pyproject.toml", *configured_inputs])
+    )
+    for value in selected:
+        _safe_member_path(value)
+    return selected
+
+
 def _configured_sdist_inputs(source_root: Path) -> tuple[str, ...]:
-    configuration = tomllib.loads(
-        (source_root / "pyproject.toml").read_text(encoding="utf-8")
-    )
-    sdist = configuration["tool"]["hatch"]["build"]["targets"]["sdist"]
-    return tuple(
-        dict.fromkeys([".gitignore", "pyproject.toml", *sdist["only-include"]])
+    return _configured_sdist_inputs_from_bytes(
+        (source_root / "pyproject.toml").read_bytes()
     )
 
 
-def _git_index_source_files(
-    source_root: Path, *, selected_inputs: Sequence[str]
-) -> tuple[PurePosixPath, ...]:
-    command = ("git", "-C", str(source_root), "ls-files", "--cached", "-z")
+def _git_output(source_root: Path, *arguments: str) -> bytes:
+    command = ("git", "-C", str(source_root), *arguments)
     print(f"$ {shlex.join(command)}", flush=True)
     completed = subprocess.run(
         command,
@@ -924,29 +1196,269 @@ def _git_index_source_files(
     if completed.returncode != 0:
         detail = completed.stderr.decode("utf-8", errors="replace").strip()
         raise ReleaseCheckError(
-            "cannot read the Git index used as the release source boundary: "
+            "cannot read Git source objects used by the release boundary: "
             f"{detail or f'exit {completed.returncode}'}"
         )
+    return completed.stdout
 
-    selected_paths = tuple(PurePosixPath(value) for value in selected_inputs)
-    included: list[PurePosixPath] = []
-    for raw_path in completed.stdout.split(b"\0"):
-        if not raw_path:
+
+def _decode_git_path(raw_path: bytes) -> PurePosixPath:
+    try:
+        decoded = raw_path.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ReleaseCheckError(
+            "Git release source path is not valid UTF-8"
+        ) from exc
+    return _safe_member_path(decoded)
+
+
+def _parse_git_index_entries(payload: bytes) -> tuple[GitBlobEntry, ...]:
+    entries: list[GitBlobEntry] = []
+    paths: set[str] = set()
+    for record in payload.split(b"\0"):
+        if not record:
             continue
-        path = _safe_member_path(os.fsdecode(raw_path))
-        if any(
-            path == selected or selected in path.parents
-            for selected in selected_paths
-        ):
-            included.append(path)
+        header, separator, raw_path = record.partition(b"\t")
+        fields = header.split()
+        if not separator or len(fields) != 3:
+            raise ReleaseCheckError("Git index entry is malformed")
+        raw_mode, raw_object_id, raw_stage = fields
+        if raw_stage != b"0":
+            raise ReleaseCheckError("Git index contains an unmerged source entry")
+        path = _decode_git_path(raw_path)
+        path_text = path.as_posix()
+        if path_text in paths:
+            raise ReleaseCheckError(f"Git index duplicates source path: {path_text}")
+        paths.add(path_text)
+        mode = raw_mode.decode("ascii", errors="strict")
+        object_id = raw_object_id.decode("ascii", errors="strict")
+        if GIT_OBJECT_ID.fullmatch(object_id) is None:
+            raise ReleaseCheckError(
+                f"Git index object ID is malformed: {object_id!r}"
+            )
+        entries.append(GitBlobEntry(mode=mode, object_id=object_id, path=path))
+    return tuple(entries)
+
+
+def _parse_git_tree_entries(payload: bytes) -> tuple[GitBlobEntry, ...]:
+    entries: list[GitBlobEntry] = []
+    paths: set[str] = set()
+    for record in payload.split(b"\0"):
+        if not record:
+            continue
+        header, separator, raw_path = record.partition(b"\t")
+        fields = header.split()
+        if not separator or len(fields) != 3:
+            raise ReleaseCheckError("Git commit tree entry is malformed")
+        raw_mode, raw_type, raw_object_id = fields
+        if raw_type != b"blob":
+            raise ReleaseCheckError("Git commit source entry is not a blob")
+        path = _decode_git_path(raw_path)
+        path_text = path.as_posix()
+        if path_text in paths:
+            raise ReleaseCheckError(
+                f"Git commit tree duplicates source path: {path_text}"
+            )
+        paths.add(path_text)
+        mode = raw_mode.decode("ascii", errors="strict")
+        object_id = raw_object_id.decode("ascii", errors="strict")
+        if GIT_OBJECT_ID.fullmatch(object_id) is None:
+            raise ReleaseCheckError(
+                f"Git commit object ID is malformed: {object_id!r}"
+            )
+        entries.append(GitBlobEntry(mode=mode, object_id=object_id, path=path))
+    return tuple(entries)
+
+
+def _read_git_blobs(
+    source_root: Path, entries: Sequence[GitBlobEntry]
+) -> dict[str, bytes]:
+    command = ("git", "-C", str(source_root), "cat-file", "--batch")
+    print(f"$ {shlex.join(command)}", flush=True)
+    process = subprocess.Popen(
+        command,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if process.stdin is None or process.stdout is None or process.stderr is None:
+        process.kill()
+        raise ReleaseCheckError("cannot open Git object reader")
+    payloads: dict[str, bytes] = {}
+    total_bytes = 0
+    try:
+        for entry in entries:
+            process.stdin.write(f"{entry.object_id}\n".encode("ascii"))
+            process.stdin.flush()
+            header = process.stdout.readline().rstrip(b"\n")
+            fields = header.split()
+            if len(fields) != 3:
+                raise ReleaseCheckError(
+                    f"Git object response is malformed: {header!r}"
+                )
+            raw_object_id, object_type, raw_size = fields
+            if (
+                raw_object_id.decode("ascii", errors="replace")
+                != entry.object_id
+                or object_type != b"blob"
+            ):
+                raise ReleaseCheckError(
+                    f"Git source object differs from index/tree: {header!r}"
+                )
+            try:
+                size = int(raw_size)
+            except ValueError as exc:
+                raise ReleaseCheckError(
+                    f"Git source object size is malformed: {header!r}"
+                ) from exc
+            if size < 0 or size > MAX_SDIST_MEMBER_BYTES:
+                raise ReleaseCheckError(
+                    "Git source object exceeds release member limit: "
+                    f"{entry.path.as_posix()}={size}"
+                )
+            total_bytes += size
+            if total_bytes > MAX_SDIST_UNCOMPRESSED_BYTES:
+                raise ReleaseCheckError(
+                    "Git selected source exceeds total release size limit: "
+                    f"{total_bytes} > {MAX_SDIST_UNCOMPRESSED_BYTES}"
+                )
+            blob = process.stdout.read(size)
+            terminator = process.stdout.read(1)
+            if len(blob) != size or terminator != b"\n":
+                raise ReleaseCheckError(
+                    f"Git source object is truncated: {entry.object_id}"
+                )
+            payloads[entry.path.as_posix()] = blob
+        process.stdin.close()
+        stderr = process.stderr.read()
+        returncode = process.wait()
+        if returncode != 0:
+            raise ReleaseCheckError(
+                "Git object reader failed: "
+                f"{stderr.decode('utf-8', errors='replace').strip()}"
+            )
+    except BaseException:
+        process.kill()
+        process.wait()
+        raise
+    return payloads
+
+
+def _select_git_source_entries(
+    source_root: Path, entries: Sequence[GitBlobEntry]
+) -> tuple[GitBlobEntry, ...]:
+    pyproject_entries = [
+        entry for entry in entries if entry.path.as_posix() == "pyproject.toml"
+    ]
+    if len(pyproject_entries) != 1:
+        raise ReleaseCheckError(
+            "Git source must contain exactly one pyproject.toml blob"
+        )
+    pyproject_payload = _read_git_blobs(source_root, pyproject_entries)[
+        "pyproject.toml"
+    ]
+    selected_inputs = _configured_sdist_inputs_from_bytes(pyproject_payload)
+    selected_paths = tuple(PurePosixPath(value) for value in selected_inputs)
+    included = tuple(
+        sorted(
+            (
+                entry
+                for entry in entries
+                if any(
+                    entry.path == selected or selected in entry.path.parents
+                    for selected in selected_paths
+                )
+            ),
+            key=lambda entry: entry.path.as_posix(),
+        )
+    )
     if not included:
         raise ReleaseCheckError(
-            "Git index contains no selected source-distribution files"
+            "Git source contains no selected source-distribution files"
         )
-    return tuple(sorted(included, key=PurePosixPath.as_posix))
+    if len(included) + 1 > MAX_SDIST_MEMBERS:
+        raise ReleaseCheckError(
+            "Git selected source exceeds sdist member limit: "
+            f"{len(included) + 1} > {MAX_SDIST_MEMBERS}"
+        )
+    missing_inputs = [
+        selected.as_posix()
+        for selected in selected_paths
+        if not any(
+            entry.path == selected or selected in entry.path.parents
+            for entry in included
+        )
+    ]
+    if missing_inputs:
+        raise ReleaseCheckError(
+            f"Git source omits configured distribution inputs: {missing_inputs}"
+        )
+    unsupported = {
+        entry.path.as_posix(): entry.mode
+        for entry in included
+        if entry.mode not in GIT_REGULAR_FILE_MODES
+    }
+    if unsupported:
+        raise ReleaseCheckError(
+            f"Git release source contains non-regular entries: {unsupported}"
+        )
+    return included
 
 
-def _copy_source_only(source_root: Path, target_root: Path) -> None:
+def _capture_git_source_snapshot(
+    source_root: Path, *, require_committed_source: bool
+) -> GitSourceSnapshot:
+    source_root = source_root.resolve()
+    if require_committed_source:
+        revision, tree = _committed_source_identity(
+            source_root, require_clean=True
+        )
+        entries = _parse_git_tree_entries(
+            _git_output(
+                source_root,
+                "ls-tree",
+                "-r",
+                "-z",
+                "--full-tree",
+                revision,
+            )
+        )
+        snapshot = GitSourceSnapshot(
+            entries=_select_git_source_entries(source_root, entries),
+            kind="git_commit",
+            revision=revision,
+            tree=tree,
+        )
+        _revalidate_git_source_snapshot(source_root, snapshot)
+        return snapshot
+
+    entries = _parse_git_index_entries(
+        _git_output(source_root, "ls-files", "--stage", "-z")
+    )
+    return GitSourceSnapshot(
+        entries=_select_git_source_entries(source_root, entries),
+        kind="git_index",
+    )
+
+
+def _copy_source_only(
+    source_root: Path,
+    target_root: Path,
+    *,
+    source_snapshot: GitSourceSnapshot | None = None,
+) -> GitSourceSnapshot | None:
+    if (source_root / ".git").exists():
+        snapshot = source_snapshot or _capture_git_source_snapshot(
+            source_root, require_committed_source=False
+        )
+        payloads = _read_git_blobs(source_root, snapshot.entries)
+        for entry in snapshot.entries:
+            target = target_root.joinpath(*entry.path.parts)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(payloads[entry.path.as_posix()])
+            target.chmod(0o755 if entry.mode == "100755" else 0o644)
+        return snapshot
+
     selected = _configured_sdist_inputs(source_root)
     for relative in selected:
         source = source_root / relative
@@ -958,26 +1470,6 @@ def _copy_source_only(source_root: Path, target_root: Path) -> None:
             raise ReleaseCheckError(
                 f"configured source-distribution input is a symlink: {relative}"
             )
-
-    if (source_root / ".git").exists():
-        for relative_path in _git_index_source_files(
-            source_root, selected_inputs=selected
-        ):
-            source = source_root.joinpath(*relative_path.parts)
-            target = target_root.joinpath(*relative_path.parts)
-            if not source.is_file():
-                raise ReleaseCheckError(
-                    "Git-indexed source-distribution input is missing or not a file: "
-                    f"{relative_path.as_posix()}"
-                )
-            if source.is_symlink():
-                raise ReleaseCheckError(
-                    "Git-indexed source-distribution input is a symlink: "
-                    f"{relative_path.as_posix()}"
-                )
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(source, target)
-        return
 
     for relative in selected:
         source = source_root / relative
@@ -992,6 +1484,7 @@ def _copy_source_only(source_root: Path, target_root: Path) -> None:
         else:
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, target)
+    return None
 
 
 def _extract_sdist(archive_path: Path, target_directory: Path) -> Path:
@@ -1240,7 +1733,7 @@ def _verify_installs(
     source_root: Path,
     scratch_root: Path,
     expected_version: str,
-) -> None:
+) -> dict[str, object]:
     ordinary = scratch_root / "ordinary-environment"
     _create_environment(ordinary, cwd=scratch_root)
     _run(
@@ -1256,6 +1749,20 @@ def _verify_installs(
     )
     _run_installed_cli(
         ordinary, cwd=scratch_root, expected_version=expected_version
+    )
+    ordinary_inventory_path = scratch_root / "ordinary-license-inventory.json"
+    _run(
+        (
+            str(_venv_python(ordinary)),
+            str(source_root / "tools/release_check.py"),
+            "--installed-python-license-inventory",
+            str(ordinary_inventory_path),
+        ),
+        cwd=scratch_root,
+    )
+    ordinary_inventory = _load_json_object(
+        ordinary_inventory_path,
+        label="ordinary installed Python license inventory",
     )
 
     floors = scratch_root / "minimum-environment"
@@ -1290,9 +1797,81 @@ def _verify_installs(
     _run_installed_cli(
         floors, cwd=scratch_root, expected_version=expected_version
     )
+    floor_inventory_path = scratch_root / "supported-floor-license-inventory.json"
+    _run(
+        (
+            str(_venv_python(floors)),
+            str(source_root / "tools/release_check.py"),
+            "--installed-python-license-inventory",
+            str(floor_inventory_path),
+        ),
+        cwd=scratch_root,
+    )
+    floor_inventory = _load_json_object(
+        floor_inventory_path,
+        label="supported-floor installed Python license inventory",
+    )
+    return {
+        "ordinary": ordinary_inventory,
+        "supported_floor": floor_inventory,
+    }
 
 
-def check_dependency_audits(source_root: Path) -> dict[str, object]:
+def _audit_installed_environment(
+    *,
+    label: str,
+    inventory: Mapping[str, object],
+    scratch_root: Path,
+    source_root: Path,
+) -> dict[str, object]:
+    coordinates = sorted(_inventory_coordinates(inventory))
+    if not coordinates:
+        raise ReleaseCheckError(f"{label} installed dependency inventory is empty")
+    requirements_path = scratch_root / f"{label}-requirements.txt"
+    report_path = scratch_root / f"{label}-audit.json"
+    requirements_path.write_text(
+        "\n".join(coordinates) + "\n", encoding="utf-8"
+    )
+    _run(
+        (
+            "uv",
+            "run",
+            "--locked",
+            "--extra",
+            "dev",
+            "pip-audit",
+            "--requirement",
+            str(requirements_path),
+            "--no-deps",
+            "--disable-pip",
+            "--strict",
+            "--progress-spinner",
+            "off",
+            "--format",
+            "json",
+            "--output",
+            str(report_path),
+        ),
+        cwd=source_root,
+    )
+    audit = validate_python_audit_report(
+        _load_json_object(report_path, label=f"{label} Python audit"),
+        label=label,
+    )
+    _validate_audit_license_alignment(audit, inventory, label=label)
+    return {
+        "audit": audit,
+        "audit_report_sha256": _sha256(report_path),
+        "licenses_and_environment": inventory,
+        "requirements_sha256": _sha256(requirements_path),
+    }
+
+
+def check_dependency_audits(
+    source_root: Path,
+    *,
+    installation_environments: Mapping[str, object],
+) -> dict[str, object]:
     source_root = source_root.resolve()
     with tempfile.TemporaryDirectory(prefix="ucf-release-dependencies-") as raw:
         scratch = Path(raw)
@@ -1394,6 +1973,25 @@ def check_dependency_audits(source_root: Path) -> dict[str, object]:
             inventory["lock_sha256"] = _sha256(lock_path)
             npm_licenses[label] = inventory
 
+        if set(installation_environments) != {"ordinary", "supported_floor"}:
+            raise ReleaseCheckError(
+                "installed environment evidence must contain ordinary and "
+                "supported_floor inventories"
+            )
+        installed_environment_audits = {}
+        for label in ("ordinary", "supported_floor"):
+            inventory = installation_environments[label]
+            if not isinstance(inventory, Mapping):
+                raise ReleaseCheckError(
+                    f"{label} installed environment inventory is malformed"
+                )
+            installed_environment_audits[label] = _audit_installed_environment(
+                label=label,
+                inventory=inventory,
+                scratch_root=scratch,
+                source_root=source_root,
+            )
+
         evidence = {
             "go": _go_dependency_inventory(source_root),
             "npm": {
@@ -1415,6 +2013,7 @@ def check_dependency_audits(source_root: Path) -> dict[str, object]:
                     "requirements_sha256": _sha256(runtime_requirements),
                     "uv_lock_sha256": _sha256(source_root / "uv.lock"),
                 },
+                "installed_environments": installed_environment_audits,
             },
             "status": "passed",
         }
@@ -1454,33 +2053,124 @@ def _read_hosted_json(url: str) -> Mapping[str, object]:
     return result
 
 
-def check_github_release_surfaces() -> dict[str, object]:
+def _require_clean_git_source(source_root: Path) -> None:
+    for difference in (("diff", "--quiet"), ("diff", "--cached", "--quiet")):
+        command = ("git", "-C", str(source_root), *difference)
+        print(f"$ {shlex.join(command)}", flush=True)
+        result = subprocess.run(command, check=False)
+        if result.returncode != 0:
+            raise ReleaseCheckError(
+                "release evidence requires committed tracked source bytes: "
+                f"{shlex.join(command)} exited {result.returncode}"
+            )
+
+
+def _committed_source_identity(
+    source_root: Path, *, require_clean: bool
+) -> tuple[str, str]:
+    revision = _git_output(
+        source_root, "rev-parse", "--verify", "HEAD"
+    ).decode("ascii", errors="replace").strip()
+    if GIT_OBJECT_ID.fullmatch(revision) is None:
+        raise ReleaseCheckError(
+            f"committed release source revision is malformed: {revision!r}"
+        )
+    tree = _git_output(
+        source_root, "rev-parse", "--verify", f"{revision}^{{tree}}"
+    ).decode("ascii", errors="replace").strip()
+    if GIT_OBJECT_ID.fullmatch(tree) is None:
+        raise ReleaseCheckError(
+            f"committed release source tree is malformed: {tree!r}"
+        )
+    if require_clean:
+        _require_clean_git_source(source_root)
+    return revision, tree
+
+
+def _revalidate_git_source_snapshot(
+    source_root: Path, snapshot: GitSourceSnapshot
+) -> None:
+    if (
+        snapshot.kind != "git_commit"
+        or snapshot.revision is None
+        or snapshot.tree is None
+    ):
+        raise ReleaseCheckError(
+            "final release evidence requires a committed Git source snapshot"
+        )
+    revision, tree = _committed_source_identity(
+        source_root, require_clean=True
+    )
+    if revision != snapshot.revision or tree != snapshot.tree:
+        raise ReleaseCheckError(
+            "committed release source changed during verification: "
+            f"{snapshot.revision}/{snapshot.tree} != {revision}/{tree}"
+        )
+
+
+def _local_source_revision(
+    source_root: Path, *, require_committed_source: bool
+) -> str:
+    revision, _ = _committed_source_identity(
+        source_root, require_clean=require_committed_source
+    )
+    return revision
+
+
+def check_github_release_surfaces(
+    source_root: Path,
+    *,
+    require_published_source: bool,
+    local_revision: str | None = None,
+) -> dict[str, object]:
+    if local_revision is None:
+        local_revision = _local_source_revision(
+            source_root,
+            require_committed_source=require_published_source,
+        )
     repository = _read_hosted_json(GITHUB_API_ROOT)
     private_reporting = _read_hosted_json(
         f"{GITHUB_API_ROOT}/private-vulnerability-reporting"
     )
-    evidence = validate_github_release_surfaces(repository, private_reporting)
+    branch = _read_hosted_json(
+        f"{GITHUB_API_ROOT}/branches/{GITHUB_DEFAULT_BRANCH}"
+    )
+    evidence = validate_github_release_surfaces(
+        repository,
+        private_reporting,
+        branch,
+        local_revision=local_revision,
+        require_published_source=require_published_source,
+    )
     evidence["status"] = "passed"
     print(json.dumps(evidence, indent=2, sort_keys=True), flush=True)
     return evidence
 
 
 def check_distribution(
-    source_root: Path, *, run_package_contract: bool = False
+    source_root: Path,
+    *,
+    run_package_contract: bool = False,
+    source_snapshot: GitSourceSnapshot | None = None,
 ) -> dict[str, object]:
     source_root = source_root.resolve()
-    configuration = tomllib.loads(
-        (source_root / "pyproject.toml").read_text(encoding="utf-8")
-    )
-    version = configuration["project"]["version"]
-    if not re.fullmatch(r"0\.1\.\d+", version):
-        raise ReleaseCheckError(
-            f"release version is not in the accepted 0.1.x preview line: {version!r}"
-        )
     with tempfile.TemporaryDirectory(prefix="ucf-release-distribution-") as raw:
         scratch = Path(raw)
         source_only = scratch / "source-only"
-        _copy_source_only(source_root, source_only)
+        captured_snapshot = _copy_source_only(
+            source_root,
+            source_only,
+            source_snapshot=source_snapshot,
+        )
+        configuration = tomllib.loads(
+            (source_only / "pyproject.toml").read_text(encoding="utf-8")
+        )
+        version = configuration["project"]["version"]
+        if not re.fullmatch(r"0\.1\.\d+", version):
+            raise ReleaseCheckError(
+                "release version is not in the accepted 0.1.x preview line: "
+                f"{version!r}"
+            )
         selected_source_manifest = _source_file_manifest(source_only)
 
         source_only_sdist = _build_sdist(
@@ -1489,16 +2179,10 @@ def check_distribution(
         populated_sdist = _build_sdist(
             source_root, scratch / "dependency-populated-dist"
         )
-        source_only_evidence = inspect_sdist(
+        source_only_evidence, source_only_manifest = _inspect_sdist_contents(
             source_only_sdist, expected_version=version
         )
-        populated_evidence = inspect_sdist(
-            populated_sdist, expected_version=version
-        )
-        source_only_manifest = _sdist_source_manifest(
-            source_only_sdist, expected_version=version
-        )
-        populated_manifest = _sdist_source_manifest(
+        populated_evidence, populated_manifest = _inspect_sdist_contents(
             populated_sdist, expected_version=version
         )
         validate_sdist_source_manifest(
@@ -1519,10 +2203,10 @@ def check_distribution(
                 f"{source_only_evidence!r} != {populated_evidence!r}"
             )
 
-        extracted = _extract_sdist(populated_sdist, scratch / "extracted")
+        extracted = _extract_sdist(source_only_sdist, scratch / "extracted")
         wheel = _build_wheel(extracted, scratch / "wheel-from-sdist")
         wheel_evidence = inspect_wheel(wheel, expected_version=version)
-        _verify_installs(
+        installation_environments = _verify_installs(
             wheel,
             source_root=extracted,
             scratch_root=scratch,
@@ -1545,8 +2229,30 @@ def check_distribution(
             )
             package_contract_evidence["status"] = "passed"
 
+        source_evidence: dict[str, object] = {
+            "kind": captured_snapshot.kind if captured_snapshot else "filesystem",
+            "selected_file_count": len(selected_source_manifest),
+            "selected_manifest_sha256": _manifest_sha256(
+                selected_source_manifest
+            ),
+        }
+        if captured_snapshot is not None:
+            source_evidence["git_object_manifest_sha256"] = _manifest_sha256(
+                {
+                    entry.path.as_posix(): (
+                        f"{entry.mode}:{entry.object_id}"
+                    )
+                    for entry in captured_snapshot.entries
+                }
+            )
+            if captured_snapshot.revision is not None:
+                source_evidence["revision"] = captured_snapshot.revision
+            if captured_snapshot.tree is not None:
+                source_evidence["tree"] = captured_snapshot.tree
+
         evidence = {
             "schema_version": 1,
+            "source_snapshot": source_evidence,
             "status": "passed",
             "source_distributions": {
                 "dependency_populated": populated_evidence,
@@ -1555,6 +2261,7 @@ def check_distribution(
             },
             "wheel_from_source_distribution": wheel_evidence,
             "minimum_requirements": list(_minimum_requirements(extracted)),
+            "installation_environments": installation_environments,
             "package_contract": package_contract_evidence,
         }
         print(json.dumps(evidence, indent=2, sort_keys=True), flush=True)
@@ -1592,31 +2299,253 @@ def _parse_args(arguments: Sequence[str]) -> argparse.Namespace:
     return parser.parse_args(arguments)
 
 
+def _invalidate_release_evidence(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    directory_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+    directory = os.open(path.parent, directory_flags)
+    try:
+        try:
+            metadata = os.stat(
+                path.name,
+                dir_fd=directory,
+                follow_symlinks=False,
+            )
+        except FileNotFoundError:
+            return
+        if stat.S_ISDIR(metadata.st_mode):
+            raise ReleaseCheckError(
+                f"release evidence path is a directory: {path}"
+            )
+        os.unlink(path.name, dir_fd=directory)
+        os.fsync(directory)
+    finally:
+        os.close(directory)
+
+
+def _read_existing_release_evidence(
+    *, directory: int, name: str, expected: bytes
+) -> None:
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+    no_follow = getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(name, flags | no_follow, dir_fd=directory)
+    except OSError as exc:
+        raise ReleaseCheckError(
+            f"cannot safely open concurrently published evidence: {name}"
+        ) from exc
+    try:
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(metadata.st_mode):
+            raise ReleaseCheckError(
+                f"release evidence path was concurrently changed: {name}"
+            )
+        chunks: list[bytes] = []
+        bytes_read = 0
+        while bytes_read <= len(expected):
+            chunk = os.read(
+                descriptor,
+                min(1024 * 1024, len(expected) + 1 - bytes_read),
+            )
+            if not chunk:
+                break
+            chunks.append(chunk)
+            bytes_read += len(chunk)
+        actual = b"".join(chunks)
+        try:
+            entry_metadata = os.stat(
+                name,
+                dir_fd=directory,
+                follow_symlinks=False,
+            )
+        except OSError as exc:
+            raise ReleaseCheckError(
+                f"release evidence path was concurrently changed: {name}"
+            ) from exc
+        same_entry = (
+            entry_metadata.st_dev == metadata.st_dev
+            and entry_metadata.st_ino == metadata.st_ino
+            and stat.S_ISREG(entry_metadata.st_mode)
+        )
+        if not same_entry or actual != expected:
+            raise ReleaseCheckError(
+                f"release evidence path was concurrently changed: {name}"
+            )
+    finally:
+        os.close(descriptor)
+
+
+def _publish_release_evidence(path: Path, evidence: Mapping[str, object]) -> None:
+    serialized = (
+        json.dumps(evidence, indent=2, sort_keys=True) + "\n"
+    ).encode("utf-8")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    directory_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+    directory = os.open(path.parent, directory_flags)
+    temporary_name: str | None = None
+    created_destination_identity: tuple[int, int] | None = None
+    try:
+        descriptor, raw_temporary = tempfile.mkstemp(
+            prefix=f".{path.name}.", dir=path.parent
+        )
+        temporary_name = Path(raw_temporary).name
+        with os.fdopen(descriptor, "wb") as stream:
+            stream.write(serialized)
+            stream.flush()
+            os.fchmod(stream.fileno(), 0o644)
+            os.fsync(stream.fileno())
+            temporary_metadata = os.fstat(stream.fileno())
+        try:
+            os.link(
+                temporary_name,
+                path.name,
+                src_dir_fd=directory,
+                dst_dir_fd=directory,
+                follow_symlinks=False,
+            )
+            created_destination_identity = (
+                temporary_metadata.st_dev,
+                temporary_metadata.st_ino,
+            )
+        except FileExistsError as exc:
+            try:
+                _read_existing_release_evidence(
+                    directory=directory,
+                    name=path.name,
+                    expected=serialized,
+                )
+            except ReleaseCheckError as collision:
+                raise collision from exc
+        os.fsync(directory)
+        os.unlink(temporary_name, dir_fd=directory)
+        temporary_name = None
+        os.fsync(directory)
+    except BaseException:
+        if created_destination_identity is not None:
+            try:
+                destination_metadata = os.stat(
+                    path.name,
+                    dir_fd=directory,
+                    follow_symlinks=False,
+                )
+            except FileNotFoundError:
+                pass
+            else:
+                destination_identity = (
+                    destination_metadata.st_dev,
+                    destination_metadata.st_ino,
+                )
+                if (
+                    stat.S_ISREG(destination_metadata.st_mode)
+                    and destination_identity == created_destination_identity
+                ):
+                    os.unlink(path.name, dir_fd=directory)
+        if temporary_name is not None:
+            try:
+                os.unlink(temporary_name, dir_fd=directory)
+            except FileNotFoundError:
+                pass
+        os.fsync(directory)
+        raise
+    finally:
+        os.close(directory)
+
+
+def _check_local_release(
+    source_root: Path,
+    *,
+    distribution_only: bool,
+    source_snapshot: GitSourceSnapshot | None,
+) -> dict[str, object]:
+    def run(dependency_source_root: Path) -> dict[str, object]:
+        evidence = check_distribution(
+            source_root,
+            run_package_contract=not distribution_only,
+            source_snapshot=source_snapshot,
+        )
+        if distribution_only:
+            return evidence
+        installation_environments = evidence.get("installation_environments")
+        if not isinstance(installation_environments, Mapping):
+            raise ReleaseCheckError(
+                "distribution evidence has no installed environment inventories"
+            )
+        evidence["dependency_review"] = check_dependency_audits(
+            dependency_source_root,
+            installation_environments=installation_environments,
+        )
+        return evidence
+
+    if source_snapshot is None:
+        return run(source_root.resolve())
+
+    with tempfile.TemporaryDirectory(
+        prefix="ucf-release-committed-source-"
+    ) as raw_snapshot_directory:
+        dependency_source_root = (
+            Path(raw_snapshot_directory) / "committed-source"
+        )
+        materialized_snapshot = _copy_source_only(
+            source_root,
+            dependency_source_root,
+            source_snapshot=source_snapshot,
+        )
+        if materialized_snapshot != source_snapshot:
+            raise ReleaseCheckError(
+                "dependency audit source differs from captured Git snapshot"
+            )
+        return run(dependency_source_root)
+
+
 def main(arguments: Sequence[str] | None = None) -> int:
     args = _parse_args(arguments or sys.argv[1:])
     try:
+        if args.evidence is not None:
+            _invalidate_release_evidence(args.evidence)
         if args.installed_python_license_inventory is not None:
+            if args.evidence is not None:
+                raise ReleaseCheckError(
+                    "installed inventory mode cannot publish final release evidence"
+                )
             _write_installed_python_license_inventory(
                 args.installed_python_license_inventory
             )
             return 0
-        evidence = check_distribution(
+        if args.distribution_only and args.evidence is not None:
+            raise ReleaseCheckError(
+                "distribution-only checks cannot publish final release evidence"
+            )
+        source_snapshot = (
+            _capture_git_source_snapshot(
+                args.source_root,
+                require_committed_source=True,
+            )
+            if args.evidence is not None
+            else None
+        )
+        evidence = _check_local_release(
             args.source_root,
-            run_package_contract=not args.distribution_only,
+            distribution_only=args.distribution_only,
+            source_snapshot=source_snapshot,
         )
         if not args.distribution_only:
-            evidence["dependency_review"] = check_dependency_audits(
-                args.source_root
-            )
             evidence["hosted_release_surfaces"] = (
-                check_github_release_surfaces()
+                check_github_release_surfaces(
+                    args.source_root,
+                    require_published_source=args.evidence is not None,
+                    local_revision=(
+                        source_snapshot.revision
+                        if source_snapshot is not None
+                        else None
+                    ),
+                )
             )
         if args.evidence is not None:
-            args.evidence.parent.mkdir(parents=True, exist_ok=True)
-            args.evidence.write_text(
-                json.dumps(evidence, indent=2, sort_keys=True) + "\n",
-                encoding="utf-8",
-            )
+            if source_snapshot is None:
+                raise ReleaseCheckError(
+                    "final release evidence has no committed source snapshot"
+                )
+            _revalidate_git_source_snapshot(args.source_root, source_snapshot)
+            _publish_release_evidence(args.evidence, evidence)
     except (OSError, ReleaseCheckError, tarfile.TarError, zipfile.BadZipFile) as exc:
         print(f"release distribution check failed: {exc}", file=sys.stderr)
         return 1

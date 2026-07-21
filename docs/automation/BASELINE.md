@@ -8,8 +8,8 @@ Counts are evidence from those runs, not allowances to reset when they regress.
 
 ## REL-002 pre-acceptance evidence
 
-The current release-readiness implementation is locally green but is not an
-accepted release baseline. Evidence is retained under
+The release-readiness implementation is not yet an accepted release baseline.
+Evidence is retained under
 `.artifacts/quality/rel002-rgr-20260721/`:
 
 - `python-full.log`: 2,107 tests passed at 90% source coverage before one final
@@ -18,27 +18,75 @@ accepted release baseline. Evidence is retained under
 - `ruff-post-hardening.log`, `spec-validation.log`, `web-build.log`, and
   `web-lint.log`: Ruff is clean, 113 specs load with zero errors/warnings, and
   the frontend build/lint passes;
-- `distribution-only-evidence.json`: source-only and dependency-populated
-  sdists were byte-identical, the wheel was built from the extracted sdist, and
-  ordinary plus exact supported-floor installs passed `ucf --version` and
-  `--help`; exact digests are provisional because final documentation/state
-  changes alter the staged source manifest;
-- `dependency-audit-actual-green.log`: locked Python runtime/release tools,
-  exact build dependencies, web full/runtime, TypeScript adapter/fixture, and
-  zero-external-module Go inventories have zero known advisories and reviewed
-  license evidence without skips or waivers;
-- `full-release-pre-pvr.log`: the aggregate checker passes distribution,
-  installed package scenarios, all three ecosystem lanes, and dependency/
-  license review, then fails exactly because GitHub reports Private
-  Vulnerability Reporting disabled. The requested final release-evidence file
-  is absent, as required on any failure.
+- `distribution-only-evidence.json`: pre-audit diagnostic in which source-only
+  and dependency-populated sdists were byte-identical, the wheel built from the source distribution
+  and exact supported-floor install passed CLI smoke. The
+  exact-index and archive-boundary re-audits supersede this as acceptance
+  evidence;
+- `dependency-audit-actual-green.log`: pre-audit diagnostic for locked Python,
+  npm, and Go inventories. It did not audit both actual installed environments
+  and is superseded as acceptance evidence;
+- `full-release-pre-pvr.log`: historical aggregate output that passed the first
+  local implementation and then failed because Private Vulnerability Reporting
+  was disabled. Independent review subsequently invalidated that implementation
+  as an acceptance boundary, so this log is diagnostic only.
+- `git-index-bytes-red.log`, `release-evidence-stale-red.log`,
+  `installed-environment-audit-wiring-red.log`,
+  `supported-floors-advisory-red.log`, `adapter-license-artifacts-red.log`,
+  `sdist-uncompressed-limit-red.log`, `hosted-main-revision-red.log`, and their
+  corresponding green logs preserve the accepted independent-audit fixes.
+- `package-contract-adapter-licenses.log`: the corrected installed package and
+  three-stack artifact contract passes, including root UCF `LICENSE`/`NOTICE`
+  in standalone TypeScript and Go distributions, at deterministic evidence
+  SHA-256
+  `87c7012fc84bd4f8f81ef7996514403778d990a63a2e797d8c71320301108894`.
+- `release-reaudit-findings-red.log` preserves ten independently reproduced
+  failures covering filtered source export, archive members/paths, commit
+  binding, evidence scope/publication, audit skips, and ignore policy;
+  `release-reaudit-findings-green-attempt2.log` passes all 24 focused release
+  tests after correction.
+- `release-third-reaudit-red.log` preserves four focused failures for complete
+  gzip-stream validation, incompatible inventory/evidence scope, and
+  commit-snapshot dependency-audit inputs; its green counterpart passes all
+  four. `release-claims-third-reaudit-red.log` preserves the historical/current
+  claim contradiction and its green counterpart passes.
+- `release-third-reaudit-affected.log` passes all 124 release/quality/claim
+  contracts; `automation-third-reaudit-green.log` passes all 183 automation
+  contracts; `ruff-third-reaudit-green.log` is clean.
+- `release-atomicity-final-red.log` preserves publisher and snapshot-cleanup
+  fault injection; `release-atomicity-final-green.log` passes all five selected
+  atomic/create-only scenarios. `release-final-affected.log` passes all 127
+  affected contracts, `automation-final-reaudit-green.log` passes all 186
+  automation contracts, and `ruff-final-reaudit-green.log` is clean.
+- `release-rollback-race-red.log` preserves the reproduced concurrent
+  destination replacement; `release-rollback-race-green.log` passes all six
+  selected publication/cleanup scenarios. `release-race-final-affected.log`
+  passes all 128 affected contracts, `automation-race-final-green.log` passes
+  all 187 automation contracts, and `ruff-race-final-green.log` is clean.
+- `distribution-raw-index-streaming-green.log` passes the complete corrected
+  staged raw-index distribution path, including identical 1,050-member sdists,
+  wheel built from the source distribution, ordinary and safe-floor installs,
+  exact environment/license inventories, and CLI smoke. It is affected evidence,
+  not final committed/published acceptance.
+- `distribution-third-reaudit-green.log` repeats that staged-source path after
+  complete-gzip and commit-bound dependency-source hardening. The later
+  `distribution-final-precommit-green.log` repeats the staged path after
+  atomicity corrections: both 1,050-member sdists are byte-identical, and
+  ordinary/supported-floor installs, CLI smoke, and exact license/environment
+  inventories pass. Exact changing pre-commit digests remain in retained output;
+  dependency audits remain for the final aggregate run.
 
 The historical 30,144,882-byte, 6,655-member sdist, false PyYAML/Typer floors,
 ten frontend advisories, missing license/policy metadata, stale pytest 9.0.2
 generation coordinate, and absent CLI version diagnostic are resolved by the
-current implementation. They are not accepted debt. CAP-214 remains planned
-until the hosted reporting surface, independent audits, aggregate all-profile
-run, and physical clean-source replay pass on the final source manifest.
+current implementation. Independent review additionally caught and corrected
+working-tree-byte substitution, stale/non-atomic evidence, vulnerable
+Pydantic/Jinja floors, audit coverage that omitted actual install environments,
+missing standalone-adapter project licensing, unbounded sdist expansion, and
+acceptance of an empty hosted repository. None is accepted debt. PVR is now
+enabled, but CAP-214 remains planned until the corrected source is committed
+and published to remote `main`, re-audits pass, and aggregate all-profile plus
+physical clean-source evidence pass on the final revision.
 
 ## Current green baseline
 
@@ -599,9 +647,9 @@ under `.artifacts/quality/rel001-benchmark-20260721/` and
 `.artifacts/agents/rel001-*/`. CAP-213 remains experimental and bounded to the
 exact frozen fixtures, Linux/x86_64 environment, pinned tools, and procedures.
 
-## Remaining trust gaps
+## Remaining evidence-bounded product limitations
 
-These are dependency-ordered product work, not accepted quality-gate failures:
+These are current product boundaries, not accepted quality-gate failures:
 
 - platform, event, protocol, temporal, and composite declarations remain
   declaration-only unless an executable capability row explicitly names an
@@ -619,51 +667,66 @@ These are dependency-ordered product work, not accepted quality-gate failures:
   automatically alter a ratchet baseline. Runtime authenticity and the
   accepted baseline tip remain caller/VCS/CI trust anchors rather than a
   signed multi-writer service;
-- `npm ci` reports ten dependency vulnerabilities, including five high
-  severity, for explicit security/release review;
 - hosted Python/Node patch labels, declared runtime dependency ranges,
   sdist/cross-platform/signing behavior, and hook trust/policy remain explicit
-  release-review inputs even though the current wheel workflow is accepted.
+  release-review inputs even though the current wheel workflow is accepted;
+- release evidence remains unsigned and depends on GitHub/VCS/CI/operator trust;
+  supported vendor security patch status cannot be inferred from the upstream
+  Python patch string alone.
 
-Broader platform execution is outside CAP-209, and transactional generation
-belongs to VER-001. Dependency, platform, packaging-policy, and advisory
-closure is required by `REL-002`. Later packages must update this list with
-fresh evidence rather than silently deleting it.
+Broader platform execution is outside CAP-209. REL-002 must preserve these
+limitations while closing only its bounded preview-release acceptance. Future
+work must update this list with fresh evidence rather than silently deleting it.
 
-## REL-002 release-readiness red baseline
+## REL-002 activation snapshot — historical red baseline
 
-Fresh root and independent observations on 2026-07-21 are retained under
+Root and independent observations made at activation on 2026-07-21 are retained under
 `.artifacts/quality/rel002-start-20260721/` and `.artifacts/agents/rel002-*/`.
-They are release blockers to remove or explicitly decide, not allowed failures:
+They explain why the package started red; the current disposition follows each
+observation and the opening REL-002 section is authoritative for acceptance:
 
-- the repository, wheel metadata, and wheel contents contain no UCF project
-  license; no authorized confidential security route or public support route is
-  configured;
-- `uv build --clear` from the dependency-populated clean-status checkout emits
+- observed: the repository and wheel had no UCF project license or authorized
+  security/support route. Disposition: Apache-2.0 `LICENSE`/`NOTICE`, package
+  metadata, PVR, Issues, and their executable checks are implemented;
+- observed: `uv build --clear` from the dependency-populated checkout emitted
   a 30,144,882-byte sdist with 6,655 entries, including 5,617 ignored
-  `node_modules` paths. A clean Git snapshot emits about 1.4 MB/1,038 entries,
-  proving the source-distribution boundary is environment-dependent;
-- on CPython 3.12.3, the declared `PyYAML==6.0` floor fails to build. With
+  `node_modules` paths. Disposition: the checker exports selected raw Git object
+  bytes, compares dependency-populated output, and enforces compressed,
+  member-count, per-member, total-file, and tar-stream limits;
+- observed: on CPython 3.12.3, the declared `PyYAML==6.0` floor failed. With
   `PyYAML==6.0.1`, the declared `typer==0.12.0` floor installs but the clean
-  installed `ucf --help` exits one with unsupported `pathlib.Path | None`;
-- fresh `npm audit --package-lock-only --ignore-scripts --json` for the web
-  lock reports 10 findings: 7 high, 1 moderate, and 2 low. Runtime-only reports
-  2 high React Router findings. The TypeScript adapter and frozen fixture locks
-  each report zero;
-- the package contract remains green and the working-tree wheel remains
+  installed `ucf --help` failed. Disposition: corrected direct floors and both
+  actual ordinary/supported-floor environments are installation-tested; the
+  aggregate checker requires independent advisory/license alignment, with the
+  fresh post-fix aggregate run still pending;
+- observed: the web lock's fresh npm audit reported ten findings, including
+  seven high and two runtime React Router findings. Disposition: compatible
+  lock upgrades removed them; final fresh aggregate audit is still required;
+- observed: the package contract was green and the working-tree wheel was
   reproducible at SHA-256
-  `17cc39364e513d1f0cf6f5d94508146de8da5748ee7928d11e8dd2d8cd105489`;
-  independently built clean sdists are reproducible and install successfully,
-  so these failures do not imply a core redesign;
-- no release-checklist gate exists. `tools/quality_gates.py` supports only
-  `automation`, `affected`, and `all`; public docs/version/owner metadata are
-  not yet synchronized or machine-checked.
+  `17cc39364e513d1f0cf6f5d94508146de8da5748ee7928d11e8dd2d8cd105489`,
+  while clean sdists were reproducible and their isolated wheel build/install
+  succeeded. Disposition: this supported the no-core-redesign decision but is
+  historical, not the final artifact hash;
+- observed: no release-checklist gate existed and public policy/version/owner
+  metadata was not synchronized. Disposition: `tools/release_check.py`, policy
+  documents, release metadata, and claim tests implement the bounded checklist;
+  fresh final execution is pending the committed/published revision.
+
+For reference, the original registry command was
+`npm audit --package-lock-only --ignore-scripts --json`; at activation the web
+  lock reports 10 findings: 7 high, 1 moderate, and 2 low. Runtime-only reports
+2 high React Router findings, while the TypeScript adapter and frozen fixture
+locks each reported zero. These counts are deliberately retained as historical
+input and must not be quoted as current advisory state.
 
 The active ExecPlan records the project owner's accepted decisions: Apache-2.0
 under `Copyright 2026 Deliner`; bounded `0.1.x` production preview with
 CPython 3.12/Linux x86_64 support and no SLA; and repository-hosted private
 vulnerability reporting plus public Issues at `github.com/Deliner/UCF`.
-Automation resumed; every technical red observation above remains to close.
+Automation resumed after those decisions. The remaining work is exactly the
+fresh final acceptance listed at the top of this file, not the superseded
+activation observations.
 
 ## Baseline update rule
 

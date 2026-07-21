@@ -194,8 +194,86 @@ def test_release_artifact_install_path_is_actionable() -> None:
         "uv run --locked python tools/release_check.py",
         "python3 tools/quality_gates.py --profile all",
         "GitHub Private Vulnerability Reporting",
+        "builds a wheel from the source distribution and installs that wheel",
     ):
         assert release_check in packaging
+
+
+def test_source_distribution_claims_match_the_proved_wheel_build_boundary() -> None:
+    support = RELEASE_POLICY_PATHS["support"].read_text(encoding="utf-8")
+    matrix = MATRIX_PATH.read_text(encoding="utf-8")
+    state = (ROOT / "docs" / "automation" / "STATE.md").read_text(
+        encoding="utf-8"
+    )
+    baseline = (ROOT / "docs" / "automation" / "BASELINE.md").read_text(
+        encoding="utf-8"
+    )
+    plan = (
+        ROOT / "docs" / "plans" / "REL-002-stable-release-readiness.md"
+    ).read_text(encoding="utf-8")
+
+    assert (
+        "release wheel, including the wheel built from the source distribution"
+        in support
+    )
+    assert "clean wheel and wheel-built-from-sdist installation" in matrix
+    for text in (state, baseline, plan):
+        assert "wheel built from the source distribution" in text
+    for overclaim in (
+        "installed from the release wheel or source distribution",
+        "clean wheel/sdist install",
+        "sdists are reproducible and install successfully",
+        "both wheel and source distribution" + ", inspect their metadata",
+    ):
+        assert overclaim not in "\n".join((support, matrix, state, baseline, plan))
+
+
+def test_release_policy_and_handoff_do_not_overstate_adapter_or_audit_state() -> None:
+    packaging = RELEASE_POLICY_PATHS["packaging"].read_text(encoding="utf-8")
+    baseline = (ROOT / "docs" / "automation" / "BASELINE.md").read_text(
+        encoding="utf-8"
+    )
+    state = (ROOT / "docs" / "automation" / "STATE.md").read_text(
+        encoding="utf-8"
+    )
+    plan = (
+        ROOT / "docs" / "plans" / "REL-002-stable-release-readiness.md"
+    ).read_text(encoding="utf-8")
+
+    assert "third-party adapter implementations" in packaging
+    assert "release evidence records" in packaging.lower()
+    assert "exact manifest and SHA-256" in packaging
+    assert "activation snapshot" in baseline
+    assert "REL-002 activation foundation evidence — historical" in state
+    assert "but the current tree is not release-ready" not in state
+    assert "every technical red observation above remains to close" not in baseline
+    assert "pre-audit and superseded" in state
+    assert "fresh revision-bound aggregate audit remains pending" in state
+    assert "Current focused counts are zero known advisories" not in state
+    assert "installation-tested and independently audited" not in baseline
+    assert "push the verified history" in plan
+    assert "remote `main` is authorized" in plan
+    outcomes = plan.split("## Outcomes & Retrospective", 1)[1].split(
+        "## Context and Orientation", 1
+    )[0]
+    assert "128 affected and 187 complete automation tests" in outcomes
+    assert "distribution-final-precommit-green.log" in outcomes
+    assert "release-atomicity-final-green.log" in outcomes
+    assert "release-rollback-race-green.log" in outcomes
+
+
+def test_rel002_historical_stable_name_does_not_promise_a_stable_api() -> None:
+    paths = (
+        ROOT / "docs" / "automation" / "TARGET_STATE.md",
+        ROOT / "docs" / "automation" / "BACKLOG.md",
+        ROOT / "docs" / "automation" / "STATE.md",
+        ROOT / "docs" / "plans" / "REL-002-stable-release-readiness.md",
+    )
+
+    for path in paths:
+        text = path.read_text(encoding="utf-8").lower()
+        assert "production preview" in text, path
+        assert "not a stable api" in text, path
 
 
 def test_license_notice_and_distribution_policy_match_owner_decision() -> None:
@@ -309,6 +387,7 @@ def test_security_privacy_and_support_policies_do_not_overclaim() -> None:
         "experimental",
         "exact fixture",
         "not supported",
+        "vendor security updates",
     ):
         assert boundary in support
 
@@ -1208,8 +1287,9 @@ def test_go_stdlib_claim_names_exact_evidence_and_limits():
         "GOROOT-vendored",
         "LICENSE",
         "PATENTS",
-        "Project-wide licensing",
-        "REL-002",
+        "root UCF Apache-2.0",
+        "NOTICE",
+        "not the Go implementation",
         "docs/CAPABILITIES.md",
     ):
         assert exact_claim in adapter_readme

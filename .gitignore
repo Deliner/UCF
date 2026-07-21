@@ -21,13 +21,19 @@ env/
 .npmrc
 .pypirc
 id_ed25519
+id_ecdsa
 id_rsa
+.aws/
+.ssh/
 *.jks
 *.key
 *.keystore
 *.p12
 *.pfx
 *.pem
+
+# JavaScript / TypeScript dependencies
+node_modules/
 
 # IDE / editor
 .idea/

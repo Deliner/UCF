@@ -846,7 +846,8 @@ def test_private_typescript_adapter_has_a_closed_local_tarball_contract():
     assert package["name"] == "@ucf/typescript-fastify-adapter"
     assert package["version"] == "1.0.0"
     assert package["private"] is True
-    assert package["files"] == ["dist"]
+    assert package["license"] == "Apache-2.0"
+    assert package["files"] == ["dist", "LICENSE", "NOTICE"]
     assert package["bin"] == {
         "ucf-typescript-fastify-adapter": "dist/main.js"
     }
@@ -891,6 +892,9 @@ def test_packaging_contract_runs_reproducible_external_go_distribution():
         "-ldflags=-buildid=",
         "go version -m",
         "--conformance",
+        "_copy_project_license_files",
+        '"LICENSE"',
+        '"NOTICE"',
     ):
         assert required in source
 

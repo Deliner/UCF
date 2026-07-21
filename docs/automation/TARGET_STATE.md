@@ -89,7 +89,11 @@ errors at trust boundaries.
 
 ## Definition of product-ready
 
-The project is ready for a stable release when:
+The historical target used “stable release” to mean an operationally reliable,
+evidence-backed delivery boundary. The accepted REL-002 owner decision narrows
+the current deliverable to a `0.1.x` production preview, not a stable API;
+promotion to `1.0.0` remains a separate future decision. The project is ready
+for that bounded product-ready preview when:
 
 - the versioned IR and adapter protocol have compatibility tests;
 - three materially different language stacks pass the conformance suite;

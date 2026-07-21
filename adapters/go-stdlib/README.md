@@ -131,11 +131,12 @@ three modules have zero external Go modules. That statement does not mean the
 static binaries contain only UCF-authored code: they include the Go runtime,
 standard library, and GOROOT-vendored code. The adapter distribution therefore
 carries the exact upstream Go `LICENSE` and `PATENTS` files under
-`third_party/go/`.
+`third_party/go/`. It also carries the root UCF Apache-2.0 `LICENSE` and
+`NOTICE` beside the adapter binary.
 
 Those upstream notices cover the bundled Go implementation components only.
-Project-wide licensing remains a REL-002 decision, so this proof makes no
-general claim that UCF as a whole is redistributable.
+The root Apache-2.0 terms cover UCF project code, not the Go implementation,
+arbitrary generated output, dependencies, or inspected legacy projects.
 
 ## Reproducible evidence
 
