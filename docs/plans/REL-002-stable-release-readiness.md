@@ -170,6 +170,19 @@ resumed without broadening the accepted preview boundary.
   type, exact size/content, and stable descriptor/entry metadata before an
   idempotent collision can pass. Rerun 131 affected and 190 automation tests
   plus Ruff green.
+- [x] 2026-07-21: Refresh the published REL-001 benchmark only through its
+  executable runner. The first full eight-gate run falsified the assumption
+  that the checked report still matched the release lock: its setup also hit
+  one bounded 600-second Go-test timeout, while an immediate exact Go probe
+  passed in under two seconds; a complete retry then reached comparison and
+  rejected `published_report_drift`. A fresh three-repetition candidate kept
+  structural digest
+  `c0ef71a90d671d29adabd3c705903244b5cbde9351f51e39da675264ebd6746a`
+  and changed only sampled runtimes plus the exact current Click, Pygments,
+  runtime-lock, installed-environment, and wheel identities. Promote that
+  generated candidate without editing its JSON; static validation, 18 focused
+  tests, and an independent three-run replay pass. A fresh all-profile run is
+  still required rather than treating either earlier failure as a waiver.
 - [ ] Prove wheel and source-distribution builds, clean installation, installed
   schemas/CLIs, dependency/advisory policy, exact published source revision,
   and the complete release checklist. GitHub Private Vulnerability Reporting
