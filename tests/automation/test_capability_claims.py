@@ -490,7 +490,7 @@ def test_rel001_benchmark_claim_is_experimental_replayable_and_bounded() -> None
 
     guide = REL001_BENCHMARK_PATH.read_text(encoding="utf-8")
     for exact_claim in (
-        "c0ef71a90d671d29adabd3c705903244b5cbde9351f51e39da675264ebd6746a",
+        "4f0e77045ca5c0cf4994d3059585aefa549854eee2897c2b7968b35f1881854b",
         "pass_with_legacy_coverage_debt",
         "verified: 0",
         "verify-published",

@@ -26,6 +26,17 @@ uses deadline-bound directional pipe markers and the real 1-second graceful/
 package/race/vet, all 54 Go ecosystem tests, and an exact non-runtime REL-001
 benchmark replay.
 
+Published candidate `c76bc50` was also rejected: GitHub Actions run
+`29844155406` completed the canonical step with exit 1. Two independent exact
+environment reproductions isolated `rel001-benchmark` as the sole failing gate.
+The workflow's floating `uv python install 3.12` selected managed CPython
+3.12.13, while the checked report was bound to 3.12.3; Python identity and three
+derived structural digests therefore changed exactly as the strict evidence
+contract requires. The accepted replacement pins CPython 3.12.13 in both
+`.python-version` and CI and regenerates the report only through the complete
+three-repetition runner. The supported package promise remains CPython 3.12;
+the exact patch pin is the reproducible repository/CI evidence coordinate.
+
 The final revision-bound acceptance evidence is retained at
 `.artifacts/quality/rel002-final-ci-closure-20260721/release-evidence.json`.
 The same published revision passes the canonical GitHub Actions workflow and
@@ -94,9 +105,9 @@ is binding:
 - The public benchmark is `docs/benchmarks/rel001-report.json`; explanatory
   limits are in `docs/benchmarks/REL-001.md` and CAP-213.
 - Three complete repetitions agree on structural digest
-  `c0ef71a90d671d29adabd3c705903244b5cbde9351f51e39da675264ebd6746a`
+  `4f0e77045ca5c0cf4994d3059585aefa549854eee2897c2b7968b35f1881854b`
   and lifecycle digest
-  `83e7187bfe60982a11929237ba8696c5534f1b3c3bcaaa38de0a3e72ed7d0d38`.
+  `b315a73a701304448edd63ed955fe9de45040df343e76fd1ede424f5adb78260`.
 - The checked totals are 13 candidates, 7 oracle false candidates, 13
   candidate decisions, 1 ambiguity resolution, 0 mapping approvals, 0 change
   approvals, 4 mappings, 5 materializations, 5 tested claims, 0 verified

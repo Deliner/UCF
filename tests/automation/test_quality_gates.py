@@ -160,6 +160,17 @@ def test_ci_pins_the_verified_node_runtime_and_caches_all_locked_projects():
     }
 
 
+def test_ci_and_local_tooling_pin_the_exact_managed_python_runtime():
+    expected_version = "3.12.13"
+    repository_pin = (ROOT / ".python-version").read_text(encoding="utf-8")
+    workflow = (ROOT / ".github" / "workflows" / "quality.yml").read_text()
+
+    assert repository_pin == f"{expected_version}\n"
+    assert f"uv python install {expected_version}" in workflow
+    assert "uv python install 3.12\n" not in workflow
+    assert affected_gates((".python-version",)) == PROFILES["all"]
+
+
 def test_ci_installs_the_checksum_verified_go_runtime():
     workflow = (ROOT / ".github" / "workflows" / "quality.yml").read_text()
 

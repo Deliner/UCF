@@ -28,7 +28,7 @@ jobs:
           enable-cache: true
 
       - name: Install Python
-        run: uv python install 3.12
+        run: uv python install 3.12.13
 
       - name: Install checksum-verified Go
         env:

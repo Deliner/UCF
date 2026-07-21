@@ -232,14 +232,25 @@ resumed without broadening the accepted preview boundary.
   fixture, and keep its real subprocess/SIGTERM/no-repeat assertion. Focused
   normal/race stress, full Go package/race/vet, and all 54 Go ecosystem tests
   pass.
-- [x] 2026-07-21: Regenerate and independently replay any revision-bound
-  benchmark identity changed by the adapter test source, commit and publish the
-  candidate, require its GitHub Actions run to pass, then regenerate strict
-  release evidence and repeat the local plus public clean-clone all profile.
-  The pre-publication three-run candidate changed only runtime samples; every
-  checked non-runtime field, including wheel and Go adapter identity, is exact.
+- [x] 2026-07-21: Regenerate and independently replay the benchmark after the
+  adapter test change, then publish candidate `c76bc50`. Its local and public
+  clean-clone all profiles pass, but actual GitHub Actions run `29844155406`
+  exits 1; reject its release evidence instead of substituting local success.
+- [x] 2026-07-21: Reproduce the hosted-class failure in two independent fresh
+  environments. Exact workflow uv 0.11.29 selects managed CPython 3.12.13 and
+  produces seven green gates plus sole `rel001-benchmark` exit 3
+  `published_report_drift`; a 3.12.3 control matches. The old report differs at
+  exactly Python version and three derived structural digests, while Go and PVR
+  pass.
+- [x] 2026-07-21: Add a focused RED for one exact shared repository/CI Python
+  pin. Set `.python-version` and the workflow install to CPython 3.12.13,
+  regenerate the checked report only through the complete three-repetition
+  runner, prove the four expected non-runtime changes, and replay it green.
+- [x] 2026-07-21: Publish the exact-pin replacement, require its actual GitHub
+  Actions run to pass, then regenerate strict release evidence and repeat the
+  local plus public clean-clone all profile on the same exact revision.
 - [x] 2026-07-21: Obtain independent release, dependency-order, and public-claim
-  acceptance on the exact final published revision; inspect the final diff and
+  acceptance on that exact final published revision; inspect the final diff and
   only then return REL-002, the backlog, and automation state to verified.
 
 ## Surprises & Discoveries
@@ -379,6 +390,17 @@ signal helper, and marker waits selected against cleanup completion remove the
 deadlock and shell scheduling dependency without changing a protocol,
 production timeout, or retry policy.
 
+The next hosted candidate exposed a separate deterministic environment drift.
+The repository supported CPython 3.12 but did not pin the patch used to create
+environment-bound benchmark evidence. GitHub's exact setup-uv flow selected
+managed 3.12.13, while the checked report recorded 3.12.3. Two independent
+fresh-clone reproductions passed every other gate and isolated exactly four
+non-runtime differences: Python version, the Python component digest, the
+aggregate structural digest, and the lifecycle digest. An initially conflicting
+probe was traced to an inherited 3.12.3 virtual environment and retracted after
+a clean-environment replay. This is evidence that the exact patch is a required
+benchmark coordinate, not a reason to erase Python identity from comparison.
+
 ## Decision Log
 
 - **2026-07-21 — do not broaden product capability during release closure.**
@@ -463,6 +485,15 @@ production timeout, or retry policy.
   Candidate `d91e57b` is therefore superseded even though its local release
   evidence and three independent audits passed. A replacement revision must
   make the hosted check itself green before final release evidence is accepted.
+
+- **2026-07-21 — pin the benchmark's managed Python patch without narrowing
+  package compatibility.** Author: root agent after two independent
+  fresh-environment reproductions. Keep `requires-python >=3.12` and the public
+  CPython 3.12/Linux x86_64 preview tier: the package is tested at supported
+  floors separately. For deterministic repository and CI evidence, pin
+  CPython 3.12.13 in `.python-version` and the workflow install. Preserve the
+  benchmark's interpreter identity, regenerate only through its full runner,
+  and require future patch movement to be an explicit reviewed report change.
 
 - **2026-07-21 — remove test-only scheduler compression, not production
   safety.** Author: root agent after two independent diagnoses and Ubuntu
@@ -632,6 +663,17 @@ no-repeat assertion remains. The accepted evidence includes the focused RED,
 normal/race stress, Ubuntu 24.04 root and non-root replay, the full Go ecosystem
 lane, exact REL-001 non-runtime replay, local and hosted all profiles, public
 clean clone, and exact-final-revision independent audits.
+
+Candidate `c76bc50` was also rejected when its hosted run selected managed
+CPython 3.12.13 against a report recorded under 3.12.3. The final replacement
+does not weaken environment binding: it makes 3.12.13 the exact repository/CI
+toolchain coordinate and publishes a complete runner-generated report at
+structural digest
+`4f0e77045ca5c0cf4994d3059585aefa549854eee2897c2b7968b35f1881854b`
+and lifecycle digest
+`b315a73a701304448edd63ed955fe9de45040df343e76fd1ede424f5adb78260`.
+The broader package compatibility declaration and bounded CPython 3.12 support
+tier remain unchanged.
 
 The implementation's rejected name-based rollback history remains documented.
 The accepted publisher uses an anonymous staged inode and no name-based

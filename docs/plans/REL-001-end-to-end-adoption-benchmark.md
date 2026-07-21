@@ -140,7 +140,7 @@ identity or narrowing the advertised comparison domain.
   compilation, bounded I/O, typed failure recovery, and release-gate routing;
   regenerate and independently recheck the report only after those contracts
   are green. The accepted structural digest is
-  `c0ef71a90d671d29adabd3c705903244b5cbde9351f51e39da675264ebd6746a`.
+  `4f0e77045ca5c0cf4994d3059585aefa549854eee2897c2b7968b35f1881854b`.
 - [x] 2026-07-21: Prove unchanged fixtures, native behavior, all required platforms,
   complete adoption/change/evidence flow, deterministic structural results,
   and bounded measured runtime across three complete repetitions. The checked
@@ -610,10 +610,11 @@ the Go lane also proves the exact HTTP, CLI, and local file-spool event
 procedures without adding transport fields to core IR.
 
 The published closed report at `docs/benchmarks/rel001-report.json` is replayed
-as an observable quality gate. Three complete repetitions agree on structural
-digest `c0ef71a90d671d29adabd3c705903244b5cbde9351f51e39da675264ebd6746a`
+as an observable quality gate. Three complete repetitions under the exact
+repository CPython 3.12.13 pin agree on structural digest
+`4f0e77045ca5c0cf4994d3059585aefa549854eee2897c2b7968b35f1881854b`
 and lifecycle digest
-`83e7187bfe60982a11929237ba8696c5534f1b3c3bcaaa38de0a3e72ed7d0d38`.
+`b315a73a701304448edd63ed955fe9de45040df343e76fd1ede424f5adb78260`.
 It reports 13 candidates, 7 oracle false candidates, 13 candidate decisions,
 one ambiguity resolution, zero mapping/change approvals, 4 mappings, 5
 materializations, 5 tested claims, zero verified claims, 18 uncovered
