@@ -213,6 +213,34 @@ resumed without broadening the accepted preview boundary.
   normal repetitions and 20 race-instrumented repetitions; the whole Go package
   passes 20 repetitions, Go vet passes, and all 54 affected Go ecosystem tests
   pass. A fresh three-run benchmark has an identical non-runtime projection.
+- [x] 2026-07-21: Reopen REL-002 after querying the actual hosted check for
+  published candidate `d91e57b`: GitHub Actions run `29839039561` failed the
+  canonical all profile. Reclassify the prior local, clean-clone, and
+  revision-bound release evidence as candidate history; do not call the
+  package accepted while hosted CI is red.
+- [x] 2026-07-21: Challenge the new root assumption before another patch.
+  Two independent reviews correlate the hosted duration with the Go cleanup
+  fixture and identify its artificial 100/500 ms timing window; exact Go
+  1.26.5 CI-like runs, 200 focused repetitions, and fresh Ubuntu 24.04 root and
+  non-root container runs falsify a deterministic production defect. Retained
+  race-instrumented REDs reproduce `signal: killed` under the compressed test
+  grace. The exact hosted artifact remains authentication-gated.
+- [x] 2026-07-21: Add a focused RED requiring a real pipe whose writer remains
+  open to fail with `os.ErrDeadlineExceeded`. Implement deadline-bound
+  readiness and termination marker reads, use the unchanged production
+  1-second graceful and 2-second absolute cleanup bounds in the integration
+  fixture, and keep its real subprocess/SIGTERM/no-repeat assertion. Focused
+  normal/race stress, full Go package/race/vet, and all 54 Go ecosystem tests
+  pass.
+- [x] 2026-07-21: Regenerate and independently replay any revision-bound
+  benchmark identity changed by the adapter test source, commit and publish the
+  candidate, require its GitHub Actions run to pass, then regenerate strict
+  release evidence and repeat the local plus public clean-clone all profile.
+  The pre-publication three-run candidate changed only runtime samples; every
+  checked non-runtime field, including wheel and Go adapter identity, is exact.
+- [x] 2026-07-21: Obtain independent release, dependency-order, and public-claim
+  acceptance on the exact final published revision; inspect the final diff and
+  only then return REL-002, the backlog, and automation state to verified.
 
 ## Surprises & Discoveries
 
@@ -429,6 +457,23 @@ production timeout, or retry policy.
   bounded cleanup result. A missing marker now fails promptly and cannot turn
   into a ten-minute suite hang.
 
+- **2026-07-21 — hosted green is an independent acceptance prerequisite.**
+  Author: root agent after querying the public checks API. Exact local and
+  clean-clone success cannot substitute for the configured GitHub Actions run.
+  Candidate `d91e57b` is therefore superseded even though its local release
+  evidence and three independent audits passed. A replacement revision must
+  make the hosted check itself green before final release evidence is accepted.
+
+- **2026-07-21 — remove test-only scheduler compression, not production
+  safety.** Author: root agent after two independent diagnoses and Ubuntu
+  container replay. Production already sends one graceful group signal and
+  has 1-second/2-second escalation bounds. The fixture's 100/500 ms substitute
+  is not the contract and produced retained race-instrumented `signal: killed`
+  failures. Use the actual constants, retain the 20 ms no-repeat observation,
+  and put OS pipe read deadlines on both marker phases. Do not increase a
+  production deadline, retry a failed gate, or replace the real process test
+  with mocks.
+
 - **2026-07-21 — make the create-only evidence link the publication commit
   point.** Author: root agent. A device/inode `stat` cannot make a later
   name-based `unlink` conditional, so another metadata check cannot close the
@@ -563,19 +608,30 @@ That precursor is retained as
 `release-evidence-governance-candidate-0f10681.json`, not substituted for the
 final revision.
 
-Final revision-bound evidence is
-`.artifacts/quality/rel002-final-20260721/release-evidence.json`; the exact
-eight-gate output is `quality-gates-all-final.log`, and a fresh public clone
-replay is under `.artifacts/agents/rel002-final-clean-source/`. These paths
-carry the final revision and changing artifact identities without embedding a
-self-invalidating commit hash in this plan. Independent final reviews accept
-the release evidence, dependency order, diff, and public-claim boundary.
+Final revision-bound evidence is under
+`.artifacts/quality/rel002-final-ci-closure-20260721/`; a fresh public clone
+replay and independent final reviews are under
+`.artifacts/agents/rel002-final-ci-closure/`, and hosted check metadata is under
+`.artifacts/ci/rel002-final/`. These paths carry the final revision and changing
+artifact identities without embedding a self-invalidating commit hash in this
+plan. Independent final reviews accept the release evidence, dependency order,
+diff, and public-claim boundary.
 The final all-profile attempt first caught one honest REL-001 wheel-identity
 drift after README metadata changed; its RED and the generated-report replay
 GREEN are retained alongside the accepted aggregate rather than hidden.
 The next attempt caught and retained the Go harness deadlock. Its correction is
 test-only, survives normal and race-instrumented stress, and leaves the complete
 REL-001 non-runtime report projection unchanged.
+
+Published candidate `d91e57b` was then rejected because its actual GitHub
+Actions run exited 1. The replacement closes the remaining fixture-only risks:
+readiness and termination markers have OS pipe deadlines, the integration test
+uses the unchanged production 1-second/2-second cleanup policy instead of an
+artificial 100/500 ms scheduler window, and the real subprocess/SIGTERM/
+no-repeat assertion remains. The accepted evidence includes the focused RED,
+normal/race stress, Ubuntu 24.04 root and non-root replay, the full Go ecosystem
+lane, exact REL-001 non-runtime replay, local and hosted all profiles, public
+clean clone, and exact-final-revision independent audits.
 
 The implementation's rejected name-based rollback history remains documented.
 The accepted publisher uses an anonymous staged inode and no name-based

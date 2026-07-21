@@ -11,6 +11,16 @@ not a stable API or general adapter/platform claim.
 
 The authoritative ignored evidence is:
 
+- `.artifacts/quality/rel002-final-ci-closure-20260721/` — the exact final
+  published revision's release evidence and all eight local gates;
+- `.artifacts/agents/rel002-final-ci-closure/` — public-HTTPS clean clone,
+  fresh locked installs, complete all-profile replay, and independent final
+  release/dependency/claims audits;
+- `.artifacts/ci/rel002-final/` — public GitHub Actions run metadata proving the
+  canonical workflow is green on the same exact revision.
+
+The earlier candidate evidence is retained as superseded history:
+
 - `.artifacts/quality/rel002-final-20260721/release-evidence.json` — strict
   `git_commit` source snapshot, exact local/public remote `main`, identical
   source distributions, wheel-from-sdist, ordinary and supported-floor clean
@@ -45,6 +55,19 @@ race-instrumented repetitions, 20 complete Go-package repetitions, Go vet, and
 54 affected ecosystem tests. A fresh three-repetition REL-001 run has an exact
 match for every non-runtime report field, so no benchmark identity was hidden
 or manually rewritten.
+
+Published candidate `d91e57b` was subsequently rejected by GitHub Actions run
+`29839039561`. Exact hosted logs require authentication, but public check
+metadata proves the canonical all-profile step exited 1. Independent diagnosis
+found no production cleanup defect: the remaining test fixture compressed the
+real 1-second/2-second cleanup policy to 100/500 ms and left readiness without
+an OS read deadline. The accepted correction adds a focused real-pipe timeout
+RED, applies read deadlines to both markers, and uses the unchanged production
+bounds. It passes 200 normal and 100 race focused repetitions, 20 full package
+runs, full-package race, Go vet, all 54 ecosystem tests, and Ubuntu 24.04 root/
+non-root container replay. A fresh three-repetition benchmark matches every
+non-runtime field exactly, including structural/lifecycle, wheel, and adapter
+identities; no checked benchmark output was rewritten.
 
 The earlier strict governance candidate is retained at
 `.artifacts/quality/rel002-final-20260721/release-evidence-governance-candidate-0f10681.json`.

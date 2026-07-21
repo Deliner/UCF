@@ -427,13 +427,16 @@ func TestVerificationCleanupDoesNotRepeatGracefulTermination(t *testing.T) {
 	go func() {
 		waited <- command.Wait()
 	}()
-	if line, err := bufio.NewReader(ready).ReadString('\n'); err != nil ||
+	if line, err := readVerificationMarkerWithin(
+		ready,
+		verificationDeadline,
+	); err != nil ||
 		line != "ready\n" {
 		t.Fatalf("verification readiness = %q, %v", line, err)
 	}
 
-	terminationGrace := 20 * verificationCleanupPollInterval
-	cleanupDeadline := 100 * verificationCleanupPollInterval
+	terminationGrace := verificationTerminationGrace
+	cleanupDeadline := verificationCleanupDeadline
 	stopped := make(chan error, 1)
 	go func() {
 		stopped <- stopVerificationProcessWithinOwned(
@@ -450,7 +453,10 @@ func TestVerificationCleanupDoesNotRepeatGracefulTermination(t *testing.T) {
 	}
 	terminated := make(chan markerResult, 1)
 	go func() {
-		line, readErr := bufio.NewReader(term).ReadString('\n')
+		line, readErr := readVerificationMarkerWithin(
+			term,
+			cleanupDeadline,
+		)
 		terminated <- markerResult{line: line, err: readErr}
 	}()
 	select {
@@ -489,6 +495,37 @@ func TestVerificationCleanupDoesNotRepeatGracefulTermination(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("graceful verification cleanup did not return")
 	}
+}
+
+func TestVerificationMarkerReadTimesOutWithWriterOpen(t *testing.T) {
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reader.Close()
+	defer writer.Close()
+
+	line, err := readVerificationMarkerWithin(
+		reader,
+		20*verificationCleanupPollInterval,
+	)
+	if !errors.Is(err, os.ErrDeadlineExceeded) {
+		t.Fatalf("verification marker timeout = %q, %v", line, err)
+	}
+}
+
+func readVerificationMarkerWithin(
+	reader *os.File,
+	deadline time.Duration,
+) (string, error) {
+	if reader == nil || deadline <= 0 {
+		return "", errors.New("verification marker deadline is invalid")
+	}
+	if err := reader.SetReadDeadline(time.Now().Add(deadline)); err != nil {
+		return "", err
+	}
+	line, readErr := bufio.NewReader(reader).ReadString('\n')
+	return line, errors.Join(readErr, reader.SetReadDeadline(time.Time{}))
 }
 
 func runGracefulTerminationHelper(t *testing.T) {

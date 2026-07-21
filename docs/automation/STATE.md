@@ -17,15 +17,21 @@ control plane, not a stable API. CAP-214 is implemented at that exact boundary;
 all external adapters and ecosystem/platform profiles retain their experimental
 fixture-scoped status.
 
+Candidate `d91e57b` was explicitly rejected after GitHub Actions run
+`29839039561` failed the canonical all profile despite local and clean-clone
+success. The replacement keeps production cleanup unchanged: its test harness
+uses deadline-bound directional pipe markers and the real 1-second graceful/
+2-second absolute cleanup bounds. Retained evidence includes the focused RED,
+200 normal and 100 race repetitions, Ubuntu 24.04 root/non-root replay, full Go
+package/race/vet, all 54 Go ecosystem tests, and an exact non-runtime REL-001
+benchmark replay.
+
 The final revision-bound acceptance evidence is retained at
-`.artifacts/quality/rel002-final-20260721/release-evidence.json`. It is created
-only after a clean local HEAD equals public remote `main` and the complete
-distribution, installed-package, dependency/advisory/license, and hosted-surface
-check exits zero. The same published revision passes all eight gates locally;
-output is retained in
-`.artifacts/quality/rel002-final-20260721/quality-gates-all-final.log`. A fresh
-public HTTPS clone with locked Python/frontend installs repeats the complete
-profile under `.artifacts/agents/rel002-final-clean-source/`.
+`.artifacts/quality/rel002-final-ci-closure-20260721/release-evidence.json`.
+The same published revision passes the canonical GitHub Actions workflow and
+all eight gates locally; output is retained in that directory. A fresh public
+HTTPS clone with locked Python/frontend installs repeats the complete profile
+under `.artifacts/agents/rel002-final-ci-closure/`.
 
 The hardened evidence publisher uses an anonymous staged inode and a
 create-only link commit point, never name-based rollback; its collision reader
