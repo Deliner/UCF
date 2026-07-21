@@ -1558,6 +1558,313 @@ def _run_installed_cli(
         )
 
 
+INSTALLED_PARSER_CONTRACT = r"""
+import json
+import sys
+from importlib.metadata import version
+from pathlib import Path
+
+import pydantic
+import ucf
+
+from ucf.models.action import ActionSpec
+from ucf.models.invariant import InvariantSpec
+from ucf.models.spec import SpecParseError, parse_spec
+from ucf.models.usecase import UseCaseSpec
+
+
+if ucf.__file__ is None or pydantic.__file__ is None:
+    raise SystemExit("installed parser imported a namespace package")
+environment_prefix = Path(sys.prefix).resolve(strict=True)
+ucf_origin = Path(ucf.__file__).resolve(strict=True)
+pydantic_origin = Path(pydantic.__file__).resolve(strict=True)
+for label, origin in (("ucf", ucf_origin), ("pydantic", pydantic_origin)):
+    if not origin.is_file():
+        raise SystemExit(f"installed parser imported non-file {label} code")
+    try:
+        origin.relative_to(environment_prefix)
+    except ValueError:
+        raise SystemExit(
+            f"installed parser imported {label} outside its environment prefix"
+        ) from None
+
+distribution_pydantic_version = version("pydantic")
+if pydantic.__version__ != distribution_pydantic_version:
+    raise SystemExit(
+        "installed Pydantic module version differs from distribution metadata"
+    )
+
+action = parse_spec(
+    {
+        "kind": "action",
+        "metadata": {"name": "installed-public-ui-alias"},
+        "platform": {"ui": {"steps": [{"assert": "visible"}]}},
+    }
+)
+if not isinstance(action, ActionSpec):
+    raise SystemExit("installed parser returned the wrong action model")
+if action.platform is None or action.platform.ui is None:
+    raise SystemExit("installed parser dropped the public UI binding")
+if action.platform.ui.steps[0].assert_condition != "visible":
+    raise SystemExit("installed parser dropped the public assert alias")
+
+usecase = parse_spec(
+    {
+        "kind": "usecase",
+        "metadata": {"name": "installed-public-reference-aliases"},
+        "invariants": [{"$ref": "invariants/example"}],
+        "requires": [
+            {
+                "$ref": "components/example",
+                "as": "example",
+                "params": {
+                    "ref": "free-form",
+                    "as_": "free-form",
+                    "assert_condition": "free-form",
+                    "from_state": "free-form",
+                },
+            }
+        ],
+    }
+)
+if not isinstance(usecase, UseCaseSpec):
+    raise SystemExit("installed parser returned the wrong use-case model")
+expected_params = {
+    "ref": "free-form",
+    "as_": "free-form",
+    "assert_condition": "free-form",
+    "from_state": "free-form",
+}
+if usecase.invariants[0].ref != "invariants/example":
+    raise SystemExit("installed parser dropped the public invariant $ref alias")
+if usecase.requires[0].ref != "components/example":
+    raise SystemExit("installed parser dropped the public requirement $ref alias")
+if usecase.requires[0].as_ != "example":
+    raise SystemExit("installed parser dropped the public as alias")
+if usecase.requires[0].params != expected_params:
+    raise SystemExit("installed parser changed alias-like free-form data")
+
+invariant = parse_spec(
+    {
+        "kind": "invariant",
+        "metadata": {"name": "installed-public-transition-alias"},
+        "type": "state-machine",
+        "forbidden": [
+            {
+                "from": "pending",
+                "to": "done",
+                "reason": "not allowed",
+            }
+        ],
+    }
+)
+if not isinstance(invariant, InvariantSpec):
+    raise SystemExit("installed parser returned the wrong invariant model")
+if invariant.forbidden[0].from_state != "pending":
+    raise SystemExit("installed parser dropped the public from alias")
+
+negative_payloads = {
+    "unknown-field": (
+        {
+            "kind": "action",
+            "metadata": {"name": "installed-unknown-field"},
+            "unknown": True,
+        },
+        ("unknown",),
+    ),
+    "nested-unknown-field": (
+        {
+            "kind": "action",
+            "metadata": {"name": "installed-nested-unknown-field"},
+            "platform": {"ui": {"steps": [{"unknown": "value"}]}},
+        },
+        ("platform.ui.steps.0.unknown",),
+    ),
+    "strict-coercion": (
+        {
+            "kind": "action",
+            "metadata": {"name": "installed-strict-coercion"},
+            "platform": {"cli": {"command": "run", "exit_code": "0"}},
+        },
+        ("platform.cli.exit_code",),
+    ),
+    "optional-internal-name": (
+        {
+            "kind": "action",
+            "metadata": {"name": "installed-optional-internal-name"},
+            "platform": {"ui": {"steps": [{"assert_condition": "visible"}]}},
+        },
+        ("platform.ui.steps.0.assert_condition",),
+    ),
+    "duplicate-ui-name": (
+        {
+            "kind": "action",
+            "metadata": {"name": "installed-duplicate-ui-name"},
+            "platform": {
+                "ui": {
+                    "steps": [
+                        {"assert": "visible", "assert_condition": "hidden"}
+                    ]
+                }
+            },
+        },
+        ("platform.ui.steps.0.assert_condition",),
+    ),
+    "duplicate-ref-name": (
+        {
+            "kind": "usecase",
+            "metadata": {"name": "installed-duplicate-ref-name"},
+            "invariants": [
+                {"$ref": "invariants/public", "ref": "invariants/internal"}
+            ],
+        },
+        ("invariants.0.ref", "invariants.0.Ref.ref"),
+    ),
+    "duplicate-requirement-ref": (
+        {
+            "kind": "usecase",
+            "metadata": {"name": "installed-duplicate-requirement-ref"},
+            "requires": [
+                {
+                    "$ref": "components/public",
+                    "ref": "components/internal",
+                    "as": "component",
+                }
+            ],
+        },
+        ("requires.0.ref",),
+    ),
+    "duplicate-requirement-name": (
+        {
+            "kind": "usecase",
+            "metadata": {"name": "installed-duplicate-requirement-name"},
+            "requires": [
+                {
+                    "$ref": "components/example",
+                    "as": "public-name",
+                    "as_": "internal-name",
+                }
+            ],
+        },
+        ("requires.0.as_",),
+    ),
+    "duplicate-transition-name": (
+        {
+            "kind": "invariant",
+            "metadata": {"name": "installed-duplicate-transition-name"},
+            "type": "state-machine",
+            "forbidden": [
+                {
+                    "from": "pending",
+                    "from_state": "queued",
+                    "to": "done",
+                    "reason": "not allowed",
+                }
+            ],
+        },
+        ("forbidden.0.from_state",),
+    ),
+}
+for label, (payload, expected_paths) in negative_payloads.items():
+    source_path = f"{label}.json"
+    try:
+        parse_spec(payload, source_path=source_path)
+    except SpecParseError as exc:
+        if exc.path != source_path:
+            raise SystemExit(
+                f"installed parser lost source provenance for fixture: {label}"
+            )
+        if not any(expected_path in str(exc) for expected_path in expected_paths):
+            raise SystemExit(
+                f"installed parser rejected {label} at the wrong path: {exc}"
+            )
+        continue
+    raise SystemExit(f"installed parser accepted negative fixture: {label}")
+
+print(
+    json.dumps(
+        {
+            "import_origin": "environment-prefix",
+            "pydantic_version": distribution_pydantic_version,
+            "status": "passed",
+        },
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+)
+"""
+
+
+def _run_installed_parser_contract(
+    environment: Path,
+    *,
+    cwd: Path,
+) -> dict[str, str]:
+    clean_environment = os.environ.copy()
+    clean_environment.pop("PYTHONHOME", None)
+    clean_environment.pop("PYTHONPATH", None)
+    command = (
+        str(_venv_python(environment)),
+        "-I",
+        "-c",
+        INSTALLED_PARSER_CONTRACT,
+    )
+    print(
+        f"$ {shlex.quote(command[0])} -I -c <installed-parser-contract>",
+        flush=True,
+    )
+    completed = subprocess.run(
+        command,
+        cwd=cwd,
+        env=clean_environment,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if completed.stdout:
+        print(completed.stdout, end="", flush=True)
+    if completed.stderr:
+        print(completed.stderr, end="", file=sys.stderr, flush=True)
+    if completed.returncode != 0:
+        raise ReleaseCheckError(
+            "installed parser contract failed with exit "
+            f"{completed.returncode}"
+        )
+    try:
+        evidence = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise ReleaseCheckError(
+            "installed parser contract emitted invalid JSON evidence"
+        ) from exc
+    if not isinstance(evidence, dict) or set(evidence) != {
+        "import_origin",
+        "pydantic_version",
+        "status",
+    }:
+        raise ReleaseCheckError(
+            "installed parser contract emitted an invalid evidence shape"
+        )
+    if evidence.get("status") != "passed":
+        raise ReleaseCheckError(
+            "installed parser contract did not report passed status"
+        )
+    if evidence.get("import_origin") != "environment-prefix":
+        raise ReleaseCheckError(
+            "installed parser contract did not prove environment-prefix imports"
+        )
+    pydantic_version = evidence.get("pydantic_version")
+    if not isinstance(pydantic_version, str) or not pydantic_version:
+        raise ReleaseCheckError(
+            "installed parser contract omitted its Pydantic version"
+        )
+    return {
+        "import_origin": "environment-prefix",
+        "pydantic_version": pydantic_version,
+        "status": "passed",
+    }
+
+
 def _minimum_requirements(source_root: Path) -> tuple[str, ...]:
     configuration = tomllib.loads(
         (source_root / "pyproject.toml").read_text(encoding="utf-8")
@@ -1660,6 +1967,51 @@ def _inventory_coordinates(inventory: Mapping[str, object]) -> set[str]:
     return coordinates
 
 
+def _bind_installed_parser_contract(
+    contract: Mapping[str, object],
+    inventory: Mapping[str, object],
+    *,
+    label: str,
+    expected_pydantic_version: str | None,
+) -> dict[str, str]:
+    pydantic_prefix = "pydantic=="
+    pydantic_coordinates = sorted(
+        coordinate
+        for coordinate in _inventory_coordinates(inventory)
+        if coordinate.startswith(pydantic_prefix)
+    )
+    if len(pydantic_coordinates) != 1:
+        raise ReleaseCheckError(
+            f"{label} inventory must contain exactly one Pydantic coordinate"
+        )
+    inventory_version = pydantic_coordinates[0][len(pydantic_prefix) :]
+    reported_version = contract.get("pydantic_version")
+    if reported_version != inventory_version:
+        raise ReleaseCheckError(
+            f"{label} parser Pydantic {reported_version!r} does not match "
+            f"its installed inventory {inventory_version!r}"
+        )
+    if (
+        expected_pydantic_version is not None
+        and inventory_version != expected_pydantic_version
+    ):
+        raise ReleaseCheckError(
+            f"{label} Pydantic {inventory_version!r} does not equal the "
+            f"declared supported floor {expected_pydantic_version!r}"
+        )
+    if contract.get("import_origin") != "environment-prefix":
+        raise ReleaseCheckError(
+            f"{label} parser contract did not prove environment-prefix imports"
+        )
+    if contract.get("status") != "passed":
+        raise ReleaseCheckError(f"{label} parser contract is not passed")
+    return {
+        "import_origin": "environment-prefix",
+        "pydantic_version": inventory_version,
+        "status": "passed",
+    }
+
+
 def _validate_audit_license_alignment(
     audit: Mapping[str, object],
     inventory: Mapping[str, object],
@@ -1755,6 +2107,10 @@ def _verify_installs(
     _run_installed_cli(
         ordinary, cwd=scratch_root, expected_version=expected_version
     )
+    ordinary_parser_contract = _run_installed_parser_contract(
+        ordinary,
+        cwd=scratch_root,
+    )
     ordinary_inventory_path = scratch_root / "ordinary-license-inventory.json"
     _run(
         (
@@ -1769,9 +2125,16 @@ def _verify_installs(
         ordinary_inventory_path,
         label="ordinary installed Python license inventory",
     )
+    ordinary_inventory["parser_contract"] = _bind_installed_parser_contract(
+        ordinary_parser_contract,
+        ordinary_inventory,
+        label="ordinary",
+        expected_pydantic_version=None,
+    )
 
     floors = scratch_root / "minimum-environment"
     _create_environment(floors, cwd=scratch_root)
+    minimum_requirements = _minimum_requirements(source_root)
     _run(
         (
             "uv",
@@ -1791,7 +2154,7 @@ def _verify_installs(
             "install",
             "--python",
             str(_venv_python(floors)),
-            *_minimum_requirements(source_root),
+            *minimum_requirements,
         ),
         cwd=scratch_root,
     )
@@ -1801,6 +2164,10 @@ def _verify_installs(
     )
     _run_installed_cli(
         floors, cwd=scratch_root, expected_version=expected_version
+    )
+    floor_parser_contract = _run_installed_parser_contract(
+        floors,
+        cwd=scratch_root,
     )
     floor_inventory_path = scratch_root / "supported-floor-license-inventory.json"
     _run(
@@ -1815,6 +2182,21 @@ def _verify_installs(
     floor_inventory = _load_json_object(
         floor_inventory_path,
         label="supported-floor installed Python license inventory",
+    )
+    pydantic_floor = [
+        requirement.removeprefix("pydantic==")
+        for requirement in minimum_requirements
+        if requirement.startswith("pydantic==")
+    ]
+    if len(pydantic_floor) != 1:
+        raise ReleaseCheckError(
+            "declared minimum requirements must contain exactly one Pydantic floor"
+        )
+    floor_inventory["parser_contract"] = _bind_installed_parser_contract(
+        floor_parser_contract,
+        floor_inventory,
+        label="supported-floor",
+        expected_pydantic_version=pydantic_floor[0],
     )
     return {
         "ordinary": ordinary_inventory,

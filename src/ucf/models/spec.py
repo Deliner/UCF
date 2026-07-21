@@ -6,8 +6,9 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from ucf.models.action import ActionSpec
 from ucf.models.component import ComponentSpec
@@ -34,6 +35,54 @@ class SpecParseError(Exception):
     def __init__(self, message: str, path: str | None = None) -> None:
         self.path = path
         super().__init__(message)
+
+
+def _find_internal_field_name(
+    raw: object,
+    validated: object,
+    path: tuple[str | int, ...] = (),
+) -> tuple[tuple[str | int, ...], str] | None:
+    """Find a Python field name used instead of its public wire alias."""
+    if isinstance(validated, BaseModel) and isinstance(raw, dict):
+        for field_name, field in type(validated).model_fields.items():
+            alias = field.alias if isinstance(field.alias, str) else field_name
+            if alias != field_name and field_name in raw:
+                return (*path, field_name), alias
+
+            if alias not in raw:
+                continue
+            invalid = _find_internal_field_name(
+                raw[alias],
+                getattr(validated, field_name),
+                (*path, alias),
+            )
+            if invalid is not None:
+                return invalid
+        return None
+
+    if isinstance(validated, (list, tuple)) and isinstance(raw, list):
+        for index, (raw_item, validated_item) in enumerate(zip(raw, validated)):
+            invalid = _find_internal_field_name(
+                raw_item,
+                validated_item,
+                (*path, index),
+            )
+            if invalid is not None:
+                return invalid
+        return None
+
+    if isinstance(validated, dict) and isinstance(raw, dict):
+        for key, validated_item in validated.items():
+            if key not in raw:
+                continue
+            invalid = _find_internal_field_name(
+                raw[key],
+                validated_item,
+                (*path, key),
+            )
+            if invalid is not None:
+                return invalid
+    return None
 
 
 def parse_spec(data: dict, *, source_path: str | None = None) -> AnySpec:
@@ -63,15 +112,24 @@ def parse_spec(data: dict, *, source_path: str | None = None) -> AnySpec:
             path=source_path,
         ) from exc
 
+    normalized_data: dict[str, Any] = json.loads(json_data)
     try:
-        return model_cls.model_validate_json(
-            json_data,
-            strict=True,
-            by_alias=True,
-            by_name=False,
-        )
+        model = model_cls.model_validate_json(json_data, strict=True)
     except ValidationError as exc:
         raise SpecParseError(
             f"Validation error in '{kind}' spec: {exc}",
             path=source_path,
         ) from exc
+
+    invalid = _find_internal_field_name(normalized_data, model)
+    if invalid is not None:
+        input_path, public_alias = invalid
+        field_name = str(input_path[-1])
+        dotted_path = ".".join(str(part) for part in input_path)
+        raise SpecParseError(
+            f"Validation error in '{kind}' spec: internal field name "
+            f"'{field_name}' at '{dotted_path}' is not allowed; use public "
+            f"alias '{public_alias}'",
+            path=source_path,
+        )
+    return model

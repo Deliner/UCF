@@ -5,7 +5,7 @@ target_state: docs/automation/TARGET_STATE.md
 active_work_package: null
 active_exec_plan: null
 status: complete
-last_updated: 2026-07-21
+last_updated: 2026-07-22
 ---
 
 # Automation handoff state
@@ -16,6 +16,32 @@ bounded result is a `0.1.x` production preview for the CPython 3.12/Linux x86_64
 control plane, not a stable API. CAP-214 is implemented at that exact boundary;
 all external adapters and ecosystem/platform profiles retain their experimental
 fixture-scoped status.
+
+Post-REL-002 maintenance `BUG-001`, recorded as a continuation of the
+`FND-002` strict-parser ExecPlan, restores the same strict public-parser
+contract across the declared `pydantic>=2.4.0` range. Pydantic `2.13.4` had
+silently discarded optional internal alias names, while `2.4.0` could not call
+the newer runtime alias flags. The floor-compatible correction validates JSON
+strictly once and then rejects internal field names against the concrete
+validated model graph. Installed wheel checks now exercise all current public
+aliases, exact free-form map preservation, nested unknown fields, coercion,
+internal-only aliases, and alias/internal duplicates. They also require UCF
+and Pydantic to import below the clean environment prefix, bind Pydantic's
+module version to distribution metadata and the installed inventory, and
+require the floor coordinate to equal the declared minimum. This maintenance
+fix does not reopen or append to the completed dependency backlog. Its local
+staged-source evidence is under
+`.artifacts/quality/bug001-pydantic-range-20260722/`; exact committed, remote,
+clean-clone, and hosted properties are not inferred from that evidence.
+
+BUG-001 also required an expected REL-001 provenance refresh because the wheel
+identity changed. A local uv `0.10.10` / older CPython-build candidate was
+rejected rather than promoted. The exact CI uv `0.11.29` and managed CPython
+3.12.13 build produced a generated report whose sole non-runtime change is the
+wheel SHA; static validation and an independent three-repetition replay retain
+the published structural digest. Regeneration refreshed 120 nondeterministic
+runtime observation leaves. Structural, lifecycle, overhead, limitation, claim,
+runtime-interpretation, and Ratchet-baseline semantics did not change.
 
 Candidate `d91e57b` was explicitly rejected after GitHub Actions run
 `29839039561` failed the canonical all profile despite local and clean-clone
@@ -126,6 +152,11 @@ execution mode.
 ## Current truth
 
 - Active package and ExecPlan: none; repository delivery state is complete.
+- Latest maintenance: `BUG-001` keeps `pydantic>=2.4.0` and proves the public
+  parser contract at the supported floor, locked coordinate, and current
+  ordinary resolver from environment-prefix imports bound to each installed
+  inventory, instead of treating installation or CLI startup as parser
+  compatibility.
 - Final package: historical `REL-002 — Stable release readiness`; its accepted
   result is a bounded `0.1.x` production preview, not a stable API.
 - Verified dependency order: `FND-001`, `FND-002`, `FND-003`, `IR-001`,
@@ -283,7 +314,8 @@ broaden adapter support, or select weaker/different terms.
   bounded compressed/member/uncompressed sizes, builds the wheel from the
   extracted sdist, proves the wheel built from the source distribution at
   ordinary and exact supported floors,
-  checks `ucf --version` and `--help`, and runs the existing installed package
+  checks `ucf --version`, `ucf --help`, and the strict public parser in both
+  installed dependency environments, and runs the existing installed package
   contract from the extracted source distribution.
 - The bounded sdist has 1,050 members rather than the rejected 6,655-member
   dependency-contaminated artifact. Candidate `20ea17e` produced byte-identical

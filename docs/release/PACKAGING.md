@@ -58,10 +58,17 @@ uv run --locked python tools/release_check.py \
 
 It must reproduce dependency-populated and source-only distributions, build the
 wheel from the source distribution, install it in ordinary and supported-floor
-environments, run `ucf --version`, `ucf --help`, and the installed package
-contract, audit both actual installed Python environments plus the exact locked
-Python/npm/Go dependency and license inventories with zero known advisories,
-and verify the canonical GitHub repository, Issues, and GitHub Private Vulnerability Reporting.
+environments, run `ucf --version`, `ucf --help`, and an installed strict-parser
+contract in both environments, and run the installed package contract. The
+parser contract requires UCF and Pydantic imports below the new environment
+prefix, binds the module/distribution Pydantic version to the installed
+inventory and exact supported floor, preserves every current public alias plus
+the complete free-form map, and rejects unknown fields, coercion, internal
+field names, and simultaneous public/internal names at their expected paths.
+The checker audits both actual installed Python
+environments plus the exact locked Python/npm/Go dependency and license
+inventories with zero known advisories, and verifies the canonical GitHub
+repository, Issues, and GitHub Private Vulnerability Reporting.
 A final evidence run additionally exports exact raw blobs from a captured clean
 commit, binds its tree and selected manifest to the artifacts, and requires its
 HEAD to equal nonempty remote `main` before atomic evidence publication. A

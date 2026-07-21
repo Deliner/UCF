@@ -123,6 +123,275 @@ def test_clean_install_rejects_cli_version_drift(tmp_path, monkeypatch):
         )
 
 
+def test_clean_install_records_parser_contract_dependency_coordinate(
+    tmp_path, monkeypatch
+):
+    environment = tmp_path / "environment"
+    (environment / "bin").mkdir(parents=True)
+    calls = []
+
+    def run(command, **kwargs):
+        calls.append((command, kwargs))
+        return subprocess.CompletedProcess(
+            command,
+            0,
+            stdout=(
+                '{"import_origin":"environment-prefix",'
+                '"pydantic_version":"2.13.4","status":"passed"}\n'
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(release_check.subprocess, "run", run)
+
+    assert release_check._run_installed_parser_contract(
+        environment,
+        cwd=tmp_path,
+    ) == {
+        "import_origin": "environment-prefix",
+        "pydantic_version": "2.13.4",
+        "status": "passed",
+    }
+    assert calls[0][0][:3] == (
+        str(environment / "bin" / "python"),
+        "-I",
+        "-c",
+    )
+    assert calls[0][1]["cwd"] == tmp_path
+    assert "PYTHONPATH" not in calls[0][1]["env"]
+
+
+def test_clean_install_rejects_parser_contract_failure(tmp_path, monkeypatch):
+    environment = tmp_path / "environment"
+    (environment / "bin").mkdir(parents=True)
+
+    def run(command, **_kwargs):
+        return subprocess.CompletedProcess(
+            command,
+            23,
+            stdout="",
+            stderr="internal alias accepted\n",
+        )
+
+    monkeypatch.setattr(release_check.subprocess, "run", run)
+
+    with pytest.raises(
+        ReleaseCheckError,
+        match="installed parser contract failed with exit 23",
+    ):
+        release_check._run_installed_parser_contract(
+            environment,
+            cwd=tmp_path,
+        )
+
+
+@pytest.mark.parametrize(
+    ("stdout", "error"),
+    [
+        ("not-json\n", "invalid JSON evidence"),
+        ("[]\n", "invalid evidence shape"),
+        (
+            '{"import_origin":"environment-prefix",'
+            '"pydantic_version":"2.13.4","status":"failed"}\n',
+            "did not report passed status",
+        ),
+        (
+            '{"import_origin":"environment-prefix",'
+            '"pydantic_version":"","status":"passed"}\n',
+            "omitted its Pydantic version",
+        ),
+        (
+            '{"import_origin":"source-tree",'
+            '"pydantic_version":"2.13.4","status":"passed"}\n',
+            "did not prove environment-prefix imports",
+        ),
+    ],
+)
+def test_clean_install_rejects_invalid_parser_contract_evidence(
+    tmp_path, monkeypatch, stdout, error
+):
+    environment = tmp_path / "environment"
+    (environment / "bin").mkdir(parents=True)
+
+    def run(command, **_kwargs):
+        return subprocess.CompletedProcess(
+            command,
+            0,
+            stdout=stdout,
+            stderr="",
+        )
+
+    monkeypatch.setattr(release_check.subprocess, "run", run)
+
+    with pytest.raises(ReleaseCheckError, match=error):
+        release_check._run_installed_parser_contract(
+            environment,
+            cwd=tmp_path,
+        )
+
+
+def test_installed_parser_contract_is_bound_to_inventory_and_floor():
+    contract = {
+        "import_origin": "environment-prefix",
+        "pydantic_version": "2.4.0",
+        "status": "passed",
+    }
+    inventory = {
+        "dependencies": [
+            {"name": "pydantic", "version": "2.4.0"},
+            {"name": "ucf", "version": "0.1.0"},
+        ],
+        "status": "reviewed",
+    }
+
+    assert release_check._bind_installed_parser_contract(
+        contract,
+        inventory,
+        label="supported-floor",
+        expected_pydantic_version="2.4.0",
+    ) == contract
+
+
+@pytest.mark.parametrize(
+    ("contract_version", "inventory_dependencies", "floor", "error"),
+    [
+        (
+            "2.13.4",
+            [{"name": "pydantic", "version": "2.13.3"}],
+            None,
+            "does not match its installed inventory",
+        ),
+        (
+            "2.13.4",
+            [{"name": "ucf", "version": "0.1.0"}],
+            None,
+            "must contain exactly one Pydantic coordinate",
+        ),
+        (
+            "2.13.4",
+            [
+                {"name": "pydantic", "version": "2.13.3"},
+                {"name": "Pydantic", "version": "2.13.4"},
+            ],
+            None,
+            "must contain exactly one Pydantic coordinate",
+        ),
+        (
+            "2.4.1",
+            [{"name": "pydantic", "version": "2.4.1"}],
+            "2.4.0",
+            "does not equal the declared supported floor",
+        ),
+    ],
+)
+def test_installed_parser_contract_rejects_unbound_dependency_coordinates(
+    contract_version,
+    inventory_dependencies,
+    floor,
+    error,
+):
+    contract = {
+        "import_origin": "environment-prefix",
+        "pydantic_version": contract_version,
+        "status": "passed",
+    }
+    inventory = {
+        "dependencies": inventory_dependencies,
+        "status": "reviewed",
+    }
+
+    with pytest.raises(ReleaseCheckError, match=error):
+        release_check._bind_installed_parser_contract(
+            contract,
+            inventory,
+            label="test-environment",
+            expected_pydantic_version=floor,
+        )
+
+
+def test_verify_installs_binds_both_parser_contracts_to_their_environments(
+    tmp_path, monkeypatch
+):
+    scratch = tmp_path / "scratch"
+    scratch.mkdir()
+    wheel = tmp_path / "ucf-0.1.0-py3-none-any.whl"
+    wheel.write_bytes(b"wheel")
+
+    def create_environment(path, *, cwd):
+        assert cwd == scratch
+        (path / "bin").mkdir(parents=True)
+
+    def run(command, *, cwd, **_kwargs):
+        assert cwd == scratch
+        if "--installed-python-license-inventory" in command:
+            output = Path(command[-1])
+            version = "2.4.0" if "supported-floor" in output.name else "2.13.4"
+            output.write_text(
+                json.dumps(
+                    {
+                        "dependencies": [
+                            {"name": "pydantic", "version": version}
+                        ],
+                        "status": "reviewed",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+    def parser_contract(environment, *, cwd):
+        assert cwd == scratch
+        version = "2.4.0" if environment.name == "minimum-environment" else "2.13.4"
+        return {
+            "import_origin": "environment-prefix",
+            "pydantic_version": version,
+            "status": "passed",
+        }
+
+    monkeypatch.setattr(release_check, "_create_environment", create_environment)
+    monkeypatch.setattr(release_check, "_run", run)
+    monkeypatch.setattr(
+        release_check,
+        "_run_installed_cli",
+        lambda *_args, **_kwargs: None,
+    )
+    monkeypatch.setattr(
+        release_check,
+        "_run_installed_parser_contract",
+        parser_contract,
+    )
+
+    evidence = release_check._verify_installs(
+        wheel,
+        source_root=ROOT,
+        scratch_root=scratch,
+        expected_version="0.1.0",
+    )
+
+    assert evidence["ordinary"]["parser_contract"] == {
+        "import_origin": "environment-prefix",
+        "pydantic_version": "2.13.4",
+        "status": "passed",
+    }
+    assert evidence["supported_floor"]["parser_contract"] == {
+        "import_origin": "environment-prefix",
+        "pydantic_version": "2.4.0",
+        "status": "passed",
+    }
+
+
+def test_installed_parser_script_asserts_complete_alias_and_origin_contract():
+    contract = release_check.INSTALLED_PARSER_CONTRACT
+
+    assert "Path(ucf.__file__)" in contract
+    assert "Path(pydantic.__file__)" in contract
+    assert "usecase.invariants[0].ref" in contract
+    assert "usecase.requires[0].ref" in contract
+    assert "usecase.requires[0].as_" in contract
+    assert "usecase.requires[0].params != expected_params" in contract
+    assert '"nested-unknown-field"' in contract
+    assert "expected_path in str(exc)" in contract
+
+
 def test_sdist_has_an_explicit_source_boundary_and_dependency_exclusions():
     configuration = _configuration()
     sdist = configuration["tool"]["hatch"]["build"]["targets"]["sdist"]

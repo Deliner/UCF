@@ -186,6 +186,14 @@ class TestStrictSpecFields:
             ),
             (
                 {
+                    "kind": "protocol",
+                    "metadata": {"name": "public-protocol-ref-alias"},
+                    "implementations": [{"ref": "components/example"}],
+                },
+                "implementations.0",
+            ),
+            (
+                {
                     "kind": "usecase",
                     "metadata": {"name": "public-requirement-aliases"},
                     "requires": [
@@ -224,12 +232,179 @@ class TestStrictSpecFields:
                 },
                 "forbidden.0",
             ),
+            (
+                {
+                    "kind": "usecase",
+                    "metadata": {"name": "inline-invariant-alias"},
+                    "invariants": [
+                        {
+                            "kind": "invariant",
+                            "metadata": {"name": "inline"},
+                            "type": "state-machine",
+                            "forbidden": [
+                                {
+                                    "from_state": "pending",
+                                    "to": "done",
+                                    "reason": "not allowed",
+                                }
+                            ],
+                        }
+                    ],
+                },
+                "invariants.0",
+            ),
         ],
     )
     def test_public_parser_rejects_coercion_and_internal_aliases(
         self, payload: dict, field_path: str
     ) -> None:
         with pytest.raises(SpecParseError) as exc_info:
-            parse_spec(payload)
+            parse_spec(payload, source_path="/specs/internal-alias.yaml")
 
         assert field_path in str(exc_info.value)
+        assert exc_info.value.path == "/specs/internal-alias.yaml"
+
+    @pytest.mark.parametrize(
+        ("payload", "field_path"),
+        [
+            (
+                {
+                    "kind": "action",
+                    "metadata": {"name": "duplicate-ui-alias"},
+                    "platform": {
+                        "ui": {
+                            "steps": [
+                                {
+                                    "assert": "visible",
+                                    "assert_condition": "hidden",
+                                }
+                            ]
+                        }
+                    },
+                },
+                "platform.ui.steps.0.assert_condition",
+            ),
+            (
+                {
+                    "kind": "usecase",
+                    "metadata": {"name": "duplicate-ref-alias"},
+                    "invariants": [
+                        {
+                            "$ref": "invariants/public",
+                            "ref": "invariants/internal",
+                        }
+                    ],
+                },
+                "invariants.0.ref",
+            ),
+            (
+                {
+                    "kind": "usecase",
+                    "metadata": {"name": "duplicate-requirement-ref"},
+                    "requires": [
+                        {
+                            "$ref": "components/public",
+                            "ref": "components/internal",
+                            "as": "component",
+                        }
+                    ],
+                },
+                "requires.0.ref",
+            ),
+            (
+                {
+                    "kind": "usecase",
+                    "metadata": {"name": "duplicate-requirement-name"},
+                    "requires": [
+                        {
+                            "$ref": "components/example",
+                            "as": "public-name",
+                            "as_": "internal-name",
+                        }
+                    ],
+                },
+                "requires.0.as_",
+            ),
+            (
+                {
+                    "kind": "invariant",
+                    "metadata": {"name": "duplicate-transition-alias"},
+                    "type": "state-machine",
+                    "forbidden": [
+                        {
+                            "from": "pending",
+                            "from_state": "queued",
+                            "to": "done",
+                            "reason": "not allowed",
+                        }
+                    ],
+                },
+                "forbidden.0.from_state",
+            ),
+        ],
+    )
+    def test_public_parser_rejects_internal_name_even_with_public_alias(
+        self, payload: dict, field_path: str
+    ) -> None:
+        with pytest.raises(SpecParseError) as exc_info:
+            parse_spec(payload)
+
+        parent_path, _, field_name = field_path.rpartition(".")
+        message = str(exc_info.value)
+        assert parent_path in message
+        assert field_name in message
+
+    def test_public_parser_accepts_and_preserves_wire_aliases(self) -> None:
+        action = parse_spec(
+            {
+                "kind": "action",
+                "metadata": {"name": "public-ui-alias"},
+                "platform": {"ui": {"steps": [{"assert": "visible"}]}},
+            }
+        )
+        assert isinstance(action, ActionSpec)
+        assert action.platform is not None
+        assert action.platform.ui is not None
+        assert action.platform.ui.steps[0].assert_condition == "visible"
+
+        usecase = parse_spec(
+            {
+                "kind": "usecase",
+                "metadata": {"name": "public-reference-aliases"},
+                "invariants": [{"$ref": "invariants/example"}],
+                "requires": [
+                    {
+                        "$ref": "components/example",
+                        "as": "example",
+                        "params": {
+                            "ref": "free-form",
+                            "as_": "free-form",
+                            "assert_condition": "free-form",
+                            "from_state": "free-form",
+                        },
+                    }
+                ],
+            }
+        )
+        assert isinstance(usecase, UseCaseSpec)
+        assert usecase.invariants[0].ref == "invariants/example"
+        assert usecase.requires[0].ref == "components/example"
+        assert usecase.requires[0].as_ == "example"
+        assert usecase.requires[0].params["assert_condition"] == "free-form"
+
+        invariant = parse_spec(
+            {
+                "kind": "invariant",
+                "metadata": {"name": "public-transition-alias"},
+                "type": "state-machine",
+                "forbidden": [
+                    {
+                        "from": "pending",
+                        "to": "done",
+                        "reason": "not allowed",
+                    }
+                ],
+            }
+        )
+        assert isinstance(invariant, InvariantSpec)
+        assert invariant.forbidden[0].from_state == "pending"

@@ -38,6 +38,18 @@ this plan before implementation. Alternatives are a shared strict model base,
 per-model strict configuration, or an explicit schema facade. Prefer the first
 option that keeps one authoritative model and does not pre-empt `IR-001`.
 
+Maintenance revalidation on 2026-07-22 challenged the narrower assumption that
+Pydantic's alias-only JSON validation remains stable across the declared
+`pydantic>=2.4.0` range. The cheapest useful experiment installed the same wheel
+with the declared floor `2.4.0`, locked `2.12.5`, and ordinary resolver-selected
+`2.13.4`, then submitted an optional Python field name. It falsified the
+assumption twice: `2.13.4` silently discarded `assert_condition`, while `2.4.0`
+did not support the call-time alias flags. Alternatives were to narrow the
+dependency range, rely on version-specific Pydantic flags, or enforce the wire
+contract after floor-compatible strict validation. The selected approach keeps
+the declared range and checks the concrete validated model graph, avoiding a
+version branch or a duplicate schema model.
+
 ## Progress
 
 - [x] (2026-07-19) Revalidate the foundational assumption and retain the
@@ -99,6 +111,22 @@ option that keeps one authoritative model and does not pre-empt `IR-001`.
   with zero errors and warnings, clean Ruff/build/lint results, and a clean
   `git diff --check`. The audit also proves the schema is included in the
   wheel. Baseline and state now advance to `FND-003`.
+- [x] (2026-07-22) Reproduce BUG-001 with the same wheel under Pydantic 2.4.0,
+  2.12.5, and 2.13.4. Retain both intended RED failures and prove the public
+  parser contract on all three coordinates after the minimum correction.
+- [x] (2026-07-22) Add internal-only, public/internal duplicate, public-alias,
+  free-form-map, union-context, and source-provenance parser regressions for all
+  current aliases. Strengthen the clean installed-wheel contract so its import
+  origin, module/distribution version, inventory coordinate, and exact floor
+  are bound rather than inferred from CLI startup.
+- [x] (2026-07-22) Regenerate REL-001 evidence with the exact CI uv and managed
+  CPython build after rejecting a structurally different local candidate. The
+  only non-runtime report change is wheel identity; an independent
+  three-repetition replay retains the structural digest.
+- [x] (2026-07-22) Run the affected and complete eight-gate profiles and obtain
+  independent parser, release-contract, and claims reviews. Technical parser
+  and release findings are closed; premature final-evidence claims are removed
+  and the maintenance work is recorded in this ExecPlan.
 
 ## Surprises & Discoveries
 
@@ -209,6 +237,23 @@ option that keeps one authoritative model and does not pre-empt `IR-001`.
   installation and reproducibility remain FND-003 acceptance behaviors.
   Evidence:
   `.artifacts/agents/fnd002-final-audit/wheel-schema.log`.
+- Observation: Pydantic 2.13.4 accepts an optional Python field name during
+  alias-only JSON validation and silently drops it, while Pydantic 2.4.0 lacks
+  the newer call-time alias arguments entirely. A post-validation walk beside
+  the concrete model graph is stable across the tested floor, lock, and current
+  ordinary coordinates.
+  Evidence: `.artifacts/quality/bug001-pydantic-range-20260722/`.
+- Observation: regenerating REL-001 with local uv 0.10.10 and a different
+  managed CPython build changed environment-derived structural identities.
+  Exact CI uv 0.11.29 and the retained CPython executable restored every
+  structural, lifecycle, and overhead identity; only the changed wheel identity
+  remained outside runtime observations.
+  Evidence: `rel001-report-ci-regeneration.log` and
+  `rel001-report-independent-replay-green.log` in the BUG-001 artifact root.
+- Observation: a list or object supplied as `kind` leaks a pre-existing raw
+  `TypeError` before model validation. It is unrelated to alias acceptance and
+  is recorded in `docs/automation/BASELINE.md` for a separate focused fix under
+  the discovered-debt policy.
 
 ## Decision Log
 
@@ -283,6 +328,32 @@ option that keeps one authoritative model and does not pre-empt `IR-001`.
   dependency-ordered backlog owners without duplicating the future behavior
   IR.
   Date/Author: 2026-07-19 / Codex.
+- Decision: resume this FND-002 strict-parser plan for BUG-001 rather than add a
+  second dependency-backlog package.
+  Rationale: the work crosses parser, installed-distribution evidence, and
+  claims boundaries and therefore requires an ExecPlan; it is maintenance of
+  the exact FND-002 public contract, while the twenty-package dependency ledger
+  remains completed and machine-enforced as one canonical plan per package.
+  Date/Author: 2026-07-22 / Codex.
+- Decision: keep `pydantic>=2.4.0` and use one floor-compatible strict JSON
+  validation followed by an explicit internal-name check over the concrete
+  validated model graph.
+  Rationale: narrowing the range would hide a supported-floor failure, and
+  branching on Pydantic versions would leave boundary correctness dependent on
+  changing library flags. The model-guided check preserves intentional
+  free-form mappings and every public alias without adding a second model.
+  Date/Author: 2026-07-22 / Codex.
+- Decision: qualify schema generation at the locked build coordinate while
+  proving the shipped schema and public runtime parser at the dependency floor.
+  Rationale: Pydantic 2.4.0 emits different schema bytes, but the shipped schema
+  remains valid and closed. Claiming byte-identical generation across an
+  open-ended runtime range would exceed the demonstrated contract.
+  Date/Author: 2026-07-22 / Codex.
+- Decision: bind installed parser evidence to environment-prefix imports and
+  the exact Pydantic module, distribution, inventory, and floor coordinate.
+  Rationale: a clean environment or successful CLI alone does not prove the
+  wheel's public parser ran against the dependency version named by evidence.
+  Date/Author: 2026-07-22 / Codex.
 
 ## Outcomes & Retrospective
 
@@ -311,12 +382,29 @@ generation. The multi-use-case render rollback gap is retained for VER-001;
 clean installation, artifact reproducibility, local/CI manifest parity, and
 the stop hook are the next package, FND-003.
 
+The 2026-07-22 BUG-001 maintenance continuation restores the alias-only public
+parser boundary at Pydantic 2.4.0, locked 2.12.5, and resolver-selected 2.13.4.
+Every current wire alias has positive and negative coverage; the installed
+release contract proves it imports from the clean environment and binds the
+actual Pydantic coordinate. The exact-CI REL-001 refresh preserves all
+deterministic structural/lifecycle/overhead semantics, and the local complete
+profile passes all eight current gates. Exact commit, remote-main, clean-clone,
+and hosted acceptance remain release-time properties and are not inferred from
+the retained pre-commit profile.
+
 ## Context and Orientation
 
 `src/ucf/models/` contains the Pydantic models for actions, components, events,
 invariants, protocols, and use cases. Modeled source objects inherit the strict
 `SpecModel` base. `src/ucf/models/spec.py::parse_spec` selects a model from the
 document's `kind` and applies strict public-alias JSON validation.
+
+For BUG-001, `_find_internal_field_name` walks normalized input beside the
+concrete model returned by Pydantic. It rejects Python field names only where a
+structured model exposes a different public alias, while leaving keys in true
+`dict[str, Any]` payloads untouched. `tools/release_check.py` executes the same
+black-box parser contract from ordinary and exact-floor wheel environments and
+binds its report to each installed dependency inventory.
 
 `src/ucf/parser/loader.py::SpecLoader` reads YAML and resolves file `$ref`
 values. `src/ucf/parser/registry.py::SpecRegistry` indexes loaded specs and
@@ -355,6 +443,14 @@ Finally run the full quality profile, review generated schema diffs and the
 complete package diff, obtain an independent acceptance audit, update the
 baseline, complete this retrospective, and advance state.
 
+For BUG-001, first reproduce the optional-alias acceptance at the current
+resolver and the call incompatibility at the declared floor. Add one acceptance
+behavior at a time, use floor-compatible validation, and then strengthen the
+installed distribution contract so source/editable leakage or inventory drift
+cannot create a false pass. Refresh REL-001 only through its full runner under
+the exact CI toolchain, compare deterministic sections independently, then run
+the affected and complete profiles and review all public claims.
+
 ## Concrete Steps
 
 Run from `/home/deliner/projects/ucf`. Stream and retain the foundational probe:
@@ -378,6 +474,18 @@ Before acceptance run:
       --log-dir .artifacts/quality/fnd002-final-<date>
     git diff --check
 
+BUG-001 range and installed-distribution checks run from the repository root:
+
+    <pydantic-2.4.0-python> -m pytest -q -o addopts='' \
+      tests/unit/test_parse_spec.py --no-cov
+    <pydantic-2.12.5-python> -m pytest -q -o addopts='' \
+      tests/unit/test_parse_spec.py --no-cov
+    <pydantic-2.13.4-python> -m pytest -q -o addopts='' \
+      tests/unit/test_parse_spec.py --no-cov
+    uv run --locked python tools/release_check.py --distribution-only
+    python3 tools/quality_gates.py --profile all \
+      --log-dir .artifacts/quality/bug001-pydantic-range-20260722/all-final-staged
+
 ## Validation and Acceptance
 
 The package is accepted only when:
@@ -399,6 +507,14 @@ The package is accepted only when:
 7. all six repository quality gates and `git diff --check` pass with fresh
    retained evidence.
 
+BUG-001 maintenance additionally requires the same installed wheel to reject
+every current Python alias name and public/internal duplicate at Pydantic 2.4.0
+and the ordinary resolver coordinate, accept every public wire alias, preserve
+free-form alias-like keys, retain source provenance, and bind imports plus
+version evidence to each environment. The current eight-gate complete profile,
+benchmark replay, and `git diff --check` must pass without dependency narrowing,
+skips, warning downgrades, or hand-edited generated evidence.
+
 ## Idempotence and Recovery
 
 Focused tests use temporary directories and do not mutate `specs/`. Schema
@@ -408,6 +524,12 @@ duplicates by last-write-wins, reset a baseline, or weaken a validator severity.
 If strictness rejects a repository spec, retain the failing fixture, determine
 whether the field is intended or stale, and record any public-contract decision
 before changing either side.
+
+The BUG-001 checks build in temporary or ignored artifact paths and are safe to
+repeat. A failed REL-001 regeneration is never promoted; rerun with the exact
+recorded CI toolchain and require deterministic-section equality. Release
+evidence uses create-only output and must target an absent path. Do not recover
+by pinning away the failing Pydantic version or by resetting the benchmark.
 
 ## Artifacts and Notes
 
@@ -421,6 +543,13 @@ Final local acceptance is under
 acceptance and the wheel-content check are summarized in
 `.artifacts/agents/fnd002-final-audit/report.md`.
 
+BUG-001 RED/GREEN, installed-wheel, benchmark, affected, and complete-profile
+evidence is under
+`.artifacts/quality/bug001-pydantic-range-20260722/`. Independent parser,
+release-contract, benchmark, and claims reports are under
+`.artifacts/agents/bug001-*/`. The local complete profile is staged-source
+evidence and is not labeled an exact committed or hosted release result.
+
 ## Interfaces and Dependencies
 
 Existing public boundaries in scope are:
@@ -432,6 +561,14 @@ Existing public boundaries in scope are:
 - the `ucf validate` CLI exit contract;
 - new versioned JSON Schema files and their deterministic generation command;
 - the public capability/status matrix and its verification-command links.
+
+BUG-001 changes no serialized source format or production dependency. It
+clarifies that `parse_spec` accepts public wire aliases only, while direct
+Python construction of Pydantic models remains a separate API. The release
+checker now treats its installed parser result and Pydantic inventory/floor
+binding as a closed evidence object. The runtime range remains
+`pydantic>=2.4.0`; schema generation remains qualified at the locked build
+coordinate.
 
 No new production dependency, hosted service, IR representation, adapter
 protocol, or framework-specific capability model is authorized by this plan.

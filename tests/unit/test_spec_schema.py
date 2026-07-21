@@ -52,6 +52,13 @@ STRUCTURAL_NEGATIVE_FIXTURES = [
         "invariants": [{"ref": "invariants/example"}],
     },
     {
+        "kind": "action",
+        "metadata": {"name": "optional-internal-alias"},
+        "platform": {
+            "ui": {"steps": [{"assert_condition": "visible"}]},
+        },
+    },
+    {
         "kind": "usecase",
         "metadata": {"name": "empty-expression"},
         "steps": [

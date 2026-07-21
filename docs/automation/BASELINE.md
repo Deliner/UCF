@@ -1,7 +1,70 @@
 # Repository quality baseline
 
-Observed on 2026-07-21 from `/home/deliner/projects/ucf`. Counts and digests are
+Observed through 2026-07-22 from `/home/deliner/projects/ucf`. Counts and digests are
 command evidence, not allowances to reset when they regress.
+
+## BUG-001 Pydantic declared-range parser boundary
+
+The published `pydantic>=2.4.0` range exposed two real strict-parser failures
+that the locked `2.12.5` environment hid. The exact release wheel under
+Pydantic `2.13.4` accepted `UiStep.assert_condition`, discarded its value, and
+returned success even though only the public `assert` alias is legal. At the
+declared `2.4.0` floor, the parser leaked `TypeError` because the call-time
+`by_alias`/`by_name` parameters did not yet exist. The focused RED evidence is
+under `.artifacts/quality/bug001-pydantic-range-20260722/`.
+
+Disposition: the public parser now performs one strict JSON validation using
+the floor-compatible API, then walks the normalized JSON beside the concrete
+validated model graph and rejects any Python field name that differs from its
+public wire alias. This preserves `$ref`, `as`, `assert`, and `from`, keeps
+alias-like keys legal inside free-form maps, and rejects internal-only plus
+alias-and-internal duplicates at their exact nested paths. No dependency cap,
+range narrowing, skip, fallback parse, or schema weakening was added.
+
+The release checker now executes a complete installed positive/negative parser
+contract from the wheel in both actual dependency environments. It fails unless
+UCF and Pydantic import from the new environment prefix, the module and
+distribution versions agree, the exact Pydantic coordinate matches the
+installed license inventory, and the floor equals the declared `2.4.0`
+minimum. The fixtures preserve every current public alias and the complete
+free-form map, while negatives verify source provenance and their expected
+nested diagnostic paths. `distribution-installed-bound-range-green.log`
+proves ordinary Pydantic `2.13.4` and supported-floor `2.4.0` both pass.
+Source-level floor and ordinary tests are retained as
+`p240-final-source-contract-green.log` and
+`p2134-final-source-contract-green.log`; the locked suite remains a separate
+control.
+
+The first affected-profile replay correctly rejected the old REL-001 report
+after BUG-001 changed the installed wheel. A local uv `0.10.10` / older managed
+CPython build candidate was discarded because it also changed three derived
+environment-bound digests. Regeneration under the exact CI uv `0.11.29` and
+managed CPython executable SHA-256
+`9544d2a29138833e6177d45dbc57468d37710b5080c901fbb579d53f251cdd6f`
+changed exactly one non-runtime leaf: wheel SHA-256 from `5cefc153...` to
+`c0a7fead...`. Static validation and an independent three-repetition replay
+both retain structural digest
+`4f0e77045ca5c0cf4994d3059585aefa549854eee2897c2b7968b35f1881854b`.
+The generated report was promoted byte-for-byte; no runtime metric, claim, or
+baseline was hand-edited. Evidence is in `rel001-report-ci-regeneration.log`,
+`rel001-report-check-green.log`, and
+`rel001-report-independent-replay-green.log` under the BUG-001 artifact root.
+
+The complete local staged-source profile passes all eight gates under
+`.artifacts/quality/bug001-pydantic-range-20260722/all-final-staged/`. This is
+staged-source evidence: it does not by itself prove an exact committed revision,
+public remote equality, a physical clean clone, or hosted acceptance. Those
+release properties must be established independently for the final revision
+before they are claimed. Pydantic-dependent schema generation remains a locked
+development/build coordinate; the floor proof covers the shipped schema and
+public runtime parser, not byte-identical schema regeneration under 2.4.0.
+
+Independent parser review also found pre-existing malformed-discriminator debt:
+a JSON-valid list or object supplied as `kind` reaches the mapping lookup and
+leaks a raw `TypeError` without `source_path`. It is rejected before alias
+validation, so it does not bypass BUG-001 or satisfy the same acceptance
+behavior. Per the discovered-debt policy it is recorded for a separate focused
+fix rather than folded into this change without its own RED test and scope.
 
 ## REL-002 accepted release-readiness evidence
 
