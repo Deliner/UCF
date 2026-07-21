@@ -228,7 +228,7 @@ def test_deliberate_failure_has_same_identity_for_local_and_ci(tmp_path):
         assert failed_lines[0].endswith("exit=19")
 
 
-def test_complete_profile_runs_the_packaging_contract():
+def test_complete_profile_runs_the_release_and_packaging_contracts():
     packaging_gates = [
         gate for gate in PROFILES["all"] if gate.name == "packaging-contract"
     ]
@@ -239,9 +239,29 @@ def test_complete_profile_runs_the_packaging_contract():
         "run",
         "--locked",
         "python",
-        "tools/package_contract.py",
+        "tools/release_check.py",
     )
     assert packaging_gates[0].working_directory == Path(".")
+
+
+@pytest.mark.parametrize(
+    "changed_path",
+    [
+        "LICENSE",
+        "NOTICE",
+        "README.md",
+        "SECURITY.md",
+        "tools/release_check.py",
+    ],
+)
+def test_release_distribution_inputs_route_to_packaging_gate(changed_path):
+    assert "packaging-contract" in {
+        gate.name for gate in affected_gates((changed_path,))
+    }
+
+
+def test_release_checker_is_a_packaging_tool_input():
+    assert "tools/release_check.py" in PACKAGING_TOOL_INPUTS
 
 
 def test_complete_profile_keeps_eight_observable_unfiltered_gates():
@@ -378,7 +398,7 @@ def test_packaging_contract_covers_deterministic_generation_distribution():
         '(str(ucf), "generation", "run", "--help")',
         "adapters/python-pytest/adapter.py",
         "tests/fixtures/generation/v1/positive/request.json",
-        "pytest==9.0.2",
+        "pytest==9.1.1",
         "PYTHONHASHSEED",
         "legacy_inventory.py",
         "generated tree changed across Python hash seeds",
@@ -1019,4 +1039,10 @@ def test_project_environment_gates_require_the_checked_lockfile():
 def test_build_backend_version_is_an_exact_reviewable_input():
     configuration = tomllib.loads((ROOT / "pyproject.toml").read_text())
 
-    assert configuration["build-system"]["requires"] == ["hatchling==1.31.0"]
+    assert configuration["build-system"]["requires"] == [
+        "hatchling==1.31.0",
+        "packaging==26.2",
+        "pathspec==1.1.1",
+        "pluggy==1.6.0",
+        "trove-classifiers==2026.6.1.19",
+    ]

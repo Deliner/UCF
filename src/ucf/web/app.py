@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from ucf import __version__
 from ucf.graph.dependency import DependencyGraph
 from ucf.parser.loader import SpecLoader
 from ucf.parser.registry import SpecRegistry
@@ -26,7 +27,7 @@ def create_app(
     """Create and configure the FastAPI application."""
     app = FastAPI(
         title="UCF Dashboard",
-        version="0.1.0",
+        version=__version__,
         description="Use Case Framework — spec catalog, dependency graph, and analysis",
     )
 

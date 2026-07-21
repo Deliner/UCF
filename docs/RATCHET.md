@@ -1,4 +1,4 @@
-# Baseline and ratchet profile 1.0.0
+# Baseline and Ratchet profiles 1.0.0 and 2.0.0
 
 UCF has an experimental, language-neutral baseline-and-ratchet boundary for
 incremental brownfield adoption. It distinguishes unchanged accepted legacy
@@ -6,6 +6,14 @@ debt from new or touched-behavior regressions, records resolved debt as a
 protected improvement, and requires an explicit immutable successor before
 the accepted floor changes. The canonical support claim and its limits are in
 `docs/CAPABILITIES.md`.
+
+Ratchet `1.0.0` remains unchanged. Parallel Ratchet `2.0.0` adds a separate
+coverage ledger so unresolved candidates and uncovered public interfaces are
+never hidden inside Behavior violations or promoted to Trust claims. It allows
+exact inherited uncertainty, blocks new/touched/reintroduced uncertainty, and
+protects comparable resolutions. V2 is not an in-place reinterpretation of v1.
+
+## Ratchet 1.0.0
 
 This boundary compares exact reviewed behavior and assessment documents. It
 does not execute policy rules, capture runtime traces, or turn discovered
@@ -175,11 +183,113 @@ policy, bundle, assessment, evaluation, or accepted-baseline input.
   trace coordinates. Handle them with the same confidentiality controls as
   the reviewed onboarding bundle.
 
+## Ratchet 2.0.0 dual ledger
+
+V2 publishes four additional closed Draft 2020-12 resources:
+
+- policy: `urn:ucf:ratchet:policy:2.0.0`;
+- assessment: `urn:ucf:ratchet:assessment:2.0.0`;
+- baseline: `urn:ucf:ratchet:baseline:2.0.0`;
+- evaluation report: `urn:ucf:ratchet:evaluation-report:2.0.0`.
+
+They remain under the exact `org.ucf.ratchet.baseline@2.0.0` evaluator
+capability. V1 and v2 parsers preflight document kind, schema URI, version, and
+capability; mixed resources, unknown fields, duplicate members, forged
+references, unsupported versions/capabilities, and implicit downgrade fail
+explicitly.
+
+A v2 Assessment and Baseline visibly contain two ledgers:
+
+- the Behavior ledger preserves v1-shaped rule, subject, violation, allowance,
+  protected-resolution, and touch semantics behind independently versioned v2
+  models;
+- the coverage ledger groups every eligible public interface by a stable,
+  language-neutral key and records reviewed decisions plus granular unresolved
+  candidate or `uncovered` debt. It never creates a Behavior entity or Trust
+  claim.
+
+The coverage qualification binds the inventory/discovery schemas, subject,
+producer, adapter capability/procedure, public-interface provenance,
+path-identity/ignore-policy, and identity/fingerprint algorithms. Source
+revision, environment, paths, spans, record/candidate/decision IDs, and exact
+bundle coordinates remain trace. A qualification change requires explicit
+requalification; it cannot look like an ordinary passing advance.
+
+### V2 outcomes and transitions
+
+Behavior reports `pass`, `fail`, or `inconclusive`. Coverage and combined
+outcomes report `pass`, `pass_with_legacy_coverage_debt`, `fail`, or
+`inconclusive`. Definite regression wins over incomplete unrelated evidence;
+otherwise inconclusive wins over a qualified pass. Only `pass` and
+`pass_with_legacy_coverage_debt` may advance.
+
+Exact inherited debt with unchanged semantic and observed fingerprints is
+`unchanged_legacy`. New, changed, touched, protected, or reviewed recurrence
+fails. A fully comparable reviewed resolution becomes a protected tombstone.
+Partial public-interface inventory, partial rule coverage, missing unresolved
+subjects, or a changed qualification is inconclusive and never silently proves
+resolution. `advance` cannot add allowances, remove protections, shrink scope,
+or hide the global coverage outcome.
+
+Use the explicit v2 transaction:
+
+```text
+ucf ratchet v2 establish \
+  --policy POLICY.json \
+  --onboarding-bundle ONBOARDING_BUNDLE.json \
+  --assessment INITIAL_ASSESSMENT.json \
+  --output BASELINE.json
+
+ucf ratchet v2 evaluate \
+  --policy POLICY.json \
+  --onboarding-bundle CURRENT_ONBOARDING_BUNDLE.json \
+  --baseline BASELINE.json \
+  --accepted-baseline-id ACCEPTED_BASELINE_ID \
+  --assessment CURRENT_ASSESSMENT.json \
+  --output REPORT.json
+
+ucf ratchet v2 advance \
+  --policy POLICY.json \
+  --onboarding-bundle CURRENT_ONBOARDING_BUNDLE.json \
+  --baseline BASELINE.json \
+  --accepted-baseline-id ACCEPTED_BASELINE_ID \
+  --assessment CURRENT_ASSESSMENT.json \
+  --evaluation REPORT.json \
+  --output NEXT_BASELINE.json
+```
+
+V2 uses the same exit classes: `0` for a successful establishment, qualifying
+evaluation, or advance; `1` for a valid failing/inconclusive evaluation; and
+`3` for invalid/contextually stale input or unsafe publication. Evaluation
+writes its complete valid report before exit `1`; advance preserves output
+unless the report qualifies.
+
+### Exact v1 migration
+
+`ucf ratchet v2 migrate-from-v1` requires an exact target v2 Policy, source v1
+Policy/Baseline/Assessment, their OnboardingBundle, and the independently
+stored accepted v1 baseline ID. It validates the complete source relationship,
+preserves generation, allowances, protections, and provenance, reprojects
+fingerprints under v2 algorithms, and imports uncertain decisions as inherited
+coverage debt. It writes a new v2 lineage root without changing v1.
+
+Migration rejects missing/mismatched sources, incomplete public-interface
+inventory, incompatible target rules, an unaccepted tip, ambiguous coverage,
+and unsafe output. There is no v2-to-v1 downgrade. The exact command and
+operator rules are in the [migration/rollback policy](release/MIGRATION.md).
+
+V2 is proven on the three immutable REL-001 fixtures, but only at their frozen
+adapter/toolchain/Linux x86_64 coordinates. A qualified pass is not a
+project-wide coverage, production adapter support, or verified-behavior claim.
+The caller must still anchor the accepted baseline tip outside the document.
+
 ## Reproducible evidence
 
 ```text
 uv run --locked --extra dev pytest -q tests/ratchet --no-cov
 uv run --locked --extra dev pytest -q tests/cli/test_ratchet.py --no-cov
+uv run --locked --extra dev pytest -q tests/ratchet_v2 --no-cov
+uv run --locked --extra dev pytest -q tests/cli/test_ratchet_v2.py --no-cov
 uv run --locked --extra dev pytest -q \
   tests/automation/test_capability_claims.py \
   tests/automation/test_quality_gates.py --no-cov
@@ -187,7 +297,8 @@ uv run --locked python tools/package_contract.py
 ```
 
 The package contract builds two byte-identical wheels, installs one outside
-the checkout, verifies exactly four ratchet schema resources, runs all three
-installed commands over the unchanged onboarding fixture, checks pass,
-regression, tightening, reintroduction, malformed-input, and blocked-output
-paths, reruns the fixture's native checks, and compares its complete manifest.
+the checkout, verifies exactly eight ratchet schema resources, runs the v1 and
+v2 commands including migration over unchanged onboarding fixtures, checks
+pass, qualified pass, regression, tightening, reintroduction, migration,
+malformed-input, and blocked-output paths, reruns native checks, and compares
+the complete manifests.

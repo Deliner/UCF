@@ -10,13 +10,16 @@ last_updated: 2026-07-21
 
 # Automation handoff state
 
-REL-001 is verified. REL-002 is active after the project owner resolved all
-three foundation decision gates: Apache-2.0 under `Copyright 2026 Deliner`, a
-bounded `0.1.x` production preview rather than a stable-API claim, and
-repository-hosted security/support through `https://github.com/Deliner/UCF`
-with `Deliner` responsible. The immediate work is strict RGR closure of release
-inventory, metadata/license, sdist, dependency/advisory, policy/claims, and
-clean-distribution gates.
+REL-001 is verified. REL-002 remains active after completing its owner
+decisions, policy set, release metadata, local distribution boundary,
+dependency/advisory remediation, and executable release checker. Fresh local
+Python, lint, specification, frontend, wheel/sdist, supported-floor, installed
+three-stack, dependency, and license evidence is green. The aggregate checker
+fails only because GitHub reports Private Vulnerability Reporting disabled for
+`https://github.com/Deliner/UCF`; the failure correctly publishes no final
+release evidence. Continue local integration and independent review, then
+repeat the aggregate and clean-source acceptance as soon as the repository
+owner enables that selected confidential reporting surface.
 
 ## Resume instruction
 
@@ -171,17 +174,64 @@ binding selections made by project owner `Deliner` are:
 Do not expose the local Git email, silently promote the preview to stable,
 broaden adapter support, or select weaker/different terms.
 
+## REL-002 implementation milestone
+
+- Apache-2.0 `LICENSE`, `NOTICE`, package SPDX metadata, maintainer/project URLs,
+  preview classifiers, `SECURITY.md`, and the compatibility, migration,
+  privacy, packaging, support, and versioning policies are implemented and
+  machine-checked.
+- `tools/release_check.py` is the packaging gate. It selects release source from
+  the Git index, builds source-only and dependency-populated sdists, requires
+  identical exact manifests/bytes, builds the wheel from the extracted sdist,
+  installs it ordinarily and at exact supported floors, checks `ucf --version`
+  and `--help`, and runs the existing installed package contract from the
+  extracted source distribution.
+- The bounded sdist is about 1.46 MB with 1,050 members rather than the rejected
+  30.1 MB/6,655-member dependency-contaminated artifact. Exact digests must be
+  refreshed after the final documentation/state commit and are not yet release
+  claims.
+- Runtime/release-tool and build Python coordinates are audited and matched to
+  installed license inventories; web full/runtime, TypeScript adapter, and
+  TypeScript fixture locks are audited separately; the Go boundary confirms
+  zero external modules and exact upstream LICENSE/PATENTS. Current counts are
+  zero known advisories with no skip, waiver, severity threshold, or baseline
+  reset. The discovered pytest 9.0.2 advisory was removed by qualifying 9.1.1.
+- React Router and Vite were upgraded through their exact locks. Frontend
+  `npm ci`, full/runtime audits, build, and lint are green.
+- Package, root CLI, web metadata, adapter producer, generation environment,
+  and documentation now share the package `0.1.0`/pytest `9.1.1` coordinates;
+  drift is rejected by tests and the clean-install check.
+- `.gitignore` and sdist exclusions cover local environment, registry, SSH,
+  private-key, keystore, cache, build, and dependency-tree state while retaining
+  `.env.example`; the archived manifest must still match every selected source
+  byte, so exclusions cannot conceal a tracked required release file.
+- Fresh evidence under `.artifacts/quality/rel002-rgr-20260721/` includes 2,107
+  passing Python tests at 90% coverage before the final documentation-only
+  test, 169 current automation tests, clean Ruff, 113 specs with zero errors or
+  warnings, frontend build/lint, distribution-only proof, full dependency and
+  license audits, and the aggregate pre-PVR failure. The requested
+  `full-release-evidence.json` is absent by design.
+- GitHub API verifies the exact public repository, default `main` branch, and
+  enabled Issues. It reports Private Vulnerability Reporting disabled. This is
+  the only known release-check failure and must not be downgraded to a warning.
+
 ## Immediate execution sequence
 
-1. Configure and verify the canonical local Git remote and selected GitHub
-   security/support surfaces without publishing a release.
-2. Proceed one acceptance behavior at a time through strict
-   Red-Green-Refactor: release inventory/check, license+metadata, sdist closure,
-   dependency/advisory closure, policy/docs/version synchronization, and clean
-   wheel/sdist/adapter release artifacts.
-3. Complete independent audits, all eight gates, clean source and
-   clean distribution, final diff/claim review, and REL-002 completion.
-4. If a new production dependency, wire reinterpretation, weaker gate,
+1. Finish the current documentation-hardening affected suite, review and commit
+   the coherent local release-boundary milestone, and rename the local branch
+   from `master` to the repository's canonical `main` before publication.
+2. Complete independent read-only contract/claims, security/privacy/licensing,
+   and packaging/clean-install audits; reproduce and close every accepted
+   finding through retained RED/GREEN evidence.
+3. When GitHub Private Vulnerability Reporting is enabled, rerun the aggregate
+   release checker with explicit evidence output, all eight gates, and a
+   physical clean-source/clean-distribution replay. Then update CAP-214,
+   BACKLOG, BASELINE, this state, and every final public claim from fresh output.
+4. Inspect the complete diff and source manifests, commit final closure, rename
+   or confirm `main`, and push only the verified history to the configured
+   canonical repository. Do not create a package release/tag until the checked
+   release artifacts and hashes are the ones being published.
+5. If a new production dependency, wire reinterpretation, weaker gate,
    destructive migration, hosted write, or broader support promise appears,
    open a new explicit decision gate before acting.
 

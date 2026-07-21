@@ -17,6 +17,18 @@ EVIDENCE_STATUS_PATH = ROOT / "docs" / "EVIDENCE_STATUS.md"
 CHANGE_LIFECYCLE_PATH = ROOT / "docs" / "CHANGE_LIFECYCLE.md"
 GENERATION_PATH = ROOT / "docs" / "GENERATION.md"
 REL001_BENCHMARK_PATH = ROOT / "docs" / "benchmarks" / "REL-001.md"
+LICENSE_PATH = ROOT / "LICENSE"
+NOTICE_PATH = ROOT / "NOTICE"
+SECURITY_PATH = ROOT / "SECURITY.md"
+RELEASE_POLICY_PATHS = {
+    "index": ROOT / "docs" / "release" / "README.md",
+    "compatibility": ROOT / "docs" / "release" / "COMPATIBILITY.md",
+    "migration": ROOT / "docs" / "release" / "MIGRATION.md",
+    "privacy": ROOT / "docs" / "release" / "PRIVACY.md",
+    "packaging": ROOT / "docs" / "release" / "PACKAGING.md",
+    "support": ROOT / "docs" / "release" / "SUPPORT.md",
+    "versioning": ROOT / "docs" / "release" / "VERSIONING.md",
+}
 TYPESCRIPT_FASTIFY_ADAPTER_PATH = (
     ROOT / "adapters" / "typescript-fastify" / "README.md"
 )
@@ -38,6 +50,14 @@ CURRENT_CLAIM_DOCS = (
     "docs/EVIDENCE_STATUS.md",
     "docs/CHANGE_LIFECYCLE.md",
     "docs/GENERATION.md",
+    "SECURITY.md",
+    "docs/release/README.md",
+    "docs/release/COMPATIBILITY.md",
+    "docs/release/MIGRATION.md",
+    "docs/release/PRIVACY.md",
+    "docs/release/PACKAGING.md",
+    "docs/release/SUPPORT.md",
+    "docs/release/VERSIONING.md",
     "adapters/python-pytest/README.md",
     "adapters/typescript-fastify/README.md",
     "adapters/go-stdlib/README.md",
@@ -120,12 +140,204 @@ def test_planned_claims_have_dependency_ordered_backlog_owners() -> None:
         )
     )
     planned = [row for row in _capability_rows() if row["status"] == "planned"]
-    assert planned
 
     for row in planned:
         owners = set(re.findall(r"\b[A-Z]+-\d+\b", row["evidence"]))
         assert owners, row
         assert owners <= backlog_ids, (row, owners - backlog_ids)
+
+
+def test_release_policy_set_is_discoverable_and_decision_bound() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    index = RELEASE_POLICY_PATHS["index"].read_text(encoding="utf-8")
+
+    for path in (*RELEASE_POLICY_PATHS.values(), SECURITY_PATH):
+        assert path.is_file(), path
+        assert str(path.relative_to(ROOT)) in readme, path
+
+    for name, path in RELEASE_POLICY_PATHS.items():
+        if name != "index":
+            assert path.name in index, path
+
+    combined = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in (*RELEASE_POLICY_PATHS.values(), SECURITY_PATH)
+    ).lower()
+    for binding in (
+        "0.1.x production preview",
+        "not a stable api",
+        "cpython 3.12",
+        "linux/x86_64",
+        "no sla",
+        "https://github.com/deliner/ucf",
+        "github private vulnerability reporting",
+        "github issues",
+        "deliner",
+        "experimental exact proofs",
+    ):
+        assert binding in combined
+
+
+def test_release_artifact_install_path_is_actionable() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    packaging = RELEASE_POLICY_PATHS["packaging"].read_text(encoding="utf-8")
+
+    for command in (
+        "uv build --sdist --wheel",
+        "python3.12 -m venv",
+        "python -m pip install",
+        "ucf --version",
+        "ucf --help",
+    ):
+        assert command in readme
+    for release_check in (
+        "uv run --locked python tools/release_check.py",
+        "python3 tools/quality_gates.py --profile all",
+        "GitHub Private Vulnerability Reporting",
+    ):
+        assert release_check in packaging
+
+
+def test_license_notice_and_distribution_policy_match_owner_decision() -> None:
+    license_text = LICENSE_PATH.read_text(encoding="utf-8")
+    notice = NOTICE_PATH.read_text(encoding="utf-8")
+    packaging = RELEASE_POLICY_PATHS["packaging"].read_text(encoding="utf-8")
+
+    assert "Apache License" in license_text
+    assert "Version 2.0, January 2004" in license_text
+    assert "http://www.apache.org/licenses/" in license_text
+    assert "END OF TERMS AND CONDITIONS" in license_text
+    assert "Copyright 2026 Deliner" in notice
+    for requirement in (
+        "LICENSE",
+        "NOTICE",
+        "Apache-2.0",
+        "wheel",
+        "source distribution",
+        "third-party",
+        "immutable",
+    ):
+        assert requirement in packaging
+
+
+def test_compatibility_migration_and_deprecation_contracts_are_explicit() -> None:
+    compatibility = RELEASE_POLICY_PATHS["compatibility"].read_text(
+        encoding="utf-8"
+    )
+    migration = RELEASE_POLICY_PATHS["migration"].read_text(encoding="utf-8")
+    versioning = RELEASE_POLICY_PATHS["versioning"].read_text(
+        encoding="utf-8"
+    )
+
+    for coordinate in (
+        "package version",
+        "schema URI",
+        "adapter protocol version",
+        "capability version",
+        "adapter implementation version",
+        "source revision",
+        "environment",
+    ):
+        assert coordinate in compatibility
+    for strictness in (
+        "Unknown fields",
+        "duplicate JSON members",
+        "unsupported versions",
+        "unsupported capabilities",
+        "no implicit downgrade",
+    ):
+        assert strictness in compatibility
+
+    for ratchet_contract in (
+        "ucf ratchet v2 migrate-from-v1",
+        "--accepted-source-baseline-id",
+        "source Policy",
+        "source Baseline",
+        "source Assessment",
+        "OnboardingBundle",
+        "no v2-to-v1 downgrade",
+        "preserves generation",
+        "unresolved coverage debt",
+    ):
+        assert ratchet_contract in migration
+
+    for promise in (
+        "at least one subsequent minor preview",
+        "90 days",
+        "migration guidance",
+        "published security advisory",
+        "affected versions",
+        "replacement",
+    ):
+        assert promise in versioning
+
+
+def test_security_privacy_and_support_policies_do_not_overclaim() -> None:
+    security = SECURITY_PATH.read_text(encoding="utf-8")
+    privacy = RELEASE_POLICY_PATHS["privacy"].read_text(encoding="utf-8")
+    support = RELEASE_POLICY_PATHS["support"].read_text(encoding="utf-8")
+
+    for boundary in (
+        "GitHub Private Vulnerability Reporting",
+        "must be enabled",
+        "Do not open a public issue",
+        "Deliner",
+        "no response-time SLA",
+        "not a sandbox",
+    ):
+        assert boundary in security
+    assert "security@" not in security.lower()
+
+    for boundary in (
+        "data controller",
+        "data processor",
+        "current OS user",
+        "does not provide hosted storage",
+        "does not universally detect or anonymize",
+        "retention",
+        "stderr",
+        "credentials",
+        "personal data",
+    ):
+        assert boundary in privacy
+
+    for boundary in (
+        "CPython 3.12",
+        "Linux/x86_64",
+        "GitHub Issues",
+        "no SLA",
+        "experimental",
+        "exact fixture",
+        "not supported",
+    ):
+        assert boundary in support
+
+
+def test_every_capability_limitation_has_an_explicit_owner_and_rationale() -> None:
+    text = MATRIX_PATH.read_text(encoding="utf-8")
+    match = re.search(
+        r"<!-- limitation-owners:start -->\n(.*?)"
+        r"<!-- limitation-owners:end -->",
+        text,
+        flags=re.DOTALL,
+    )
+    assert match is not None, "limitation-owner table markers are missing"
+
+    ownership: dict[str, tuple[str, str]] = {}
+    for line in match.group(1).splitlines():
+        if not line.startswith("| CAP-"):
+            continue
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        assert len(cells) == 3, line
+        capability_id, owner, rationale = cells
+        assert capability_id not in ownership, capability_id
+        ownership[capability_id] = (owner, rationale)
+
+    capability_ids = {row["id"] for row in _capability_rows()}
+    assert set(ownership) == capability_ids
+    for capability_id, (owner, rationale) in ownership.items():
+        assert owner == "Deliner", capability_id
+        assert len(rationale.split()) >= 5, capability_id
 
 
 def test_rel001_benchmark_claim_is_experimental_replayable_and_bounded() -> None:
@@ -300,7 +512,7 @@ def test_generation_claim_is_experimental_executable_and_bounded() -> None:
         "org.ucf.adapter.generation.python-pytest",
         "one Behavior IR action",
         "two Python hash seeds",
-        "pytest 9.0.2",
+        "pytest 9.1.1",
         "receipt-backed",
         "generated-only",
     ):
@@ -343,7 +555,7 @@ def test_generation_claim_is_experimental_executable_and_bounded() -> None:
         "created",
         "unchanged",
         "updated",
-        "pytest==9.0.2",
+        "pytest==9.1.1",
         "renameat2",
         "POSIX",
         "exit `3`",

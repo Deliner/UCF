@@ -4779,7 +4779,7 @@ def reserve_item(*, item_id: str) -> str:
             "install",
             "--python",
             str(python),
-            "pytest==9.0.2",
+            "pytest==9.1.1",
         ),
         run_directory,
         environment,

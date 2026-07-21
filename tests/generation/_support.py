@@ -111,7 +111,7 @@ def generation_request() -> GenerationRequest:
         environment=GenerationEnvironment(
             kind="generation_environment",
             identity_uri="urn:ucf:environment:python-3.12-pytest-9:1.0.0",
-            revision=_digest(b"python=3.12.3\npytest=9.0.2\n"),
+            revision=_digest(b"python=3.12.3\npytest=9.1.1\n"),
         ),
         profile_configuration=RecordValue(
             kind="record",

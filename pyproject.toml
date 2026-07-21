@@ -1,20 +1,45 @@
 [build-system]
-requires = ["hatchling==1.31.0"]
+requires = [
+    "hatchling==1.31.0",
+    "packaging==26.2",
+    "pathspec==1.1.1",
+    "pluggy==1.6.0",
+    "trove-classifiers==2026.6.1.19",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "ucf"
 version = "0.1.0"
 description = "Use Case-Driven Development Framework"
+readme = "README.md"
 requires-python = ">=3.12"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "Deliner" }]
+maintainers = [{ name = "Deliner" }]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Testing",
+]
 dependencies = [
     "pydantic>=2.0",
-    "pyyaml>=6.0",
-    "typer>=0.12",
+    "pyyaml>=6.0.1",
+    "typer>=0.16.0",
     "networkx>=3.0",
     "rich>=13.0",
     "jinja2>=3.1",
 ]
+
+[project.urls]
+Documentation = "https://github.com/Deliner/UCF/tree/main/docs"
+Repository = "https://github.com/Deliner/UCF"
+Security = "https://github.com/Deliner/UCF/security/advisories/new"
+Support = "https://github.com/Deliner/UCF/issues"
 
 [project.optional-dependencies]
 web = [
@@ -22,11 +47,12 @@ web = [
     "uvicorn[standard]>=0.34",
 ]
 dev = [
-    "pytest>=8.0",
+    "pytest>=9.0.3",
     "pytest-cov>=5.0",
     "ruff>=0.5",
     "httpx>=0.28",
     "jsonschema>=4.23",
+    "pip-audit==2.10.1",
 ]
 
 [project.scripts]
@@ -34,6 +60,72 @@ ucf = "ucf.cli:app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ucf"]
+
+[tool.hatch.build.targets.sdist]
+reproducible = true
+skip-excluded-dirs = true
+only-include = [
+    ".agents",
+    ".codex",
+    ".cursor",
+    ".github",
+    "AGENTS.md",
+    "BOTTLE_NECKS.md",
+    "CONTEXT_TRACER.md",
+    "CRITIQUE.md",
+    "CURSOR_HOOKS.md",
+    "DEPENDENCY_GRAPH.md",
+    "FRAMEWORK_STRESS_TEST_SESSION_2.md",
+    "GENERATORS.md",
+    "IMPLEMENTATION_ROADMAP.md",
+    "INVARIANTS.md",
+    "LICENSE",
+    "NOTICE",
+    "PLANS.md",
+    "README.md",
+    "SECURITY.md",
+    "SPEC_LANGUAGE.md",
+    "STRESS_TEST_REPORT.md",
+    "UCF_FRAMEWORK_GUIDE.md",
+    "adapters",
+    "docs",
+    "examples",
+    "specs",
+    "src",
+    "tests",
+    "tools",
+    "uv.lock",
+    "web",
+]
+exclude = [
+    "/.cursor/settings.json",
+    "**/.artifacts/",
+    "**/.DS_Store",
+    "**/.env",
+    "**/.env.*",
+    "**/.netrc",
+    "**/.npmrc",
+    "**/.pypirc",
+    "**/.venv/",
+    "**/__pycache__/",
+    "**/id_ed25519",
+    "**/id_rsa",
+    "**/*.jks",
+    "**/*.key",
+    "**/*.keystore",
+    "**/*.p12",
+    "**/*.pfx",
+    "**/*.pem",
+    "**/build/",
+    "**/dist/",
+    "**/htmlcov/",
+    "**/node_modules/",
+    "**/.coverage",
+    "**/.pytest_cache/",
+    "**/.ruff_cache/",
+    "**/*.egg-info/",
+    "**/*.py[cod]",
+]
 
 [tool.ruff]
 target-version = "py312"

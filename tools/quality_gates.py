@@ -114,7 +114,7 @@ REL001_BENCHMARK = Gate(
 )
 PACKAGING_CONTRACT = Gate(
     name="packaging-contract",
-    command=("uv", "run", "--locked", "python", "tools/package_contract.py"),
+    command=("uv", "run", "--locked", "python", "tools/release_check.py"),
 )
 WEB_BUILD = Gate(
     name="web-build",
@@ -156,6 +156,7 @@ PACKAGING_TOOL_INPUTS = {
     "tools/installed_typescript_fastify_smoke.py",
     "tools/package_contract.py",
     "tools/quality_gates.py",
+    "tools/release_check.py",
     "tools/rel001_benchmark.py",
     "tools/rel001_benchmark_scenarios.py",
     "tools/typescript_fastify_adapter_contract.py",
@@ -192,6 +193,8 @@ def affected_gates(changed_files: Sequence[str]) -> tuple[Gate, ...]:
             selected.add(REL001_BENCHMARK)
         if path.startswith("web/"):
             selected.update((WEB_BUILD, WEB_LINT))
+        elif path in {"LICENSE", "NOTICE", "README.md", "SECURITY.md"}:
+            selected.add(PACKAGING_CONTRACT)
         elif path.startswith(("adapters/", "tests/fixtures/")):
             selected.update((PYTHON_TESTS, PYTHON_LINT, PACKAGING_CONTRACT))
         elif path in PACKAGING_TOOL_INPUTS:

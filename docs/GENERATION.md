@@ -84,7 +84,7 @@ backend, the result declares:
 python3 -B -m pytest -q {generated_root}
 ```
 
-The clean-package contract installs only the wheel and `pytest==9.0.2`, copies
+The clean-package contract installs only the wheel and `pytest==9.1.1`, copies
 the external adapter and request into a workspace outside the checkout,
 generates under Python hash seeds `1` and `777`, compares the complete trees,
 runs the declared test, and repeats generation as an exact no-op. No

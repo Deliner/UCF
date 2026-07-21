@@ -70,8 +70,9 @@ requested stable release without an explicit owner decision. SemVer describes
 major version zero as initial development whose public API should not be
 considered stable. License selection, licensor identity, confidential security
 intake, public support channel, and the release/deprecation commitment are
-human decisions. REL-002 is blocked on those decisions before policy or
-metadata implementation; technical blockers remain ordered work after resume.
+human decisions. REL-002 was blocked on those decisions before policy or
+metadata implementation; the owner resolved all three and technical work
+resumed without broadening the accepted preview boundary.
 
 ## Progress
 
@@ -92,12 +93,20 @@ metadata implementation; technical blockers remain ordered work after resume.
   `Deliner` responsible, GitHub private vulnerability reporting, and Issues
   support without an SLA. Resume REL-002 without changing the requested
   evidence bar or promoting experimental adapters.
-- [ ] Add one failing release-readiness contract at a time, implement the
+- [x] 2026-07-21: Add one failing release-readiness contract at a time, implement the
   smallest closure, and keep each focused slice green through refactoring.
-- [ ] Publish and machine-check compatibility, migration, security, privacy,
+- [x] 2026-07-21: Publish and machine-check compatibility, migration, security, privacy,
   packaging, licensing, support, and deprecation policies and limitations.
+- [x] 2026-07-21: Close the local distribution boundary: exact Git-index source
+  manifest, identical source-only/dependency-populated sdists, wheel-from-sdist,
+  ordinary and supported-floor installs, one package/CLI version, installed
+  three-stack package scenarios, strict dependency/license audits, actionable
+  install guidance, and credential-aware ignore/exclusion policy. Retain every
+  focused RED and GREEN under `.artifacts/quality/rel002-rgr-20260721/`.
 - [ ] Prove wheel and source-distribution builds, clean installation, installed
   schemas/CLIs, dependency/advisory policy, and the complete release checklist.
+  The local portion passes; GitHub Private Vulnerability Reporting is the only
+  failing hosted surface and therefore prevents release evidence publication.
 - [ ] Complete independent contract/claims, security/privacy/licensing, and
   packaging/clean-install reviews; close accepted findings with retained REDs.
 - [ ] Run affected suites and all eight gates, inspect the complete diff, repeat
@@ -148,6 +157,24 @@ Ratchet v2 and migration. The root CLI lacks `--version`; four independent
 name an explicit limitation owner. These are claim/checklist gaps rather than
 evidence that REL-001 failed.
 
+The release checker itself exposed two deeper closure gaps after the initial
+implementation. First, a source-only copy based on the physical checkout could
+silently admit untracked files, so the release source manifest now comes from
+the Git index and the archived manifest must match it byte-for-byte. Second,
+the older package contract installed its own generation pytest coordinate;
+fresh Python advisory output identified `pytest 9.0.2` as affected by
+`PYSEC-2026-1845`, so the exact executable generation coordinate and lock moved
+to `9.1.1`. The resulting Python, npm, and Go audits report zero known
+advisories without skips or waivers.
+
+The full release checker now passes both sdist builds, wheel-from-sdist,
+ordinary and minimum-floor installation, the complete installed package
+contract, all three ecosystem lanes, and dependency/license inventories. It
+then fails exactly at the selected hosted security surface because GitHub's API
+reports Private Vulnerability Reporting disabled. The failure correctly leaves
+the requested final evidence path absent; CAP-214 cannot advance while this
+owner-controlled repository setting is false.
+
 ## Decision Log
 
 - **2026-07-21 — do not broaden product capability during release closure.**
@@ -162,6 +189,27 @@ evidence that REL-001 failed.
   internally consistent with the capability matrix, and covered by a release
   checklist or documentation-claim test. Prose alone does not close a critical
   blocker.
+
+- **2026-07-21 — use the staged Git source set as the sdist authority.** Author:
+  root agent. Hatch configuration remains the explicit include/exclude policy,
+  but release selection is the Git index intersected with that policy. Both a
+  source-only copy and the dependency-populated checkout must archive exactly
+  that selected manifest with identical bytes. Untracked checkout files cannot
+  become release input, and a tracked selected file cannot be silently omitted.
+
+- **2026-07-21 — accept no dependency advisory or license waivers in the
+  preview release checklist.** Author: root agent. The checker audits the
+  hashed locked Python all-extras set, exact fully enumerated build set, all
+  three npm locks plus web runtime scope, and zero-external-module Go boundary.
+  Audit coordinates must equal license-inventory coordinates. Missing metadata,
+  a nonzero advisory count, unknown license, or network failure blocks release.
+
+- **2026-07-21 — hosted confidential intake is executable release state.**
+  Author: root agent, implementing DG-REL002-003. The release checker verifies
+  the exact public repository, default `main` branch, enabled Issues, and
+  enabled GitHub Private Vulnerability Reporting through GitHub's API. Policy
+  prose cannot substitute for the selected confidential route; the current
+  disabled result is a hard release failure and publishes no acceptance file.
 
 - **2026-07-21 — DG-REL002-001: project license and licensor identity.** Status:
   accepted by project owner. There is no root license, package SPDX expression,
@@ -258,13 +306,23 @@ evidence that REL-001 failed.
 
 ## Outcomes & Retrospective
 
-The foundational milestone and all three owner decisions are complete. REL-002
-has resumed with a bounded technical path: no core redesign or new production
-dependency is needed. The selected result is a reproducibly releasable `0.1.x`
-production preview, not a stable-API claim. Work now proceeds through sdist
-closure, dependency/advisory updates, license and release metadata/policies,
-exact version/support inventory, and an executable release profile, followed by
-independent review and clean release replay.
+The foundation, all three owner decisions, policy set, local distribution
+closure, dependency/advisory remediation, release metadata, exact version
+diagnostic, and executable release profile are complete. Fresh local evidence
+includes 2,107 passing Python tests at 90% coverage before the final
+documentation-only test, 169 current automation tests, clean
+Ruff/spec/frontend checks, an
+identical bounded sdist pair, wheel-from-sdist installation at current and
+supported dependency floors, and complete installed Python/TypeScript/Go
+scenarios. The selected result remains a bounded `0.1.x` production preview,
+not a stable-API claim.
+
+REL-002 is not accepted yet. GitHub Private Vulnerability Reporting remains
+disabled, so the aggregate checker stops after all local work and deliberately
+publishes no final evidence. After that owner-controlled setting becomes true,
+the remaining work is a fresh aggregate replay, independent final audits,
+physical clean-source verification, complete diff/claim review, CAP-214 and
+baseline/state closure, and the final commit/push sequence.
 
 ## Context and Orientation
 

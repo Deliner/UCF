@@ -24,4 +24,4 @@ a Trust claim.
 The checked publication transaction is Linux-only: it uses `renameat2` and
 POSIX advisory locking in the installed UCF core. The adapter itself is kept
 outside the Python wheel. Current evidence covers one Python function and
-pytest 9.0.2, not general Python framework or cross-language generation.
+pytest 9.1.1, not general Python framework or cross-language generation.

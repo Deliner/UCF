@@ -27,6 +27,8 @@ from rich.console import Console
 from rich.table import Table
 from rich.tree import Tree
 
+from ucf import __version__
+
 app = typer.Typer(
     name="ucf",
     help="Use Case-Driven Development Framework",
@@ -55,6 +57,25 @@ evidence_app = typer.Typer(
     help="Versioned verification-evidence freshness operations"
 )
 app.add_typer(evidence_app, name="evidence")
+
+
+def _version_callback(value: bool) -> None:
+    if value:
+        typer.echo(f"ucf {__version__}")
+        raise typer.Exit()
+
+
+@app.callback()
+def root_options(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        callback=_version_callback,
+        is_eager=True,
+        help="Show the installed UCF package version and exit.",
+    ),
+) -> None:
+    """Apply root-level diagnostic options."""
 
 
 @evidence_app.command("record")

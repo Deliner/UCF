@@ -9,6 +9,7 @@ from dataclasses import dataclass, replace
 from enum import StrEnum
 from pathlib import Path
 
+from ucf import __version__
 from ucf.adapter_protocol.codec import (
     decode_response_frame,
     encode_frame,
@@ -190,7 +191,7 @@ class AdapterProcess:
         self._client = client or Producer(
             kind="producer",
             name="org.ucf.core",
-            version="0.1.0",
+            version=__version__,
         )
         self._retain_stderr_tail = retain_stderr_tail
         self._state = ProcessState.NEW

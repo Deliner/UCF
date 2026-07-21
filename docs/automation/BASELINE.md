@@ -6,6 +6,40 @@ clean-source acceptance is under
 `.artifacts/agents/rel001-clean-source-snapshot/20260721T034500Z-rel001/`.
 Counts are evidence from those runs, not allowances to reset when they regress.
 
+## REL-002 pre-acceptance evidence
+
+The current release-readiness implementation is locally green but is not an
+accepted release baseline. Evidence is retained under
+`.artifacts/quality/rel002-rgr-20260721/`:
+
+- `python-full.log`: 2,107 tests passed at 90% source coverage before one final
+  documentation-only automation test was added;
+- `automation-post-hardening.log`: all 169 automation contracts pass;
+- `ruff-post-hardening.log`, `spec-validation.log`, `web-build.log`, and
+  `web-lint.log`: Ruff is clean, 113 specs load with zero errors/warnings, and
+  the frontend build/lint passes;
+- `distribution-only-evidence.json`: source-only and dependency-populated
+  sdists were byte-identical, the wheel was built from the extracted sdist, and
+  ordinary plus exact supported-floor installs passed `ucf --version` and
+  `--help`; exact digests are provisional because final documentation/state
+  changes alter the staged source manifest;
+- `dependency-audit-actual-green.log`: locked Python runtime/release tools,
+  exact build dependencies, web full/runtime, TypeScript adapter/fixture, and
+  zero-external-module Go inventories have zero known advisories and reviewed
+  license evidence without skips or waivers;
+- `full-release-pre-pvr.log`: the aggregate checker passes distribution,
+  installed package scenarios, all three ecosystem lanes, and dependency/
+  license review, then fails exactly because GitHub reports Private
+  Vulnerability Reporting disabled. The requested final release-evidence file
+  is absent, as required on any failure.
+
+The historical 30,144,882-byte, 6,655-member sdist, false PyYAML/Typer floors,
+ten frontend advisories, missing license/policy metadata, stale pytest 9.0.2
+generation coordinate, and absent CLI version diagnostic are resolved by the
+current implementation. They are not accepted debt. CAP-214 remains planned
+until the hosted reporting surface, independent audits, aggregate all-profile
+run, and physical clean-source replay pass on the final source manifest.
+
 ## Current green baseline
 
 From a physical source-only snapshot with fresh locked Python and frontend

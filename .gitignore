@@ -13,6 +13,22 @@ build/
 venv/
 env/
 
+# Local secrets and credentials
+.env
+.env.*
+!.env.example
+.netrc
+.npmrc
+.pypirc
+id_ed25519
+id_rsa
+*.jks
+*.key
+*.keystore
+*.p12
+*.pfx
+*.pem
+
 # IDE / editor
 .idea/
 .vscode/
