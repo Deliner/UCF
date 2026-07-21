@@ -39,9 +39,9 @@ outside the claim. An exact experimental generation `1.0.0` profile now drives
 one external Python/pytest function-test backend, publishes a deterministic
 generated-only tree, and executes its output from a clean wheel environment.
 Revision-bound evidence and the three-fixture benchmark are implemented with
-the exact limits in the capability matrix. Production-preview release
-acceptance remains pending until CAP-214's complete executable checklist is
-proved.
+the exact limits in the capability matrix. The bounded production-preview
+release-readiness checklist is implemented as CAP-214; it does not make the API
+stable or promote the experimental adapters beyond their exact fixtures.
 
 ## Install and inspect a preview artifact
 
@@ -102,7 +102,7 @@ user-owned obligation. UCF reserves stronger labels such as `tested` and
 | Source platform fields | Declaration-only HTTP, gRPC, GraphQL, UI, CLI, Kafka, event, and protocol intent unless an exact executable capability row separately names a checked procedure |
 | Analysis | Experimental declared-data-flow, completeness, Python marker drift, and web catalog features |
 | Delivery | Canonical local/CI gate manifest, reproducible Python wheel, isolated install smoke, and a trusted project Codex Stop hook |
-| Release boundary | `0.1.x` production preview on CPython 3.12/Linux x86_64 with no SLA; release acceptance remains CAP-214 work, adapters remain experimental exact proofs, and formal `verified` claims are unavailable |
+| Release boundary | Implemented reproducible `0.1.x` production-preview readiness on CPython 3.12/Linux x86_64 with no SLA; exact committed/public source, clean artifacts and installs, dependency/license review, policies, PVR, and all gates are checked, while adapters remain experimental exact proofs and formal `verified` claims are unavailable |
 
 Exact limits and the command evidence for every row are maintained in
 [docs/CAPABILITIES.md](docs/CAPABILITIES.md).

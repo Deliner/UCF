@@ -31,7 +31,7 @@ demonstrated. `in_progress` must identify the one active package in
 | 17 | VER-001 | verified | [ExecPlan](../plans/VER-001-deterministic-executable-generation.md) |
 | 18 | VER-002 | verified | [ExecPlan](../plans/VER-002-evidence-loop.md) |
 | 19 | REL-001 | verified | [ExecPlan](../plans/REL-001-end-to-end-adoption-benchmark.md) |
-| 20 | REL-002 | in_progress | [ExecPlan](../plans/REL-002-stable-release-readiness.md) |
+| 20 | REL-002 | verified | [ExecPlan](../plans/REL-002-stable-release-readiness.md) |
 <!-- work-package-status:end -->
 
 ## Foundation

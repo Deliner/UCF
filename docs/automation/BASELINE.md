@@ -1,15 +1,42 @@
 # Repository quality baseline
 
-Observed on 2026-07-21 from `/home/deliner/projects/ucf`. The current green
-release candidate is commit `20ea17e`. Local all-profile evidence is under
-`.artifacts/quality/rel002-final-20260721/`; physical clean-source evidence is
-under `.artifacts/agents/rel002-clean-source-snapshot/20260721T130000Z-20ea17e/`.
-Counts are evidence from those runs, not allowances to reset when they regress.
+Observed on 2026-07-21 from `/home/deliner/projects/ucf`. Counts and digests are
+command evidence, not allowances to reset when they regress.
 
-## REL-002 pre-acceptance evidence
+## REL-002 accepted release-readiness evidence
 
-The release-readiness implementation is not yet an accepted release baseline.
-Evidence is retained under
+REL-002 and all nineteen dependencies are verified. CAP-214 is implemented for
+the bounded `0.1.x` CPython 3.12/Linux x86_64 production-preview control plane,
+not a stable API or general adapter/platform claim.
+
+The authoritative ignored evidence is:
+
+- `.artifacts/quality/rel002-final-20260721/release-evidence.json` — strict
+  `git_commit` source snapshot, exact local/public remote `main`, identical
+  source distributions, wheel-from-sdist, ordinary and supported-floor clean
+  installs, installed package and three-stack scenarios, dependency/advisory/
+  license review, public Issues, and enabled Private Vulnerability Reporting;
+- `.artifacts/quality/rel002-final-20260721/quality-gates-all-final.log` — all
+  eight canonical local/CI gates on that same published revision;
+- `.artifacts/agents/rel002-final-clean-source/` — public-HTTPS clean clone,
+  fresh locked Python and frontend installs, complete all-profile replay, and
+  source/status checks;
+- the final independent claims, dependency-order, and release-readiness audits
+  under `.artifacts/agents/rel002-final-*/`.
+
+The earlier strict governance candidate is retained at
+`.artifacts/quality/rel002-final-20260721/release-evidence-governance-candidate-0f10681.json`.
+It passed with exact local/remote revision `0f10681`, a 1,050-file selected
+source snapshot, byte-identical 1,491,281-byte/1,051-member sdists, zero-known-
+advisory dependency review, both install profiles, and the reproducible
+230-file wheel SHA-256
+`87c7012f7a9a36d85d3cbf6394ea8da192bf4e50a356c2e96b9276d114dee505`.
+It is precursor evidence, not the final revision marker.
+
+## REL-002 pre-acceptance evidence — historical
+
+The following evidence predates final acceptance and is retained as the
+hardening audit trail. It was not an accepted release baseline at the time:
 `.artifacts/quality/rel002-rgr-20260721/`:
 
 - `python-full.log`: 2,107 tests passed at 90% source coverage before one final
@@ -115,13 +142,14 @@ current implementation. Independent review additionally caught and corrected
 working-tree-byte substitution, stale/non-atomic evidence, vulnerable
 Pydantic/Jinja floors, audit coverage that omitted actual install environments,
 missing standalone-adapter project licensing, unbounded sdist expansion, and
-acceptance of an empty hosted repository. None is accepted debt. PVR is
-enabled, and candidate `20ea17e` is published to remote `main`. Its all-profile
-and physical clean-source executions are green, but CAP-214 remains planned
-until governance/public claims are closed and the resulting exact `main`
-revision repeats aggregate, all-profile, and physical clean-source acceptance.
+acceptance of an empty hosted repository. None is accepted debt. At this
+intermediate milestone PVR was enabled and candidate `20ea17e` was published to
+remote `main`. Its all-profile and physical clean-source executions were green,
+while CAP-214 stayed planned until governance/public claims and the exact final-
+revision replay were complete. The accepted section above supersedes that
+transitional status.
 
-## Current green baseline
+## Pre-final technical baseline — historical
 
 From public HTTPS clone `20ea17e`, after fresh locked Python and frontend
 installs, the command:
@@ -165,7 +193,7 @@ Exact local output is
 `.artifacts/quality/rel002-final-20260721/quality-gates-all-benchmark-refreshed.log`;
 the physical replay is
 `.artifacts/agents/rel002-clean-source-snapshot/20260721T130000Z-20ea17e/quality-gates-all.log`.
-This is a green technical candidate, not yet the final acceptance marker.
+This was a green technical candidate, not the final acceptance marker.
 
 ## Prior VER-002 green baseline
 

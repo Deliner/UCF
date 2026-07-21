@@ -237,6 +237,7 @@ def test_release_policy_and_handoff_do_not_overstate_adapter_or_audit_state() ->
         encoding="utf-8"
     )
     normalized_state = " ".join(state.split())
+    normalized_baseline = " ".join(baseline.split())
     plan = (
         ROOT / "docs" / "plans" / "REL-002-stable-release-readiness.md"
     ).read_text(encoding="utf-8")
@@ -258,14 +259,11 @@ def test_release_policy_and_handoff_do_not_overstate_adapter_or_audit_state() ->
     assert "but the current tree is not release-ready" not in state
     assert "every technical red observation above remains to close" not in baseline
     assert "pre-audit and superseded" in state
-    assert "green clean-source release candidate" in normalized_state
-    assert (
-        "final revision-bound acceptance evidence remains pending"
-        in normalized_state.lower()
-    )
-    assert "20ea17e" in state
-    assert "190 automation tests" in normalized_state
-    assert "2,129 Python tests" in normalized_state
+    assert "REL-002 is verified" in normalized_state
+    assert "final revision-bound acceptance evidence is retained" in normalized_state
+    assert "REL-002 accepted release-readiness evidence" in normalized_baseline
+    assert "remains pending" not in normalized_state
+    assert "CAP-214 therefore remains planned" not in normalized_state
     assert "Current focused counts are zero known advisories" not in state
     assert "installation-tested and independently audited" not in baseline
     assert "push the verified history" in plan
@@ -275,6 +273,7 @@ def test_release_policy_and_handoff_do_not_overstate_adapter_or_audit_state() ->
     )[0]
     normalized_outcomes = " ".join(outcomes.split())
     assert "131 affected and 190 complete automation tests" in normalized_outcomes
+    assert "REL-002 is accepted" in normalized_outcomes
     assert "distribution-final-precommit-green.log" in outcomes
     assert "release-atomicity-final-green.log" in outcomes
     assert "release-rollback-race-green.log" in outcomes
@@ -287,14 +286,8 @@ def test_release_policy_and_handoff_do_not_overstate_adapter_or_audit_state() ->
         assert "name-based rollback" in handoff
         assert "both staged corrections" not in handoff
     assert ".artifacts/quality/rel002-final-20260721/release-evidence.json" in state
-    assert (
-        ".artifacts/quality/rel002-final-20260721/"
-        "quality-gates-all-benchmark-refreshed.log" in state
-    )
-    assert (
-        ".artifacts/agents/rel002-clean-source-snapshot/"
-        "20260721T130000Z-20ea17e/" in state
-    )
+    assert "quality-gates-all-final.log" in state
+    assert "rel002-final-clean-source" in state
     assert "full-release-evidence.json" not in state
     for log_name in (
         "release-check.log",
@@ -1392,6 +1385,6 @@ def test_go_stdlib_claim_names_exact_evidence_and_limits():
         "never creates a `verified` claim",
     ):
         assert adapter_claim in normalized_adapter_readme
-    assert rows["CAP-214"]["status"] == "planned"
+    assert rows["CAP-214"]["status"] == "implemented"
     assert "Compiled ecosystems, broader platforms" not in project_readme
     assert "adapters/go-stdlib/README.md" in project_readme

@@ -192,7 +192,7 @@ resumed without broadening the accepted preview boundary.
   canonical backlog status ledger, enforce one complete ExecPlan per package,
   archive two superseded non-ExecPlan proposals, and retain final
   exact-revision acceptance as the sole remaining barrier.
-- [ ] 2026-07-21: Commit and publish the governance/public-claim closure, run
+- [x] 2026-07-21: Commit and publish the governance/public-claim closure, run
   explicit revision-bound evidence plus all eight gates and a physical clean
   clone on the resulting exact revision, obtain final independent acceptance,
   and mark REL-002 verified without broadening the preview claim.
@@ -494,25 +494,36 @@ automation tests passed at that milestone. Its retained evidence includes
 and `release-collision-affected-green.log`; later counterexamples supersede
 only the unsafe claims named above, never the failing-test history.
 
-REL-002 is not accepted yet. PVR is enabled, every accepted implementation
-finding is closed, and candidate `20ea17e` is published on exact remote `main`.
-Its local all-profile and physical public-clone replay both pass all eight
-gates: 190 automation tests, 2,129 Python tests at 90% coverage, Ruff, 113
-specification checks, the three-run benchmark, package contract, frontend
-build, and frontend lint. The release path proves byte-identical 1,050-member
-sdists, ordinary and supported-floor installs, exact installed dependency and
-license inventories, and a 230-file wheel at SHA-256
-`87c7012f7a9a36d85d3cbf6394ea8da192bf4e50a356c2e96b9276d114dee505`.
+REL-002 is accepted. All twenty dependency-ordered packages are verified and
+the repository now exposes one canonical complete ExecPlan per package. The
+bounded result remains a `0.1.x` production preview for the CPython 3.12/Linux
+x86_64 control plane, not a stable API, SLA, registry publication, tag, signed
+artifact, broad platform promise, or promotion of experimental adapters.
 
-The implementation's rejected name-based rollback history remains documented;
-the accepted publisher uses an anonymous staged inode and no name-based
-rollback. Independent closure audits accepted that technical boundary and
-found the final governance gap: `docs/plans/` contained two obsolete proposals
-and the dependency backlog had no canonical status ledger. Those corrections
-are now the only uncommitted source change. Remaining work is one commit/push,
-explicit final revision-bound evidence, all-profile and physical clean-source
-replay on that exact revision, final independent review, and the honest
-CAP-214/REL-002 transition.
+The published governance candidate `0f10681` first proved the complete strict
+path with `source_snapshot.kind=git_commit`, exact local/remote `main`, enabled
+Issues and PVR, identical 1,491,281-byte/1,051-member sdists, ordinary and
+supported-floor installs, zero-known-advisory dependency review, installed
+three-stack scenarios, and a 230-file wheel at SHA-256
+`87c7012f7a9a36d85d3cbf6394ea8da192bf4e50a356c2e96b9276d114dee505`.
+That precursor is retained as
+`release-evidence-governance-candidate-0f10681.json`, not substituted for the
+final revision.
+
+Final revision-bound evidence is
+`.artifacts/quality/rel002-final-20260721/release-evidence.json`; the exact
+eight-gate output is `quality-gates-all-final.log`, and a fresh public clone
+replay is under `.artifacts/agents/rel002-final-clean-source/`. These paths
+carry the final revision and changing artifact identities without embedding a
+self-invalidating commit hash in this plan. Independent final reviews accept
+the release evidence, dependency order, diff, and public-claim boundary.
+
+The implementation's rejected name-based rollback history remains documented.
+The accepted publisher uses an anonymous staged inode and no name-based
+rollback; `committed_durability_unknown` exits nonzero. The lasting lesson is
+that release-readiness prose is trustworthy only when exact source, artifact,
+installation, dependency, hosted-surface, claim, governance, and clean-clone
+checks converge on the same published revision.
 
 ## Context and Orientation
 

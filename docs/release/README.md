@@ -26,11 +26,12 @@ Deliner:
 - [../../LICENSE](../../LICENSE) and [../../NOTICE](../../NOTICE) — Apache-2.0
   grant and project attribution.
 
-The policies constrain releases; they do not themselves prove one. CAP-214
-remains planned until the executable release checklist proves metadata,
-dependency/advisory disposition, reproducible wheel and source distribution,
-clean installation, installed resources, policy consistency, and the complete
-quality profile. The canonical evidence-backed capability statement remains
+The policies constrain releases; they do not themselves prove one. CAP-214 is
+implemented only because the executable release checklist also proves exact
+published source, metadata, dependency/advisory disposition, reproducible wheel
+and source distribution, clean installation, installed resources, policy
+consistency, hosted reporting surfaces, and the complete quality profile. The
+canonical evidence-backed capability statement remains
 `docs/CAPABILITIES.md`.
 
 ## Decision ownership and residual risk

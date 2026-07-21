@@ -140,3 +140,14 @@ def test_work_package_status_matches_state_and_completed_execplans() -> None:
 
         if status == "verified":
             assert "- [ ]" not in plan, package_id
+
+
+def test_dependency_ordered_backlog_is_fully_verified() -> None:
+    rows = _status_rows()
+    assert rows
+    assert {status for _, status, _ in rows} == {"verified"}
+
+    state = _frontmatter(STATE_PATH)
+    assert state["status"] == "complete"
+    assert state["active_work_package"] == "null"
+    assert state["active_exec_plan"] == "null"
