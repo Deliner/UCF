@@ -1,8 +1,14 @@
 # Design Document: Conditional Execution in UCF (Bottle Neck #13)
 
+> **Historical proposal — superseded and rejected.** This document is not an
+> ExecPlan, capability claim, or implementation authorization. Its raw
+> expression/`eval()` design violates the current strict parsing and execution
+> boundaries. It is retained only as historical context; current behavior is
+> defined by executable contracts and `docs/CAPABILITIES.md`.
+
 **Date:** 2026-02-28  
 **Feature:** Conditional Steps (`when` and `skip_if`)  
-**Status:** Approved  
+**Status:** Superseded / not accepted
 
 ## 1. Overview
 The UCF framework currently executes all steps sequentially. This design document outlines the implementation of conditional execution (if/else branching) to allow expressing business logic like Feature Flags and Approval Workflows directly in YAML specifications.
@@ -47,7 +53,9 @@ The static analyzer (`ucf trace`) cannot evaluate runtime expressions. Therefore
 3. If an unconditional step requires data from a conditional step, the tracer should emit a warning: `Warning: Step depends on optional field from conditional step.`
 
 ## 3. Trade-offs & Security
-- **Security:** Since tests run locally/in CI and specs are committed by developers, using `eval()` in generated test code poses no security threat to production runtimes.
+- **Security (historical conclusion rejected):** Committed specifications and
+  local/CI execution do not make raw expression evaluation safe. The proposed
+  `eval()` boundary is not accepted and must not be implemented from this note.
 - **Expressiveness vs Magic:** We chose string expressions over strict YAML dicts to allow complex logic (`A and (B or C)`).
 
 ## 4. Implementation Steps

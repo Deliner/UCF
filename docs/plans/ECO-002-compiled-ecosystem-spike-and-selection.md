@@ -139,7 +139,7 @@ by `AGENTS.md`.
   post-exit `ETXTBSY` inode deny-write window also occurs outside UCF; the
   negative replaces the executable atomically and retains `/proc` proof that
   no adapter-owned child survives.
-- [x] Complete strict inventory, discovery, explicit review/reconciliation,
+- [x] 2026-07-19: Complete strict inventory, discovery, explicit review/reconciliation,
   mapping, real verification, deterministic/negative/process/resource tests,
   and prove no claim promotion beyond reproducible evidence.
 - [x] 2026-07-19: Integrate the exact Go 1.26.5 toolchain in CI and the

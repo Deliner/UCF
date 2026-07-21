@@ -78,38 +78,38 @@ versioning options rather than silently reinterpreting `1.0.0`.
 
 ## Progress
 
-- [x] Revalidate the candidate-representation assumption with serialized
+- [x] 2026-07-19: Revalidate the candidate-representation assumption with serialized
   direct-Trust, provisional-Behavior, and independent-profile probes; retain
   scanner-boundary evidence. See
   `.artifacts/agents/brn002-foundation/representation-report.md`,
   `.artifacts/agents/brn002-foundation/probe-results.json`, and
   `.artifacts/agents/brn002-foundation/fixture-boundary-report.md`.
-- [x] Retain the smallest relevant baseline and prove the chosen legacy Python
+- [x] 2026-07-19: Retain the smallest relevant baseline and prove the chosen legacy Python
   fixture runs before onboarding with a complete unchanged-source manifest.
   The checked `python_legacy_quote` fixture passes three native checks and its
   eight-entry non-following manifest remains byte-identical at
   `654fe6c58854f11f910ef21a19d1098ddda8b9d20196862783493fc6561d228d`;
   see `.artifacts/agents/brn002-fixture-create/report.md`.
-- [x] Define exact closed discovery, decision, and baseline bundle contracts
+- [x] 2026-07-19: Define exact closed discovery, decision, and baseline bundle contracts
   with deterministic codecs/schemas and negative fixtures. The 61-test core
   onboarding slice covers discovery request/result, complete-inventory
   binding, candidate content identities, typed evidence references, exact
   coverage, stale-safe discriminated decisions, materialization, Trust import,
   bundle recomputation, wire conversion, and four published closed schemas.
-- [x] Implement the minimum external Python adapter discovery operation
+- [x] 2026-07-19: Implement the minimum external Python adapter discovery operation
   through the accepted process protocol. One dependency-free process now
   negotiates inventory plus discovery, binds discovery to its exact completed
   same-session snapshot, emits four deterministic candidates, and exposes
   three localized negative modes without advertising `ucf.map`.
-- [x] Implement explicit reconciliation that preserves accepted, edited,
+- [x] 2026-07-19: Implement explicit reconciliation that preserves accepted, edited,
   rejected, and uncertain candidates and materializes one accepted use case.
-- [x] Import exact post-decision declarations, observations, mappings,
+- [x] 2026-07-19: Import exact post-decision declarations, observations, mappings,
   provenance, and claim levels into Behavior/Trust IR without promotion.
-- [x] Publish deterministic installed `adapter discover` and `adapter onboard`
+- [x] 2026-07-19: Publish deterministic installed `adapter discover` and `adapter onboard`
   commands and documentation; prove repeatability, stale/adapter-failure
   atomicity, exact packaged schemas, native behavior, and a complete unchanged
   application manifest from a clean external wheel environment.
-- [x] Run the affected integration suite and all seven quality gates. The
+- [x] 2026-07-19: Run the affected integration suite and all seven quality gates. The
   affected slice passes 384 tests; the accepted local profile passes 38
   automation tests, 900 Python tests at 89% coverage, Ruff, 113 specs with
   zero errors/warnings, the installed package contract, frontend build, and

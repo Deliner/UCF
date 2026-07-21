@@ -1,9 +1,9 @@
 # Repository quality baseline
 
-Observed on 2026-07-21 from `/home/deliner/projects/ucf`. The current accepted
-local run is under `.artifacts/quality/rel001-benchmark-20260721/`; physical
-clean-source acceptance is under
-`.artifacts/agents/rel001-clean-source-snapshot/20260721T034500Z-rel001/`.
+Observed on 2026-07-21 from `/home/deliner/projects/ucf`. The current green
+release candidate is commit `20ea17e`. Local all-profile evidence is under
+`.artifacts/quality/rel002-final-20260721/`; physical clean-source evidence is
+under `.artifacts/agents/rel002-clean-source-snapshot/20260721T130000Z-20ea17e/`.
 Counts are evidence from those runs, not allowances to reset when they regress.
 
 ## REL-002 pre-acceptance evidence
@@ -115,16 +115,15 @@ current implementation. Independent review additionally caught and corrected
 working-tree-byte substitution, stale/non-atomic evidence, vulnerable
 Pydantic/Jinja floors, audit coverage that omitted actual install environments,
 missing standalone-adapter project licensing, unbounded sdist expansion, and
-acceptance of an empty hosted repository. None is accepted debt. PVR is now
-enabled, and `fe271f8` is published to remote `main`, but CAP-214 remains
-planned until both staged corrections—the GitHub `size` authority and
-anonymous-inode publisher—are committed/published and the exact `main` branch
-revision passes aggregate, all-profile, and physical clean-source evidence on
-the final revision.
+acceptance of an empty hosted repository. None is accepted debt. PVR is
+enabled, and candidate `20ea17e` is published to remote `main`. Its all-profile
+and physical clean-source executions are green, but CAP-214 remains planned
+until governance/public claims are closed and the resulting exact `main`
+revision repeats aggregate, all-profile, and physical clean-source acceptance.
 
 ## Current green baseline
 
-From a physical source-only snapshot with fresh locked Python and frontend
+From public HTTPS clone `20ea17e`, after fresh locked Python and frontend
 installs, the command:
 
     python3 tools/quality_gates.py --profile all
@@ -142,8 +141,8 @@ exited zero after running all eight phases:
 
 Detailed observations:
 
-- automation contracts: 141 passed;
-- Python: 2,080 passed and 90% source coverage;
+- automation contracts: 190 passed;
+- Python: 2,129 passed and 90% source coverage;
 - Ruff over `src`, `tests`, `tools`, and the project Stop hook: no findings;
 - specifications: 113 loaded, 0 errors, and 0 warnings;
 - the checked REL-001 report replayed three complete real-stack repetitions at
@@ -152,17 +151,21 @@ Detailed observations:
 - packaging built two byte-identical wheels and exercised the installed UCF
   contracts, Ratchet v2 and migration, Python, TypeScript/Fastify, Go HTTP,
   Go CLI/event, generation, lifecycle, governance, and evidence-status lanes
-  outside checkout imports; accepted wheel SHA-256 is
-  `17cc39364e513d1f0cf6f5d94508146de8da5748ee7928d11e8dd2d8cd105489`;
+  outside checkout imports; candidate wheel SHA-256 is
+  `87c7012f7a9a36d85d3cbf6394ea8da192bf4e50a356c2e96b9276d114dee505`;
 - frontend TypeScript/Vite production build and ESLint passed;
 - `git diff --check` reported no whitespace errors.
 
-The accepted snapshot contains 1,034 regular source files. Checkout and
-snapshot manifests remained byte-identical before and after at SHA-256
-`c8dd5c83796d2db24be725149546a44c0d6d227a60ee42946387169ea64c8858`.
-Exact output is retained in the snapshot's `quality-gates.console.log` and
-`source-manifest-comparison.log`. The independent final benchmark security
-review also replayed the corrected lifecycle projection and accepted it.
+The packaging phase produced byte-identical 1,050-member sdists with selected
+source manifest SHA-256
+`bf3b077b83088bee665018c68b29ce2c110db2caed18ffbbddd710e62539e197`
+and object manifest SHA-256
+`bbe0d593eb822a4541e758ce28243fdf58269144c9efc61719b643ca97938a34`.
+Exact local output is
+`.artifacts/quality/rel002-final-20260721/quality-gates-all-benchmark-refreshed.log`;
+the physical replay is
+`.artifacts/agents/rel002-clean-source-snapshot/20260721T130000Z-20ea17e/quality-gates-all.log`.
+This is a green technical candidate, not yet the final acceptance marker.
 
 ## Prior VER-002 green baseline
 

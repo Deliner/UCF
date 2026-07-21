@@ -105,18 +105,18 @@ transport-specific field or protocol method is justified by this gap.
   `f54ab3d5dfc50b5bf57610da6ec081aa3b4f700a71064fdaf041ebc56ac7cff4`;
   the source manifest stays byte-identical at SHA-256
   `7b563b0296cb40498b984edc1ea3eb96b9fb8e96c8225aa695bc50b8b0889d2d`.
-- [x] Retain focused REDs proving the exact executable CLI and event paths do
+- [x] 2026-07-20: Retain focused REDs proving the exact executable CLI and event paths do
   not yet exist. Treat the public conformance kit's unsupported-required case
   and the foundation subprocess outcome as inherited GREEN. Invalid early
   manual probes remain labeled as such; corrected startup, attested
   capability, inventory, CLI-procedure, and event-procedure REDs fail at the
   intended boundaries.
-- [x] Implement the minimum external inventory/mapping/verification support
+- [x] 2026-07-20: Implement the minimum external inventory/mapping/verification support
   and real CLI behavior, then refactor while focused and affected tests stay
   green. One reviewed neutral quote-order candidate and mapping feed an exact
   real CLI verification; the unchanged HTTP/conformance and full affected Go
   ecosystem slice pass 42/42.
-- [x] Implement the minimum real asynchronous event behavior with a
+- [x] 2026-07-20: Implement the minimum real asynchronous event behavior with a
   deterministic completion/observation boundary. The adapter runs four
   separate bounded processes against an external temporary spool with no
   sleeps, checks absence before dispatch, observes the correlated result, and

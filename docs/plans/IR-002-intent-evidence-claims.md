@@ -45,19 +45,19 @@ only if it does not conflate desired and observed state.
 
 ## Progress
 
-- [x] Revalidate the foundational assumption and retain overlay/versioning,
+- [x] 2026-07-19: Revalidate the foundational assumption and retain overlay/versioning,
   conflict-survival, promotion-matrix, document-identity, and cross-runtime
   probes.
-- [x] Specify immutable declaration, observed-fact, candidate, mapping,
+- [x] 2026-07-19: Specify immutable declaration, observed-fact, candidate, mapping,
   conflict, confidence, and claim records with closed schemas and stable IDs.
-- [x] Add RED reconciliation tests proving declared and observed facts survive
+- [x] 2026-07-19: Add RED reconciliation tests proving declared and observed facts survive
   disagreement and no operation silently overwrites either record.
-- [x] Add RED promotion tests for `observed`, `declared`, `mapped`, `tested`,
+- [x] 2026-07-19: Add RED promotion tests for `observed`, `declared`, `mapped`, `tested`,
   and `verified`; require reproducible evidence and reject uncertain,
   failed, stale, mismatched, or circular evidence.
-- [x] Publish deterministic fixtures/schema/API/CLI boundaries and document
+- [x] 2026-07-19: Publish deterministic fixtures/schema/API/CLI boundaries and document
   exact semantics without claiming adapter discovery or formal proof.
-- [x] Run affected and complete gates, review the full diff, obtain independent
+- [x] 2026-07-19: Run affected and complete gates, review the full diff, obtain independent
   adversarial and clean-snapshot acceptance, update baseline, and advance to
   `ADP-001`.
 

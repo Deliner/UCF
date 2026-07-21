@@ -181,20 +181,21 @@ resumed without broadening the accepted preview boundary.
   and changed only sampled runtimes plus the exact current Click, Pygments,
   runtime-lock, installed-environment, and wheel identities. Promote that
   generated candidate without editing its JSON; static validation, 18 focused
-  tests, and an independent three-run replay pass. A fresh all-profile run is
-  still required rather than treating either earlier failure as a waiver.
-- [ ] Prove wheel and source-distribution builds, clean installation, installed
-  schemas/CLIs, dependency/advisory policy, exact published source revision,
-  and the complete release checklist. GitHub Private Vulnerability Reporting
-  and published `main` are live; both staged corrections—the hosted-size
-  authority and anonymous-inode publisher—must be committed before the
-  aggregate can publish final evidence.
-- [ ] Complete independent contract/claims, security/privacy/licensing, and
-  packaging/clean-install re-audits; close any accepted findings with retained
-  RED/GREEN evidence.
-- [ ] Run affected suites and all eight gates, inspect the complete diff, repeat
-  physical clean-source and clean-distribution scenarios, update automation
-  state/baseline, and record the final outcome.
+  tests, and an independent three-run replay pass.
+- [x] 2026-07-21: Commit and publish candidate `20ea17e`, then run all eight
+  gates locally and from a physical public-HTTPS clone with fresh locked Python
+  and frontend installs. Both executions pass 190 automation tests, 2,129
+  Python tests at 90% coverage, Ruff, 113 specification checks, the three-run
+  benchmark, packaging, frontend build, and frontend lint.
+- [x] 2026-07-21: Complete independent contract/claims, dependency-order, and
+  release-readiness closure re-audits. Accept their governance findings: add a
+  canonical backlog status ledger, enforce one complete ExecPlan per package,
+  archive two superseded non-ExecPlan proposals, and retain final
+  exact-revision acceptance as the sole remaining barrier.
+- [ ] 2026-07-21: Commit and publish the governance/public-claim closure, run
+  explicit revision-bound evidence plus all eight gates and a physical clean
+  clone on the resulting exact revision, obtain final independent acceptance,
+  and mark REL-002 verified without broadening the preview claim.
 
 ## Surprises & Discoveries
 
@@ -486,24 +487,32 @@ materially strengthened their trust boundaries; its accepted findings and
 focused corrections are recorded above. The selected result remains a bounded
 `0.1.x` production preview, not a stable API.
 
-REL-002 is not accepted yet. PVR is enabled and the corrected package contract
-passes; 131 affected and 190 complete automation tests plus Ruff pass. The
-staged `distribution-final-precommit-green.log` proves byte-identical sdists and
-both installation profiles. The earlier `release-atomicity-final-green.log`
-and `release-rollback-race-green.log` are retained, but their name-based rollback
-claim is superseded by the stat-then-unlink RED. The new focused publisher proof
-uses an anonymous staged inode and no name-based rollback;
-`release-post-commit-affected-green.log` records that affected replay. The
-collision-reader follow-up then rejected blocking FIFO and concurrent append;
-`release-collision-affected-green.log` records the latest full replay. The
-prior closure is committed and published as `fe271f8`;
-its first aggregate passed every local phase and
-failed only on the falsified GitHub `size` cache heuristic despite the exact
-`main` branch revision. Both staged corrections—the hosted-size authority and
-anonymous-inode publisher—are not yet committed. Remaining work is to
-commit/push both, obtain final aggregate evidence, run full and physical
-clean-source verification, complete independent diff/claim review, close
-CAP-214 and baseline/state, and perform the final push/replay cycle.
+The hardening audit trail remains explicit: 131 affected and 190 complete
+automation tests passed at that milestone. Its retained evidence includes
+`distribution-final-precommit-green.log`, `release-atomicity-final-green.log`,
+`release-rollback-race-green.log`, `release-post-commit-affected-green.log`,
+and `release-collision-affected-green.log`; later counterexamples supersede
+only the unsafe claims named above, never the failing-test history.
+
+REL-002 is not accepted yet. PVR is enabled, every accepted implementation
+finding is closed, and candidate `20ea17e` is published on exact remote `main`.
+Its local all-profile and physical public-clone replay both pass all eight
+gates: 190 automation tests, 2,129 Python tests at 90% coverage, Ruff, 113
+specification checks, the three-run benchmark, package contract, frontend
+build, and frontend lint. The release path proves byte-identical 1,050-member
+sdists, ordinary and supported-floor installs, exact installed dependency and
+license inventories, and a 230-file wheel at SHA-256
+`87c7012f7a9a36d85d3cbf6394ea8da192bf4e50a356c2e96b9276d114dee505`.
+
+The implementation's rejected name-based rollback history remains documented;
+the accepted publisher uses an anonymous staged inode and no name-based
+rollback. Independent closure audits accepted that technical boundary and
+found the final governance gap: `docs/plans/` contained two obsolete proposals
+and the dependency backlog had no canonical status ledger. Those corrections
+are now the only uncommitted source change. Remaining work is one commit/push,
+explicit final revision-bound evidence, all-profile and physical clean-source
+replay on that exact revision, final independent review, and the honest
+CAP-214/REL-002 transition.
 
 ## Context and Orientation
 

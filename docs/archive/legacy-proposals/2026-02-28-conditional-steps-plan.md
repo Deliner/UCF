@@ -1,5 +1,11 @@
 # Conditional Steps Implementation Plan
 
+> **Historical proposal — superseded and not accepted.** This file is not an
+> active UCF ExecPlan and none of its task or commit instructions authorize
+> implementation. In particular, its raw expression/`eval()` direction was
+> rejected as inconsistent with the current strict security boundary. It is
+> retained only as historical context.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Implement `when` and `skip_if` fields in use case steps to allow dynamic branching (if/else) logic during test generation based on runtime context.

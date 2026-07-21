@@ -10,37 +10,32 @@ last_updated: 2026-07-21
 
 # Automation handoff state
 
-REL-001 is verified. REL-002 remains active after completing its owner
-decisions, policy set, release metadata, local distribution boundary,
-dependency/advisory remediation, and executable release checker. The owner has
-now enabled GitHub Private Vulnerability Reporting. Three independent
-pre-acceptance audits rejected the first release-check implementation on exact
-Git-index bytes, stale/non-atomic evidence, unaudited installed environments,
-unsafe dependency floors, missing standalone-adapter license files, unbounded
-sdist expansion, and an unpopulated remote repository. The first follow-up
-re-audit then exposed smudge-filtered index export, late artifact-to-HEAD
-binding, directory/PAX archive amplification, scoped evidence publication, and
-a symlink/TOCTOU collision. The second follow-up found three remaining
-fail-open paths: dependency audits read the mutable checkout, tar parsing did
-not drain concatenated/corrupt gzip members, and hidden inventory mode could
-preserve stale final evidence. Every accepted finding now has a retained
-focused RED and local correction. A final atomicity pass moved temporary-source
-cleanup before publication, but its attempted device/inode rollback was itself
-falsified: replacing the entry after `stat` made name-based rollback delete the
-replacement. The corrected publisher uses an anonymous staged inode and makes
-the create-only link its commit point; post-commit durability uncertainty is
-reported without deleting a visible path. The collision reader now rejects
-FIFO blocking and concurrent content/metadata mutation. Current evidence is 131
-affected and 190 automation tests plus Ruff green. Commit `fe271f8` is published on remote
-`main`. Its first aggregate
-passed distribution, package contract, all three stacks, actual-install audits,
-and dependency/license review, then rejected GitHub's asynchronous zero `size`
-cache despite the exact `main` branch revision matching locally, through REST,
-and through Git transport. A focused RED/GREEN now treats that exact branch as
-the direct nonempty proof and records the GitHub `size` cache only as telemetry;
-both staged corrections—the hosted-size authority and anonymous-inode
-publisher—are not yet committed. Final aggregate evidence, CAP-214,
-all-profile, and physical clean-source acceptance remain pending.
+REL-001 is verified. REL-002 remains the only active package. Its owner
+decisions, policy set, release metadata, dependency/advisory remediation,
+distribution boundary, executable release checker, and every accepted
+independent-audit correction are committed and published. The hardened
+publisher uses an anonymous staged inode and a create-only link commit point,
+never name-based rollback; its collision reader rejects FIFO blocking and
+concurrent content or metadata mutation. The exact `main` branch revision is
+the publication authority, while GitHub's asynchronous `size` cache is retained
+only as telemetry.
+
+Commit `20ea17e` is a green clean-source release candidate on local and remote
+`main`. A local all-profile run and a physical public-HTTPS clone with fresh
+locked Python and frontend installs both passed all eight gates: 190 automation
+tests, 2,129 Python tests at 90% coverage, Ruff, 113 specification checks, the
+three-run benchmark, packaging, frontend build, and frontend lint. The
+dependency-ordered governance ledger and final public claim transition are now
+being closed. Final revision-bound acceptance evidence remains pending until
+that metadata is committed, pushed, and replayed from the resulting exact
+revision; CAP-214 therefore remains planned at this stopping point.
+
+Candidate command evidence is retained in
+`.artifacts/quality/rel002-final-20260721/quality-gates-all-benchmark-refreshed.log`
+and the physical replay directory
+`.artifacts/agents/rel002-clean-source-snapshot/20260721T130000Z-20ea17e/`.
+The final aggregate target remains
+`.artifacts/quality/rel002-final-20260721/release-evidence.json`.
 
 ## Resume instruction
 
@@ -69,10 +64,10 @@ execution mode.
   independent review; and physical clean-source evidence.
 - Canonical branch is local `main`; `origin` is
   `https://github.com/Deliner/UCF.git`. The hosted repository is public, Issues
-  and Private Vulnerability Reporting are enabled. Commit `fe271f8` is the
-  current exact `main` branch revision locally and remotely; both staged
-  corrections, hosted metadata and anonymous-inode publication, are pending
-  their follow-up commit.
+  and Private Vulnerability Reporting are enabled. Commit `20ea17e` is the
+  current exact `main` branch revision locally and remotely. It is a verified
+  technical candidate; the remaining source changes are governance and public
+  claim closure followed by one exact-revision replay.
 
 ## Binding Ratchet decision
 
@@ -219,17 +214,18 @@ broaden adapter support, or select weaker/different terms.
   ordinary and exact supported floors,
   checks `ucf --version` and `--help`, and runs the existing installed package
   contract from the extracted source distribution.
-- The bounded sdist is about 1.46 MB with 1,050 members rather than the rejected
-  30.1 MB/6,655-member dependency-contaminated artifact. Exact digests must be
-  refreshed after the final documentation/state commit and are not yet release
-  claims.
+- The bounded sdist has 1,050 members rather than the rejected 6,655-member
+  dependency-contaminated artifact. Candidate `20ea17e` produced byte-identical
+  1,488,617-byte sdists at SHA-256
+  `3a0b611165f4d9fb6d9e8c20ae1458af5fdc1490fa01628e0e6b8772e8318d54`;
+  these candidate coordinates do not substitute for final-revision evidence.
 - The checker is wired to audit runtime/release-tool, build, ordinary-install,
   and supported-floor Python coordinates and match them to exact installed
   license/environment inventories; it also separates web full/runtime,
   TypeScript adapter, TypeScript fixture, and zero-external-module Go review.
-  The corrected post-fix distribution run captured and installation-tested both
-  actual environment inventories; the fresh revision-bound aggregate audit remains pending.
-  No current post-fix zero-advisory result is claimed here.
+  Candidate `20ea17e` captured, installation-tested, and independently audited
+  both actual environment inventories with zero known advisories. Final
+  revision-bound acceptance evidence remains pending after metadata closure.
   The accepted floors are `pydantic>=2.4.0`, `jinja2>=3.1.6`,
   `pyyaml>=6.0.1`, and the previously accepted Typer floor; the locked pytest
   coordinate was raised from the advisory-bearing 9.0.2 to 9.1.1.
@@ -251,15 +247,16 @@ broaden adapter support, or select weaker/different terms.
   dependency/license output, and aggregate pre-PVR run under
   `.artifacts/quality/rel002-rgr-20260721/` are pre-audit and superseded; they
   remain diagnostics, not proof of the corrected path. Focused RED/GREEN logs
-  and the corrected package-contract result are current, while aggregate,
-  all-profile, and clean-source acceptance remain pending. The requested final
-  `.artifacts/quality/rel002-final-20260721/release-evidence.json` is absent by
-  design.
+  and the corrected package-contract result are historical diagnostics. The
+  current 190-test automation, 2,129-test Python, all-profile, and physical
+  clean-source candidate evidence is green. The requested final
+  `.artifacts/quality/rel002-final-20260721/release-evidence.json` remains
+  reserved for the exact final published revision and is absent by design.
 - GitHub API now verifies the exact public repository, default `main`, enabled
   Issues, and enabled Private Vulnerability Reporting. Final evidence also
   requires a clean committed checkout whose local HEAD exactly equals remote
-  `main`; that condition intentionally remains red until the corrected source
-  is committed and pushed.
+  `main`; candidate `20ea17e` satisfies that condition, and the final metadata
+  revision must prove it again.
 
 ## Independent pre-acceptance audit findings
 
@@ -282,8 +279,10 @@ are:
 - the locked verification environment was audited instead of the two
   environments users actually install; ordinary and supported-floor exact
   inventories are now captured and installation-tested, and the aggregate
-  checker requires their independent advisory/license alignment. Fresh
-  revision-bound aggregate execution remains pending;
+  checker requires their independent advisory/license alignment. Candidate
+  `20ea17e` passes those full install/audit phases from a clean published
+  checkout; final metadata must repeat the strict evidence-publishing mode at
+  its own exact revision;
 - `pydantic==2.0` and `jinja2==3.1.0` were known-vulnerable supported floors;
   floors were raised to the first accepted safe versions and locked tests cover
   the policy;
@@ -354,24 +353,25 @@ and `release-post-commit-automation-green.log` prove the final no-rollback
 publisher correction. The subsequent `release-collision-reader-green.log`,
 `release-collision-affected-green.log`, and
 `release-collision-automation-green.log` prove nonblocking, stable exact
-collision handling. Independent acceptance re-audit remains required.
+collision handling. The independent closure re-audits accepted the
+implementation boundary and identified only the governance/status and final
+exact-revision closure now in progress. A final read-only audit remains
+required after the last replay.
 
 ## Immediate execution sequence
 
-1. Run the corrected affected suite and distribution proof, inspect the full
-   diff, commit both staged corrections on local `main`, and push them to the
-   canonical remote `main`.
-2. Repeat the aggregate checker with explicit evidence so it proves PVR and
-   exact local/remote revision equality; then request independent read-only
-   re-audits of contracts/claims, security/licensing, and packaging/clean install.
-3. Close every accepted re-audit finding through retained RED/GREEN evidence.
-   Then update CAP-214, BACKLOG, BASELINE, this state, every ExecPlan outcome,
-   and all final public claims from fresh output; commit and push that closure.
+1. Complete the executable backlog/ExecPlan governance ledger and move
+   superseded non-ExecPlan proposals out of `docs/plans/`; retain focused
+   RED/GREEN evidence.
+2. Commit and push that metadata candidate, then run the aggregate checker with
+   an explicit absent evidence path to prove exact local/remote revision,
+   PVR, installations, audits, artifacts, and package scenarios.
+3. Update CAP-214, BACKLOG, BASELINE, this state, the REL-002 outcome, and final
+   public claims from that fresh output; commit and push the closure.
 4. From the final remote revision, repeat explicit release evidence, all eight
    gates, and a physical clean-source/clean-distribution replay. Inspect the
-   complete final diff, manifests, Git status, and remote revision. Do not create
-   a package release/tag until the checked artifact bytes and hashes are the
-   ones being published.
+   complete final diff, manifests, Git status, and remote revision, then obtain
+   independent final claims/dependency/release audits.
 5. If a new production dependency, wire reinterpretation, weaker gate,
    destructive migration, hosted write, or broader support promise appears,
    open a new explicit decision gate before acting.

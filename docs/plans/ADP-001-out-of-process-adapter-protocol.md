@@ -47,20 +47,20 @@ production code.
 
 ## Progress
 
-- [x] Revalidate the foundational assumption with comparable JSON-RPC and
+- [x] 2026-07-19: Revalidate the foundational assumption with comparable JSON-RPC and
   custom-envelope subprocess probes.
-- [x] Specify an exact-version closed protocol, stable method/capability names,
+- [x] 2026-07-19: Specify an exact-version closed protocol, stable method/capability names,
   correlation rules, structured errors, lifecycle, and compatibility policy.
-- [x] Add RED transport-independent codec/dispatcher contract tests, including
+- [x] 2026-07-19: Add RED transport-independent codec/dispatcher contract tests, including
   malformed, unknown, duplicate, incompatible, and unsupported inputs.
-- [x] Add RED process-runner tests for negotiation, deterministic exchange,
+- [x] 2026-07-19: Add RED process-runner tests for negotiation, deterministic exchange,
   cancellation, timeout/termination, stderr isolation, and clean shutdown.
-- [x] Implement the smallest reference adapter process without importing it
+- [x] 2026-07-19: Implement the smallest reference adapter process without importing it
   into the core and prove every required operation through declared
   capabilities.
-- [x] Publish schema/fixtures/API/CLI or test-runner documentation with exact
+- [x] 2026-07-19: Publish schema/fixtures/API/CLI or test-runner documentation with exact
   limitations, package assets, and CAP-203 evidence appropriate to ADP-001.
-- [x] Run affected and full gates, inspect the complete diff, obtain
+- [x] 2026-07-19: Run affected and full gates, inspect the complete diff, obtain
   independent protocol/security and clean-snapshot acceptance, update
   baseline, and advance to `ADP-002`.
 

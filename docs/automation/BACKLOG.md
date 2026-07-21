@@ -4,6 +4,36 @@ Each work package must have one ExecPlan and one independently demonstrable
 outcome. The order challenges the highest-risk assumptions before expanding the
 feature surface.
 
+The table below is the canonical completion ledger. `verified` means the
+package's acceptance behavior, ExecPlan outcome, and dependency order have been
+demonstrated. `in_progress` must identify the one active package in
+`docs/automation/STATE.md`.
+
+<!-- work-package-status:start -->
+| Order | Work package | Status | ExecPlan |
+|---:|---|---|---|
+| 1 | FND-001 | verified | [ExecPlan](../plans/FND-001-green-baseline.md) |
+| 2 | FND-002 | verified | [ExecPlan](../plans/FND-002-strict-parser-and-claims.md) |
+| 3 | FND-003 | verified | [ExecPlan](../plans/FND-003-deterministic-gates-and-packaging.md) |
+| 4 | IR-001 | verified | [ExecPlan](../plans/IR-001-versioned-behavior-ir.md) |
+| 5 | IR-002 | verified | [ExecPlan](../plans/IR-002-intent-evidence-claims.md) |
+| 6 | ADP-001 | verified | [ExecPlan](../plans/ADP-001-out-of-process-adapter-protocol.md) |
+| 7 | ADP-002 | verified | [ExecPlan](../plans/ADP-002-adapter-conformance-kit.md) |
+| 8 | BRN-001 | verified | [ExecPlan](../plans/BRN-001-read-only-inventory.md) |
+| 9 | BRN-002 | verified | [ExecPlan](../plans/BRN-002-python-brownfield-vertical-slice.md) |
+| 10 | BRN-003 | verified | [ExecPlan](../plans/BRN-003-baseline-and-ratchet.md) |
+| 11 | BRN-004 | verified | [ExecPlan](../plans/BRN-004-optional-runtime-evidence.md) |
+| 12 | ECO-001 | verified | [ExecPlan](../plans/ECO-001-typescript-framework-adapter.md) |
+| 13 | ECO-002 | verified | [ExecPlan](../plans/ECO-002-compiled-ecosystem-spike-and-selection.md) |
+| 14 | ECO-003 | verified | [ExecPlan](../plans/ECO-003-non-http-platform-proof.md) |
+| 15 | CHG-001 | verified | [ExecPlan](../plans/CHG-001-openspec-change-envelope.md) |
+| 16 | CHG-002 | verified | [ExecPlan](../plans/CHG-002-impact-approval-gates.md) |
+| 17 | VER-001 | verified | [ExecPlan](../plans/VER-001-deterministic-executable-generation.md) |
+| 18 | VER-002 | verified | [ExecPlan](../plans/VER-002-evidence-loop.md) |
+| 19 | REL-001 | verified | [ExecPlan](../plans/REL-001-end-to-end-adoption-benchmark.md) |
+| 20 | REL-002 | in_progress | [ExecPlan](../plans/REL-002-stable-release-readiness.md) |
+<!-- work-package-status:end -->
+
 ## Foundation
 
 ### FND-001 — Restore a trustworthy green baseline

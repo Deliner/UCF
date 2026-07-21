@@ -236,6 +236,7 @@ def test_release_policy_and_handoff_do_not_overstate_adapter_or_audit_state() ->
     state = (ROOT / "docs" / "automation" / "STATE.md").read_text(
         encoding="utf-8"
     )
+    normalized_state = " ".join(state.split())
     plan = (
         ROOT / "docs" / "plans" / "REL-002-stable-release-readiness.md"
     ).read_text(encoding="utf-8")
@@ -257,7 +258,14 @@ def test_release_policy_and_handoff_do_not_overstate_adapter_or_audit_state() ->
     assert "but the current tree is not release-ready" not in state
     assert "every technical red observation above remains to close" not in baseline
     assert "pre-audit and superseded" in state
-    assert "fresh revision-bound aggregate audit remains pending" in state
+    assert "green clean-source release candidate" in normalized_state
+    assert (
+        "final revision-bound acceptance evidence remains pending"
+        in normalized_state.lower()
+    )
+    assert "20ea17e" in state
+    assert "190 automation tests" in normalized_state
+    assert "2,129 Python tests" in normalized_state
     assert "Current focused counts are zero known advisories" not in state
     assert "installation-tested and independently audited" not in baseline
     assert "push the verified history" in plan
@@ -265,7 +273,8 @@ def test_release_policy_and_handoff_do_not_overstate_adapter_or_audit_state() ->
     outcomes = plan.split("## Outcomes & Retrospective", 1)[1].split(
         "## Context and Orientation", 1
     )[0]
-    assert "131 affected and 190 complete automation tests" in outcomes
+    normalized_outcomes = " ".join(outcomes.split())
+    assert "131 affected and 190 complete automation tests" in normalized_outcomes
     assert "distribution-final-precommit-green.log" in outcomes
     assert "release-atomicity-final-green.log" in outcomes
     assert "release-rollback-race-green.log" in outcomes
@@ -276,8 +285,16 @@ def test_release_policy_and_handoff_do_not_overstate_adapter_or_audit_state() ->
         assert "exact `main` branch revision" in handoff
         assert "anonymous staged inode" in handoff
         assert "name-based rollback" in handoff
-        assert "both staged corrections" in handoff
+        assert "both staged corrections" not in handoff
     assert ".artifacts/quality/rel002-final-20260721/release-evidence.json" in state
+    assert (
+        ".artifacts/quality/rel002-final-20260721/"
+        "quality-gates-all-benchmark-refreshed.log" in state
+    )
+    assert (
+        ".artifacts/agents/rel002-clean-source-snapshot/"
+        "20260721T130000Z-20ea17e/" in state
+    )
     assert "full-release-evidence.json" not in state
     for log_name in (
         "release-check.log",
