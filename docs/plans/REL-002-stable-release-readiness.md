@@ -144,10 +144,38 @@ resumed without broadening the accepted preview boundary.
   deleted. Add a failing replacement race, bind rollback to the created
   regular-file device/inode with a no-follow recheck, and rerun 128 affected
   and 187 automation tests plus Ruff green.
+- [x] 2026-07-21: Commit the accepted local closure as `fe271f8`, publish it to
+  canonical remote `main`, and run the first revision-bound aggregate. All
+  distribution, package-contract, three-stack, installed-environment,
+  dependency, advisory, and license phases passed. Hosted validation alone
+  rejected GitHub's still-zero `size` cache even though the branch endpoint and
+  Git transport returned the exact `main` branch revision `fe271f8`.
+- [x] 2026-07-21: Replace the falsified hosted nonempty heuristic through a
+  focused RED/GREEN. A present, well-formed exact `main` branch revision is the
+  nonempty/published proof; the GitHub `size` cache remains recorded telemetry
+  and must be a nonnegative integer, but is not acceptance authority.
+- [x] 2026-07-21: Close the final publisher TOCTOU re-audit. The foundational
+  assumption that a device/inode `stat` followed by name-based `unlink` can
+  safely roll back a post-link failure was falsified by replacing the entry
+  between those calls. Another metadata check and quarantine/restore both keep
+  a name race. Test the accepted Linux boundary instead: an anonymous staged
+  inode is fully written and flushed, create-only publication is the commit
+  point, and post-commit directory durability uncertainty is reported without
+  deleting or replacing any visible entry. Rerun 129 affected and 188 automation
+  contracts plus Ruff green.
+- [x] 2026-07-21: Close the collision-reader follow-up. Its assumptions that
+  `O_RDONLY` cannot block before type validation and that exact bytes plus inode
+  identity establish a stable exact collision were falsified by a FIFO and an
+  append during the final entry check. Require nonblocking open, regular-file
+  type, exact size/content, and stable descriptor/entry metadata before an
+  idempotent collision can pass. Rerun 131 affected and 190 automation tests
+  plus Ruff green.
 - [ ] Prove wheel and source-distribution builds, clean installation, installed
   schemas/CLIs, dependency/advisory policy, exact published source revision,
   and the complete release checklist. GitHub Private Vulnerability Reporting
-  is enabled, but remote `main` is empty until the corrected commit is pushed.
+  and published `main` are live; both staged corrections—the hosted-size
+  authority and anonymous-inode publisher—must be committed before the
+  aggregate can publish final evidence.
 - [ ] Complete independent contract/claims, security/privacy/licensing, and
   packaging/clean-install re-audits; close any accepted findings with retained
   RED/GREEN evidence.
@@ -253,16 +281,26 @@ under `.artifacts/quality/rel002-rgr-20260721/`.
 The final atomicity pass then showed that temporary-snapshot cleanup and a
 post-link directory durability failure could occur after final evidence became
 visible. Local snapshot verification now exits its managed directory before
-hosted/final publication, and the create-only publisher rolls back only the
-destination inode created by its own failed call. Fault-injection tests preserve
-an identical concurrent publisher's file while guaranteeing that this
-invocation's failed marker is absent.
+hosted/final publication. The first correction attempted to roll back the
+destination inode created by its own failed call.
 
 Independent recheck then replaced the newly linked entry before an injected
-durability failure and proved that boolean ownership was insufficient: rollback
-deleted the replacement. Publication now captures the created file identity
-and only unlinks a no-follow regular-file entry whose device/inode still match;
-the concurrent replacement regression preserves the other publisher's link.
+durability failure and proved that boolean ownership was insufficient. A second
+correction captured device/inode identity, but the final audit replaced the
+entry after `stat` and before `unlink`, proving that name-based rollback was
+still unsafe. Publication now writes and flushes an anonymous staged inode,
+uses create-only `linkat` as the commit point, and performs no name-based
+rollback afterward. A parent-directory flush failure reports
+`committed_durability_unknown` while preserving the complete visible entry;
+acceptance still requires command exit zero.
+
+The first aggregate run against published `fe271f8` falsified the assumption
+that GitHub repository `size > 0` is a synchronous publication fact. The GitHub
+`size` cache remained zero after push while the REST branch endpoint and Git
+transport both returned the exact `main` branch revision. A repository without
+that branch cannot pass because the endpoint fails; exact branch identity is
+therefore the direct nonempty proof, while cached size remains nonnegative
+telemetry. The failed aggregate left no final evidence file.
 
 ## Decision Log
 
@@ -315,6 +353,23 @@ the concurrent replacement regression preserves the other publisher's link.
   remote `main`. Ordinary CI/PR checks may validate a non-main revision without
   publishing final evidence, but they record that it is not the published
   revision. An empty repository or missing/malformed branch fails closed.
+
+- **2026-07-21 — use exact remote branch identity, not cached repository size,
+  as publication authority.** Author: root agent. The first post-push aggregate
+  observed GitHub `size` cache `0` while the branch API and Git transport agreed
+  on the exact `main` branch revision. Final evidence still requires a valid
+  public repository, enabled Issues/PVR, a present well-formed `main`, and exact
+  local/remote revision equality. Cached size is recorded but cannot veto that
+  stronger direct proof.
+
+- **2026-07-21 — make the create-only evidence link the publication commit
+  point.** Author: root agent. A device/inode `stat` cannot make a later
+  name-based `unlink` conditional, so another metadata check cannot close the
+  rollback race. On the supported Linux boundary, the complete JSON is written
+  and flushed as an anonymous staged inode and published with `O_TMPFILE` plus
+  `linkat(AT_EMPTY_PATH)`. No destination deletion occurs after commit. A later
+  directory-flush error is explicit `committed_durability_unknown`, preserves
+  the complete visible entry, and remains a nonzero, non-accepted run.
 
 - **2026-07-21 — DG-REL002-001: project license and licensor identity.** Status:
   accepted by project owner. At the decision gate there was no root license,
@@ -419,15 +474,23 @@ focused corrections are recorded above. The selected result remains a bounded
 `0.1.x` production preview, not a stable API.
 
 REL-002 is not accepted yet. PVR is enabled and the corrected package contract
-passes; 128 affected and 187 complete automation tests plus Ruff pass. The
+passes; 131 affected and 190 complete automation tests plus Ruff pass. The
 staged `distribution-final-precommit-green.log` proves byte-identical sdists and
-both installation profiles, and `release-atomicity-final-green.log` proves the
-publication/cleanup fault paths. `release-rollback-race-green.log` additionally
-proves that rollback preserves a replaced destination. The revised source is
-not yet committed or published to remote `main`. Remaining work is final independent acceptance,
-fresh aggregate replay against that exact remote revision, full and physical
-clean-source verification, complete diff/claim review, CAP-214 and
-baseline/state closure, and a final commit/push/replay cycle.
+both installation profiles. The earlier `release-atomicity-final-green.log`
+and `release-rollback-race-green.log` are retained, but their name-based rollback
+claim is superseded by the stat-then-unlink RED. The new focused publisher proof
+uses an anonymous staged inode and no name-based rollback;
+`release-post-commit-affected-green.log` records that affected replay. The
+collision-reader follow-up then rejected blocking FIFO and concurrent append;
+`release-collision-affected-green.log` records the latest full replay. The
+prior closure is committed and published as `fe271f8`;
+its first aggregate passed every local phase and
+failed only on the falsified GitHub `size` cache heuristic despite the exact
+`main` branch revision. Both staged corrections—the hosted-size authority and
+anonymous-inode publisher—are not yet committed. Remaining work is to
+commit/push both, obtain final aggregate evidence, run full and physical
+clean-source verification, complete independent diff/claim review, close
+CAP-214 and baseline/state, and perform the final push/replay cycle.
 
 ## Context and Orientation
 

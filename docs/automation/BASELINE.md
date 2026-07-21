@@ -62,7 +62,26 @@ Evidence is retained under
   destination replacement; `release-rollback-race-green.log` passes all six
   selected publication/cleanup scenarios. `release-race-final-affected.log`
   passes all 128 affected contracts, `automation-race-final-green.log` passes
-  all 187 automation contracts, and `ruff-race-final-green.log` is clean.
+  all 187 automation contracts, and `ruff-race-final-green.log` is clean. A
+  later stat-then-unlink counterexample supersedes its rollback-safety claim.
+- `.artifacts/quality/rel002-final-20260721/release-post-commit-race-red.log`
+  preserves that final name-based rollback race. The focused
+  `.artifacts/quality/rel002-final-20260721/release-post-commit-green.log`
+  proves the replacement design: an anonymous staged inode is published at a
+  create-only commit point, and `committed_durability_unknown` never starts
+  name-based rollback.
+  `.artifacts/quality/rel002-final-20260721/release-post-commit-affected-green.log`
+  passes all 129 affected contracts,
+  `.artifacts/quality/rel002-final-20260721/release-post-commit-automation-green.log`
+  passes all 188 automation contracts, and
+  `.artifacts/quality/rel002-final-20260721/release-post-commit-ruff-green.log`
+  is clean.
+- `.artifacts/quality/rel002-final-20260721/release-collision-reader-red.log`
+  preserves the blocking FIFO and concurrent-append counterexamples; its green
+  counterpart passes both. `release-collision-affected-green.log` passes all
+  131 affected contracts, `release-collision-automation-green.log` passes all
+  190 automation contracts, and `release-collision-full-ruff-green.log` is
+  clean.
 - `distribution-raw-index-streaming-green.log` passes the complete corrected
   staged raw-index distribution path, including identical 1,050-member sdists,
   wheel built from the source distribution, ordinary and safe-floor installs,
@@ -75,6 +94,19 @@ Evidence is retained under
   ordinary/supported-floor installs, CLI smoke, and exact license/environment
   inventories pass. Exact changing pre-commit digests remain in retained output;
   dependency audits remain for the final aggregate run.
+- `.artifacts/quality/rel002-final-20260721/release-check.log` is the first
+  aggregate against
+  published `fe271f8`: distribution, wheel/package contract, three stacks,
+  ordinary/floor installs, dependency advisories, and license alignment passed;
+  the hosted phase rejected GitHub `size` cache `0`, and no final evidence file
+  was published.
+  `.artifacts/quality/rel002-final-20260721/github-surface-after-push.log`
+  records the simultaneous exact `main` branch revision from REST and Git
+  transport. The focused
+  `.artifacts/quality/rel002-final-20260721/hosted-size-cache-red.log` and
+  `.artifacts/quality/rel002-final-20260721/hosted-size-cache-green.log`
+  correction makes that exact branch identity the direct nonempty proof and
+  retains size only as nonnegative telemetry.
 
 The historical 30,144,882-byte, 6,655-member sdist, false PyYAML/Typer floors,
 ten frontend advisories, missing license/policy metadata, stale pytest 9.0.2
@@ -84,9 +116,11 @@ working-tree-byte substitution, stale/non-atomic evidence, vulnerable
 Pydantic/Jinja floors, audit coverage that omitted actual install environments,
 missing standalone-adapter project licensing, unbounded sdist expansion, and
 acceptance of an empty hosted repository. None is accepted debt. PVR is now
-enabled, but CAP-214 remains planned until the corrected source is committed
-and published to remote `main`, re-audits pass, and aggregate all-profile plus
-physical clean-source evidence pass on the final revision.
+enabled, and `fe271f8` is published to remote `main`, but CAP-214 remains
+planned until both staged corrections—the GitHub `size` authority and
+anonymous-inode publisher—are committed/published and the exact `main` branch
+revision passes aggregate, all-profile, and physical clean-source evidence on
+the final revision.
 
 ## Current green baseline
 
@@ -671,6 +705,10 @@ These are current product boundaries, not accepted quality-gate failures:
   sdist/cross-platform/signing behavior, and hook trust/policy remain explicit
   release-review inputs even though the current wheel workflow is accepted;
 - release evidence remains unsigned and depends on GitHub/VCS/CI/operator trust;
+  its final publication requires Linux `O_TMPFILE`/`linkat` support from the
+  evidence filesystem, and a nonzero `committed_durability_unknown` outcome is
+  not accepted even though its complete post-commit file is preserved without
+  name-based rollback;
   supported vendor security patch status cannot be inferred from the upstream
   Python patch string alone.
 

@@ -5,6 +5,7 @@ import io
 import json
 import os
 import subprocess
+import sys
 import tarfile
 import tomllib
 from email.message import Message
@@ -574,7 +575,7 @@ def test_release_evidence_publication_is_atomic_and_create_only(tmp_path):
     )
 
 
-def test_release_evidence_publication_rolls_back_a_post_link_failure(
+def test_release_evidence_publication_reports_a_post_commit_failure(
     tmp_path, monkeypatch
 ):
     evidence_path = tmp_path / "release-evidence.json"
@@ -591,12 +592,16 @@ def test_release_evidence_publication_rolls_back_a_post_link_failure(
 
     monkeypatch.setattr(release_check.os, "fsync", fail_first_directory_fsync)
 
-    with pytest.raises(OSError, match="injected directory fsync failure"):
+    with pytest.raises(
+        ReleaseCheckError, match="committed_durability_unknown"
+    ):
         release_check._publish_release_evidence(evidence_path, expected)
-    assert not evidence_path.exists()
+    assert evidence_path.read_text(encoding="utf-8") == (
+        json.dumps(expected, indent=2, sort_keys=True) + "\n"
+    )
 
 
-def test_release_evidence_rollback_preserves_an_identical_concurrent_file(
+def test_release_evidence_post_commit_failure_preserves_an_identical_file(
     tmp_path, monkeypatch
 ):
     evidence_path = tmp_path / "release-evidence.json"
@@ -615,12 +620,14 @@ def test_release_evidence_rollback_preserves_an_identical_concurrent_file(
 
     monkeypatch.setattr(release_check.os, "fsync", fail_first_directory_fsync)
 
-    with pytest.raises(OSError, match="injected directory fsync failure"):
+    with pytest.raises(
+        ReleaseCheckError, match="committed_durability_unknown"
+    ):
         release_check._publish_release_evidence(evidence_path, expected)
     assert evidence_path.read_text(encoding="utf-8") == serialized
 
 
-def test_release_evidence_rollback_preserves_a_replaced_destination(
+def test_release_evidence_post_commit_failure_preserves_replaced_destination(
     tmp_path, monkeypatch
 ):
     evidence_path = tmp_path / "release-evidence.json"
@@ -644,11 +651,129 @@ def test_release_evidence_rollback_preserves_a_replaced_destination(
         release_check.os, "fsync", replace_destination_before_failure
     )
 
-    with pytest.raises(OSError, match="injected directory fsync failure"):
+    with pytest.raises(
+        ReleaseCheckError, match="committed_durability_unknown"
+    ):
         release_check._publish_release_evidence(evidence_path, expected)
     assert evidence_path.read_text(encoding="utf-8") == serialized
     assert evidence_path.stat().st_ino == replacement.stat().st_ino
     assert replacement.stat().st_nlink == 2
+
+
+def test_release_evidence_post_commit_failure_never_starts_name_rollback(
+    tmp_path, monkeypatch
+):
+    evidence_path = tmp_path / "release-evidence.json"
+    replacement = tmp_path / "concurrent-evidence.json"
+    expected = {"schema_version": 1, "status": "passed"}
+    serialized = json.dumps(expected, indent=2, sort_keys=True) + "\n"
+    replacement.write_text(serialized, encoding="utf-8")
+    real_fsync = os.fsync
+    real_stat = os.stat
+    fsync_calls = 0
+    rollback_identity_checked = False
+
+    def fail_post_commit_directory_fsync(descriptor):
+        nonlocal fsync_calls
+        fsync_calls += 1
+        if fsync_calls == 2:
+            raise OSError("injected post-commit directory fsync failure")
+        return real_fsync(descriptor)
+
+    def swap_after_rollback_identity_check(path, *args, **kwargs):
+        nonlocal rollback_identity_checked
+        metadata = real_stat(path, *args, **kwargs)
+        if (
+            not rollback_identity_checked
+            and path == evidence_path.name
+            and kwargs.get("dir_fd") is not None
+            and kwargs.get("follow_symlinks") is False
+        ):
+            evidence_path.unlink()
+            os.link(replacement, evidence_path)
+            rollback_identity_checked = True
+        return metadata
+
+    monkeypatch.setattr(
+        release_check.os, "fsync", fail_post_commit_directory_fsync
+    )
+    monkeypatch.setattr(
+        release_check.os, "stat", swap_after_rollback_identity_check
+    )
+
+    with pytest.raises(
+        ReleaseCheckError, match="committed_durability_unknown"
+    ):
+        release_check._publish_release_evidence(evidence_path, expected)
+    assert rollback_identity_checked is False
+    assert evidence_path.read_text(encoding="utf-8") == serialized
+    assert evidence_path.stat().st_ino != replacement.stat().st_ino
+    assert replacement.stat().st_nlink == 1
+
+
+def test_release_evidence_collision_rejects_fifo_without_blocking(tmp_path):
+    evidence_path = tmp_path / "release-evidence.json"
+    os.mkfifo(evidence_path)
+    program = "\n".join(
+        (
+            "from pathlib import Path",
+            (
+                "from tools.release_check import "
+                "ReleaseCheckError, _publish_release_evidence"
+            ),
+            f"path = Path({str(evidence_path)!r})",
+            "try:",
+            "    _publish_release_evidence(path, {'status': 'passed'})",
+            "except ReleaseCheckError:",
+            "    print('rejected')",
+            "else:",
+            "    raise SystemExit('FIFO collision was accepted')",
+        )
+    )
+
+    result = subprocess.run(
+        (sys.executable, "-c", program),
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=2,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == "rejected\n"
+
+
+def test_release_evidence_collision_rejects_append_during_identity_check(
+    tmp_path, monkeypatch
+):
+    evidence_path = tmp_path / "release-evidence.json"
+    expected = {"schema_version": 1, "status": "passed"}
+    serialized = json.dumps(expected, indent=2, sort_keys=True) + "\n"
+    evidence_path.write_text(serialized, encoding="utf-8")
+    real_stat = os.stat
+    appended = False
+
+    def append_before_entry_metadata(path, *args, **kwargs):
+        nonlocal appended
+        if (
+            not appended
+            and path == evidence_path.name
+            and kwargs.get("dir_fd") is not None
+            and kwargs.get("follow_symlinks") is False
+        ):
+            with evidence_path.open("ab") as stream:
+                stream.write(b'{"concurrent":true}\n')
+                stream.flush()
+            appended = True
+        return real_stat(path, *args, **kwargs)
+
+    monkeypatch.setattr(release_check.os, "stat", append_before_entry_metadata)
+
+    with pytest.raises(ReleaseCheckError, match="concurrently changed"):
+        release_check._publish_release_evidence(evidence_path, expected)
+    assert appended is True
+    assert evidence_path.read_bytes() != serialized.encode("utf-8")
 
 
 def test_release_evidence_invalidation_unlinks_symlink_without_touching_target(
@@ -843,7 +968,7 @@ def test_hosted_release_surface_requires_enabled_private_reporting():
         )
 
 
-def test_hosted_release_surface_requires_nonempty_published_main_revision():
+def test_hosted_release_uses_exact_main_when_repository_size_cache_is_zero():
     local_revision = "a" * 40
     repository = {
         "default_branch": "main",
@@ -852,9 +977,9 @@ def test_hosted_release_surface_requires_nonempty_published_main_revision():
         "private": False,
         "size": 0,
     }
-    branch = {"name": "main", "commit": {"sha": "b" * 40}}
+    branch = {}
 
-    with pytest.raises(ReleaseCheckError, match="empty"):
+    with pytest.raises(ReleaseCheckError, match="main branch is malformed"):
         release_check.validate_github_release_surfaces(
             repository,
             {"enabled": True},
@@ -863,7 +988,7 @@ def test_hosted_release_surface_requires_nonempty_published_main_revision():
             require_published_source=True,
         )
 
-    repository["size"] = 1
+    branch = {"name": "main", "commit": {"sha": "b" * 40}}
     with pytest.raises(ReleaseCheckError, match="not published"):
         release_check.validate_github_release_surfaces(
             repository,
@@ -882,6 +1007,7 @@ def test_hosted_release_surface_requires_nonempty_published_main_revision():
         require_published_source=True,
     )
     assert evidence["remote_main_revision"] == local_revision
+    assert evidence["reported_repository_size_kib"] == 0
     assert evidence["source_revision"] == local_revision
     assert evidence["source_published_to_main"] is True
 

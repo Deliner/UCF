@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import ctypes
+import errno
 import gzip
 import hashlib
 import json
@@ -584,9 +586,11 @@ def validate_github_release_surfaces(
     if (
         isinstance(repository_size, bool)
         or not isinstance(repository_size, int)
-        or repository_size <= 0
+        or repository_size < 0
     ):
-        raise ReleaseCheckError("canonical GitHub repository is empty")
+        raise ReleaseCheckError(
+            "canonical GitHub repository size metadata is malformed"
+        )
     commit = branch.get("commit")
     remote_revision = commit.get("sha") if isinstance(commit, Mapping) else None
     if (
@@ -616,6 +620,7 @@ def validate_github_release_surfaces(
         "issues": "enabled",
         "private_vulnerability_reporting": "enabled",
         "remote_main_revision": remote_revision,
+        "reported_repository_size_kib": repository_size,
         "repository": GITHUB_REPOSITORY,
         "source_published_to_main": source_published,
         "source_revision": local_revision,
@@ -2325,7 +2330,11 @@ def _invalidate_release_evidence(path: Path) -> None:
 def _read_existing_release_evidence(
     *, directory: int, name: str, expected: bytes
 ) -> None:
-    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+    flags = (
+        os.O_RDONLY
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_NONBLOCK", 0)
+    )
     no_follow = getattr(os, "O_NOFOLLOW", 0)
     try:
         descriptor = os.open(name, flags | no_follow, dir_fd=directory)
@@ -2335,22 +2344,30 @@ def _read_existing_release_evidence(
         ) from exc
     try:
         metadata = os.fstat(descriptor)
-        if not stat.S_ISREG(metadata.st_mode):
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_size != len(expected)
+        ):
             raise ReleaseCheckError(
                 f"release evidence path was concurrently changed: {name}"
             )
-        chunks: list[bytes] = []
-        bytes_read = 0
-        while bytes_read <= len(expected):
-            chunk = os.read(
-                descriptor,
-                min(1024 * 1024, len(expected) + 1 - bytes_read),
-            )
-            if not chunk:
-                break
-            chunks.append(chunk)
-            bytes_read += len(chunk)
-        actual = b"".join(chunks)
+
+        def read_candidate() -> bytes:
+            os.lseek(descriptor, 0, os.SEEK_SET)
+            chunks: list[bytes] = []
+            bytes_read = 0
+            while bytes_read <= len(expected):
+                chunk = os.read(
+                    descriptor,
+                    min(1024 * 1024, len(expected) + 1 - bytes_read),
+                )
+                if not chunk:
+                    break
+                chunks.append(chunk)
+                bytes_read += len(chunk)
+            return b"".join(chunks)
+
+        actual = read_candidate()
         try:
             entry_metadata = os.stat(
                 name,
@@ -2361,17 +2378,103 @@ def _read_existing_release_evidence(
             raise ReleaseCheckError(
                 f"release evidence path was concurrently changed: {name}"
             ) from exc
+        repeated = read_candidate()
+        final_metadata = os.fstat(descriptor)
+        stable_fields = (
+            "st_mode",
+            "st_nlink",
+            "st_uid",
+            "st_gid",
+            "st_size",
+            "st_mtime_ns",
+            "st_ctime_ns",
+        )
+        descriptor_stable = all(
+            getattr(metadata, field) == getattr(final_metadata, field)
+            for field in stable_fields
+        )
         same_entry = (
             entry_metadata.st_dev == metadata.st_dev
             and entry_metadata.st_ino == metadata.st_ino
+            and final_metadata.st_dev == metadata.st_dev
+            and final_metadata.st_ino == metadata.st_ino
             and stat.S_ISREG(entry_metadata.st_mode)
+            and all(
+                getattr(entry_metadata, field)
+                == getattr(final_metadata, field)
+                for field in stable_fields
+            )
         )
-        if not same_entry or actual != expected:
+        if (
+            not descriptor_stable
+            or not same_entry
+            or actual != expected
+            or repeated != expected
+        ):
             raise ReleaseCheckError(
                 f"release evidence path was concurrently changed: {name}"
             )
     finally:
         os.close(descriptor)
+
+
+def _open_anonymous_evidence_file(directory: int) -> int:
+    temporary_file_flag = getattr(os, "O_TMPFILE", 0)
+    if temporary_file_flag == 0:
+        raise ReleaseCheckError(
+            "atomic release evidence publication requires Linux O_TMPFILE support"
+        )
+    flags = os.O_RDWR | getattr(os, "O_CLOEXEC", 0) | temporary_file_flag
+    try:
+        return os.open(".", flags, 0o644, dir_fd=directory)
+    except OSError as exc:
+        raise ReleaseCheckError(
+            "atomic release evidence publication requires O_TMPFILE support "
+            "from the evidence filesystem"
+        ) from exc
+
+
+def _link_anonymous_evidence_file(
+    *, descriptor: int, directory: int, name: str
+) -> None:
+    library = ctypes.CDLL(None, use_errno=True)
+    link_at = getattr(library, "linkat", None)
+    if link_at is None:
+        raise ReleaseCheckError(
+            "atomic release evidence publication requires Linux linkat support"
+        )
+    link_at.argtypes = (
+        ctypes.c_int,
+        ctypes.c_char_p,
+        ctypes.c_int,
+        ctypes.c_char_p,
+        ctypes.c_int,
+    )
+    link_at.restype = ctypes.c_int
+    result = link_at(
+        descriptor,
+        b"",
+        directory,
+        os.fsencode(name),
+        0x1000,  # AT_EMPTY_PATH
+    )
+    if result == 0:
+        return
+    error_number = ctypes.get_errno()
+    if error_number == errno.EEXIST:
+        raise FileExistsError(error_number, os.strerror(error_number), name)
+    if error_number in {
+        errno.EINVAL,
+        errno.ENOSYS,
+        errno.EOPNOTSUPP,
+        getattr(errno, "ENOTSUP", errno.EOPNOTSUPP),
+        errno.EPERM,
+    }:
+        raise ReleaseCheckError(
+            "atomic release evidence publication requires O_TMPFILE/linkat "
+            "support from the evidence filesystem"
+        )
+    raise OSError(error_number, os.strerror(error_number), name)
 
 
 def _publish_release_evidence(path: Path, evidence: Mapping[str, object]) -> None:
@@ -2381,30 +2484,22 @@ def _publish_release_evidence(path: Path, evidence: Mapping[str, object]) -> Non
     path.parent.mkdir(parents=True, exist_ok=True)
     directory_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
     directory = os.open(path.parent, directory_flags)
-    temporary_name: str | None = None
-    created_destination_identity: tuple[int, int] | None = None
+    descriptor: int | None = None
     try:
-        descriptor, raw_temporary = tempfile.mkstemp(
-            prefix=f".{path.name}.", dir=path.parent
-        )
-        temporary_name = Path(raw_temporary).name
-        with os.fdopen(descriptor, "wb") as stream:
-            stream.write(serialized)
-            stream.flush()
-            os.fchmod(stream.fileno(), 0o644)
-            os.fsync(stream.fileno())
-            temporary_metadata = os.fstat(stream.fileno())
+        descriptor = _open_anonymous_evidence_file(directory)
+        remaining = memoryview(serialized)
+        while remaining:
+            written = os.write(descriptor, remaining)
+            if written <= 0:
+                raise OSError("release evidence staging write made no progress")
+            remaining = remaining[written:]
+        os.fchmod(descriptor, 0o644)
+        os.fsync(descriptor)
         try:
-            os.link(
-                temporary_name,
-                path.name,
-                src_dir_fd=directory,
-                dst_dir_fd=directory,
-                follow_symlinks=False,
-            )
-            created_destination_identity = (
-                temporary_metadata.st_dev,
-                temporary_metadata.st_ino,
+            _link_anonymous_evidence_file(
+                descriptor=descriptor,
+                directory=directory,
+                name=path.name,
             )
         except FileExistsError as exc:
             try:
@@ -2415,38 +2510,16 @@ def _publish_release_evidence(path: Path, evidence: Mapping[str, object]) -> Non
                 )
             except ReleaseCheckError as collision:
                 raise collision from exc
-        os.fsync(directory)
-        os.unlink(temporary_name, dir_fd=directory)
-        temporary_name = None
-        os.fsync(directory)
-    except BaseException:
-        if created_destination_identity is not None:
-            try:
-                destination_metadata = os.stat(
-                    path.name,
-                    dir_fd=directory,
-                    follow_symlinks=False,
-                )
-            except FileNotFoundError:
-                pass
-            else:
-                destination_identity = (
-                    destination_metadata.st_dev,
-                    destination_metadata.st_ino,
-                )
-                if (
-                    stat.S_ISREG(destination_metadata.st_mode)
-                    and destination_identity == created_destination_identity
-                ):
-                    os.unlink(path.name, dir_fd=directory)
-        if temporary_name is not None:
-            try:
-                os.unlink(temporary_name, dir_fd=directory)
-            except FileNotFoundError:
-                pass
-        os.fsync(directory)
-        raise
+        try:
+            os.fsync(directory)
+        except OSError as exc:
+            raise ReleaseCheckError(
+                "release evidence committed_durability_unknown: complete "
+                "evidence is visible but directory durability was not confirmed"
+            ) from exc
     finally:
+        if descriptor is not None:
+            os.close(descriptor)
         os.close(directory)
 
 

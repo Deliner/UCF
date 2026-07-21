@@ -24,14 +24,23 @@ a symlink/TOCTOU collision. The second follow-up found three remaining
 fail-open paths: dependency audits read the mutable checkout, tar parsing did
 not drain concatenated/corrupt gzip members, and hidden inventory mode could
 preserve stale final evidence. Every accepted finding now has a retained
-focused RED and local correction. The final atomicity pass additionally moved
-temporary-source cleanup before publication and made post-link failure roll
-back only this publisher's matching inode; a concurrent replacement regression
-is now retained. Current evidence is 128 affected and 187 automation tests plus
-Ruff green. The source is not yet committed or
-published, so final
-acceptance re-audit, aggregate evidence, CAP-214, all-profile, and physical
-clean-source acceptance remain pending.
+focused RED and local correction. A final atomicity pass moved temporary-source
+cleanup before publication, but its attempted device/inode rollback was itself
+falsified: replacing the entry after `stat` made name-based rollback delete the
+replacement. The corrected publisher uses an anonymous staged inode and makes
+the create-only link its commit point; post-commit durability uncertainty is
+reported without deleting a visible path. The collision reader now rejects
+FIFO blocking and concurrent content/metadata mutation. Current evidence is 131
+affected and 190 automation tests plus Ruff green. Commit `fe271f8` is published on remote
+`main`. Its first aggregate
+passed distribution, package contract, all three stacks, actual-install audits,
+and dependency/license review, then rejected GitHub's asynchronous zero `size`
+cache despite the exact `main` branch revision matching locally, through REST,
+and through Git transport. A focused RED/GREEN now treats that exact branch as
+the direct nonempty proof and records the GitHub `size` cache only as telemetry;
+both staged corrections—the hosted-size authority and anonymous-inode
+publisher—are not yet committed. Final aggregate evidence, CAP-214,
+all-profile, and physical clean-source acceptance remain pending.
 
 ## Resume instruction
 
@@ -60,8 +69,10 @@ execution mode.
   independent review; and physical clean-source evidence.
 - Canonical branch is local `main`; `origin` is
   `https://github.com/Deliner/UCF.git`. The hosted repository is public, Issues
-  and Private Vulnerability Reporting are enabled, but no source revision has
-  yet been published to remote `main`.
+  and Private Vulnerability Reporting are enabled. Commit `fe271f8` is the
+  current exact `main` branch revision locally and remotely; both staged
+  corrections, hosted metadata and anonymous-inode publication, are pending
+  their follow-up commit.
 
 ## Binding Ratchet decision
 
@@ -242,7 +253,8 @@ broaden adapter support, or select weaker/different terms.
   remain diagnostics, not proof of the corrected path. Focused RED/GREEN logs
   and the corrected package-contract result are current, while aggregate,
   all-profile, and clean-source acceptance remain pending. The requested final
-  `full-release-evidence.json` is absent by design.
+  `.artifacts/quality/rel002-final-20260721/release-evidence.json` is absent by
+  design.
 - GitHub API now verifies the exact public repository, default `main`, enabled
   Issues, and enabled Private Vulnerability Reporting. Final evidence also
   requires a clean committed checkout whose local HEAD exactly equals remote
@@ -265,7 +277,8 @@ are:
   object/source manifests, and revalidates the same HEAD/tree before publish;
 - failed runs could leave old evidence and successful publication was not
   atomic/create-only; a run invalidates its target before work and publishes an
-  exact JSON file through an atomic hard-link transaction;
+  exact JSON file from an anonymous staged inode through a create-only
+  `linkat` transaction;
 - the locked verification environment was audited instead of the two
   environments users actually install; ordinary and supported-floor exact
   inventories are now captured and installation-tested, and the aggregate
@@ -283,6 +296,10 @@ are:
   stream before extraction;
 - an empty GitHub repository could satisfy the hosted check; final evidence now
   requires nonempty remote `main` at the exact clean local source revision;
+- the first published-revision aggregate showed that GitHub `size` cache may
+  remain zero after `main` exists. A present exact `main` branch revision is now
+  the direct nonempty/publication proof; nonnegative cached size is retained
+  only as evidence metadata;
 - historical “stable release” wording overstated the accepted `0.1.x`
   production preview and the source-install wording overstated direct archive
   installation; both claims are narrowed and machine-checked.
@@ -296,18 +313,25 @@ are:
 - hidden installed-inventory mode returned before stale evidence invalidation;
   every requested evidence path is invalidated first and incompatible scoped
   modes then fail closed;
-- temporary-snapshot cleanup and post-link durability failure could happen
-  after this invocation's final marker became visible; cleanup now precedes
-  hosted/final publication, and publisher rollback removes only a destination
-  created by the failing invocation while preserving identical concurrent
-  evidence;
-- boolean rollback ownership still allowed a destination replaced after link
-  to be deleted; rollback now captures the created device/inode and performs a
-  no-follow regular-file identity check before unlinking;
+- temporary-snapshot cleanup could happen after final evidence became visible;
+  cleanup now precedes hosted/final publication;
+- two successive name-based rollback designs were unsafe: a boolean ownership
+  flag deleted a pre-check replacement, and a device/inode check still deleted
+  a replacement made between `stat` and `unlink`. The final design performs no
+  name-based rollback after commit. It writes and flushes an anonymous staged
+  inode, publishes it with create-only `linkat`, and reports
+  `committed_durability_unknown` without removing the complete visible entry if
+  the parent-directory flush fails;
 - evidence collision verification followed a path after `lstat`, and stale
   symlinks survived invalidation; invalidation now unlinks non-directory entries
-  without following them, and collision comparison uses `O_NOFOLLOW`, an open
-  descriptor, inode recheck, file/directory fsync, and create-only linking;
+  without following them, collision comparison uses `O_NOFOLLOW` plus an open
+  descriptor and inode recheck, and publication requires Linux `O_TMPFILE`/
+  `linkat` support from the evidence filesystem;
+- collision validation could block while opening a FIFO and could accept bytes
+  appended between its bounded read and entry check; it now uses `O_NONBLOCK`,
+  rejects non-regular entries before reading, repeats the bounded exact read,
+  and requires stable descriptor/entry identity, size, and modification
+  metadata;
 - historical BASELINE text, source-install wording, remote-write authority,
   adapter-license scope, embedded-hash wording, and root ignore coverage were
   contradictory; cross-document tests now enforce the corrected boundary.
@@ -315,8 +339,8 @@ are:
 Focused RED/GREEN logs are under
 `.artifacts/quality/rel002-rgr-20260721/`. The earlier aggregate green file was
 pre-audit and is superseded; it must not be used as final release evidence.
-The latest affected contract is 128/128, the complete automation suite is
-187/187, Ruff is clean, and
+The latest affected contract is 131/131, the complete automation suite is
+190/190, Ruff is clean, and
 `distribution-raw-index-streaming-green.log` proves the corrected staged-source
 distribution path. The later `distribution-third-reaudit-green.log` repeats it
 after complete-gzip and commit-bound dependency-source hardening. The current
@@ -324,16 +348,22 @@ after complete-gzip and commit-bound dependency-source hardening. The current
 atomicity corrections: both 1,050-member sdists are byte-identical and both
 ordinary and supported-floor installations pass. Exact evolving pre-commit
 digests remain in retained command output rather than becoming self-referential
-source claims. Independent acceptance re-audit remains required.
+source claims. The later
+`.artifacts/quality/rel002-final-20260721/release-post-commit-affected-green.log`
+and `release-post-commit-automation-green.log` prove the final no-rollback
+publisher correction. The subsequent `release-collision-reader-green.log`,
+`release-collision-affected-green.log`, and
+`release-collision-automation-green.log` prove nonblocking, stable exact
+collision handling. Independent acceptance re-audit remains required.
 
 ## Immediate execution sequence
 
 1. Run the corrected affected suite and distribution proof, inspect the full
-   diff, commit the audit closure on local `main`, and push it to canonical
-   remote `main`.
-2. Run the aggregate checker with explicit evidence so it proves PVR and exact
-   local/remote revision equality; then request independent read-only re-audits
-   of contracts/claims, security/licensing, and packaging/clean install.
+   diff, commit both staged corrections on local `main`, and push them to the
+   canonical remote `main`.
+2. Repeat the aggregate checker with explicit evidence so it proves PVR and
+   exact local/remote revision equality; then request independent read-only
+   re-audits of contracts/claims, security/licensing, and packaging/clean install.
 3. Close every accepted re-audit finding through retained RED/GREEN evidence.
    Then update CAP-214, BACKLOG, BASELINE, this state, every ExecPlan outcome,
    and all final public claims from fresh output; commit and push that closure.

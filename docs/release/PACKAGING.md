@@ -65,8 +65,21 @@ and verify the canonical GitHub repository, Issues, and GitHub Private Vulnerabi
 A final evidence run additionally exports exact raw blobs from a captured clean
 commit, binds its tree and selected manifest to the artifacts, and requires its
 HEAD to equal nonempty remote `main` before atomic evidence publication. A
-failed phase leaves no evidence at the requested path. The complete repository
-acceptance command remains:
+failed pre-commit phase leaves no evidence at the requested path. On the
+supported Linux boundary, publication requires `O_TMPFILE` plus `linkat` with
+`AT_EMPTY_PATH`: the complete file remains an anonymous staged inode until its
+create-only link is the commit point. No name-based rollback follows that
+commit. If the subsequent parent-directory flush fails, the command exits
+nonzero with `committed_durability_unknown` and preserves the complete visible
+file because deleting by name could remove a concurrent replacement. File
+existence or an internal `status` field alone is therefore insufficient;
+retained acceptance also requires that the producing command exit zero. A
+filesystem without this publication support fails explicitly before creating
+the evidence path. An existing-path collision is opened with `O_NONBLOCK` and
+`O_NOFOLLOW`, so a FIFO or symbolic link cannot block or redirect validation;
+only a regular file with exact content and stable descriptor/entry identity,
+size, and modification metadata is an idempotent success. The complete
+repository acceptance command remains:
 
 ```bash
 python3 tools/quality_gates.py --profile all

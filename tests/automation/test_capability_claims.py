@@ -243,6 +243,15 @@ def test_release_policy_and_handoff_do_not_overstate_adapter_or_audit_state() ->
     assert "third-party adapter implementations" in packaging
     assert "release evidence records" in packaging.lower()
     assert "exact manifest and SHA-256" in packaging
+    for publication_term in (
+        "O_TMPFILE",
+        "linkat",
+        "O_NONBLOCK",
+        "FIFO",
+        "committed_durability_unknown",
+        "exit zero",
+    ):
+        assert publication_term in packaging
     assert "activation snapshot" in baseline
     assert "REL-002 activation foundation evidence — historical" in state
     assert "but the current tree is not release-ready" not in state
@@ -256,10 +265,30 @@ def test_release_policy_and_handoff_do_not_overstate_adapter_or_audit_state() ->
     outcomes = plan.split("## Outcomes & Retrospective", 1)[1].split(
         "## Context and Orientation", 1
     )[0]
-    assert "128 affected and 187 complete automation tests" in outcomes
+    assert "131 affected and 190 complete automation tests" in outcomes
     assert "distribution-final-precommit-green.log" in outcomes
     assert "release-atomicity-final-green.log" in outcomes
     assert "release-rollback-race-green.log" in outcomes
+    assert "release-post-commit-affected-green.log" in outcomes
+    assert "release-collision-affected-green.log" in outcomes
+    for handoff in (state, baseline, plan):
+        assert "GitHub `size` cache" in handoff
+        assert "exact `main` branch revision" in handoff
+        assert "anonymous staged inode" in handoff
+        assert "name-based rollback" in handoff
+        assert "both staged corrections" in handoff
+    assert ".artifacts/quality/rel002-final-20260721/release-evidence.json" in state
+    assert "full-release-evidence.json" not in state
+    for log_name in (
+        "release-check.log",
+        "github-surface-after-push.log",
+        "hosted-size-cache-red.log",
+        "hosted-size-cache-green.log",
+    ):
+        assert (
+            f".artifacts/quality/rel002-final-20260721/{log_name}"
+            in baseline
+        )
 
 
 def test_rel002_historical_stable_name_does_not_promise_a_stable_api() -> None:
