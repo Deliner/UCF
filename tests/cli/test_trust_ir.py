@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from click import unstyle
 from typer.testing import CliRunner
 
 from ucf.cli import app
@@ -37,8 +38,9 @@ def test_trust_validate_requires_the_referenced_behavior_document():
     result = runner.invoke(app, ["trust", "validate", str(TRUST)])
 
     assert result.exit_code != 0
-    assert "--behavior-ir" in result.output
-    assert "Trust IR 1.0.0 valid" not in result.output
+    output = unstyle(result.output)
+    assert "--behavior-ir" in output
+    assert "Trust IR 1.0.0 valid" not in output
 
 
 def test_trust_validate_reports_internal_error_without_traceback(tmp_path):

@@ -246,9 +246,18 @@ resumed without broadening the accepted preview boundary.
   pin. Set `.python-version` and the workflow install to CPython 3.12.13,
   regenerate the checked report only through the complete three-repetition
   runner, prove the four expected non-runtime changes, and replay it green.
-- [x] 2026-07-21: Publish the exact-pin replacement, require its actual GitHub
-  Actions run to pass, then regenerate strict release evidence and repeat the
-  local plus public clean-clone all profile on the same exact revision.
+- [x] 2026-07-21: Publish exact-pin candidate `e895c6e`; retain its local and
+  public clean-clone 8/8 profiles, but reject it after GitHub Actions run
+  `29849357054` exits 1. Preserve the public run/job/artifact metadata and do not
+  infer a gate identity from the authentication-gated artifact.
+- [x] 2026-07-21: Add a focused RED/GREEN for a bounded GitHub failure
+  annotation containing only validated gate ID and integer exit code. Publish
+  the diagnostic replacement and use that evidence before changing any gate,
+  timeout, dependency, or product behavior.
+- [x] 2026-07-21: Replay the full Python gate with the exact
+  `GITHUB_ACTIONS=true` runner signal. Reproduce two CLI-help failures caused by
+  ANSI style boundaries, keep colored help unchanged, and compare unstyled
+  semantic text. Prove both focused tests green with and without the CI signal.
 - [x] 2026-07-21: Obtain independent release, dependency-order, and public-claim
   acceptance on that exact final published revision; inspect the final diff and
   only then return REL-002, the backlog, and automation state to verified.
@@ -401,6 +410,23 @@ probe was traced to an inherited 3.12.3 virtual environment and retracted after
 a clean-environment replay. This is evidence that the exact patch is a required
 benchmark coordinate, not a reason to erase Python identity from comparison.
 
+The exact-pin candidate proved that environment reproduction and local success
+still cannot identify an opaque hosted failure. Run `29849357054` binds the
+correct source, completed setup successfully, failed only the aggregate quality
+step, and retained an artifact, but GitHub requires authentication to read its
+logs. The same commit passes two complete local profiles, including one from a
+new public clone. Duration and compressed artifact size are correlations, not
+failure evidence; the next candidate therefore exposes only the already-safe
+gate identity and exit code as a public annotation before any corrective
+implementation is selected.
+
+That runner signal is sufficient to reproduce the concrete red gate locally.
+Rich intentionally styles CLI help in GitHub Actions; the two failing tests
+searched raw ANSI-bearing text for contiguous option names. `click.unstyle`
+recovers the exact user-visible semantic text and proves all three required
+options without turning color off. This explains a deterministic workflow-only
+failure class without claiming access to the retained hosted log.
+
 ## Decision Log
 
 - **2026-07-21 — do not broaden product capability during release closure.**
@@ -494,6 +520,21 @@ benchmark coordinate, not a reason to erase Python identity from comparison.
   CPython 3.12.13 in `.python-version` and the workflow install. Preserve the
   benchmark's interpreter identity, regenerate only through its full runner,
   and require future patch movement to be an explicit reviewed report change.
+
+- **2026-07-21 — expose bounded CI failure identity, not retained output.**
+  Author: root agent after exact-pin run `29849357054`. GitHub's public API and
+  job page expose aggregate failure but require authentication for logs and the
+  retained artifact. Emit one workflow annotation per failed gate using only
+  the prevalidated gate ID and integer exit code. Do not copy log tails into an
+  annotation, pass credentials to untrusted code, retry a red command, or infer
+  the cause from historical failures.
+
+- **2026-07-21 — normalize test observation, not CLI presentation.** Author:
+  root agent after the exact `GITHUB_ACTIONS=true` RED. Rich help styling is
+  valid output, and required option names remain present after ANSI removal.
+  Keep production color/help behavior unchanged; use Click's public `unstyle`
+  helper only in the two semantic assertions and verify colored plus uncolored
+  cases.
 
 - **2026-07-21 — remove test-only scheduler compression, not production
   safety.** Author: root agent after two independent diagnoses and Ubuntu
@@ -674,6 +715,21 @@ and lifecycle digest
 `b315a73a701304448edd63ed955fe9de45040df343e76fd1ede424f5adb78260`.
 The broader package compatibility declaration and bounded CPython 3.12 support
 tier remain unchanged.
+
+Exact-pin candidate `e895c6e` was rejected separately: both local profiles and
+the new public clone pass all eight gates, while actual Actions run
+`29849357054` exits 1 and retains authentication-gated artifact `8503126276`.
+That contradiction is preserved rather than relabeled green. A minimal
+observable replacement publishes only failed gate ID and exit code so the next
+change can be based on reproducible failure evidence instead of timing or
+artifact-size inference.
+
+The exact runner signal subsequently reproduces the actionable defect: two
+tests treated ANSI-decorated Rich help as plain semantic text. Their focused
+CI-colored RED and dual-environment GREEN are retained under
+`.artifacts/quality/rel002-ci-observability-20260721/`. The implementation
+changes only test observation via `click.unstyle`; production CLI presentation
+and required-option behavior are unchanged.
 
 The implementation's rejected name-based rollback history remains documented.
 The accepted publisher uses an anonymous staged inode and no name-based

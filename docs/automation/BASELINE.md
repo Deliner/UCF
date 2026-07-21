@@ -83,6 +83,26 @@ benchmark. RED/GREEN and differential evidence is under
 `.artifacts/quality/rel002-python-pin-20260721/`; independent reports are under
 `.artifacts/agents/rel002-final-ci-closure/`.
 
+Exact-pin candidate `e895c6e` is also rejected. GitHub Actions run
+`29849357054` failed its sole canonical gate step while the same revision passed
+8/8 locally and in a new public HTTPS clone with uv 0.11.29 and CPython 3.12.13.
+Public job metadata proves the failure and retained artifact `8503126276`, but
+GitHub requires authentication for its contents; therefore the failing gate is
+not guessed from duration, artifact size, or prior candidates. A focused
+RED/GREEN adds a public-safe failure annotation containing only validated gate
+ID and exit code. Evidence is under
+`.artifacts/quality/rel002-ci-observability-20260721/`,
+`.artifacts/ci/rel002-final-python-pin/`, and
+`.artifacts/agents/rel002-final-python-pin/`.
+
+An exact local runner-environment replay then deterministically isolated the
+Python gate: `GITHUB_ACTIONS=true` makes Rich emit ANSI-styled help, and two CLI
+tests searched raw styled output for contiguous option names. The public CLI
+contract was correct; the observer was not style-neutral. Focused RED/GREEN in
+the same artifact directory proves semantic assertions after `click.unstyle`
+under both CI-colored and ordinary output. No color, help, or required-option
+behavior was disabled.
+
 The earlier strict governance candidate is retained at
 `.artifacts/quality/rel002-final-20260721/release-evidence-governance-candidate-0f10681.json`.
 It passed with exact local/remote revision `0f10681`, a 1,050-file selected

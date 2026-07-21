@@ -366,6 +366,18 @@ def _print_summary(results: Sequence[GateResult], log_dir: Path) -> None:
     print(f"Logs: {log_dir}", flush=True)
 
 
+def _print_github_failure_annotations(results: Sequence[GateResult]) -> None:
+    if os.environ.get("GITHUB_ACTIONS") != "true":
+        return
+    for result in results:
+        if not result.passed:
+            print(
+                "::error title=UCF quality gate failed::"
+                f"{result.gate.name} exited with code {result.returncode}",
+                flush=True,
+            )
+
+
 def _summary_line(result: GateResult) -> str:
     status = "PASS" if result.passed else "FAIL"
     return (
@@ -438,6 +450,7 @@ def main(arguments: Sequence[str] | None = None) -> int:
 
     log_dir = args.log_dir or _default_log_dir(root)
     results = run_gates(gates, log_dir=log_dir, repository_root=root)
+    _print_github_failure_annotations(results)
     return 0 if all(result.passed for result in results) else 1
 
 

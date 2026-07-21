@@ -37,6 +37,25 @@ contract requires. The accepted replacement pins CPython 3.12.13 in both
 three-repetition runner. The supported package promise remains CPython 3.12;
 the exact patch pin is the reproducible repository/CI evidence coordinate.
 
+Exact-pin candidate `e895c6e` was then rejected by GitHub Actions run
+`29849357054`: local and fresh public-HTTPS-clone all profiles pass 8/8, but the
+canonical hosted step exits 1. Public metadata exposes only the aggregate step
+failure, and retained artifact `8503126276` requires authentication. No gate or
+product conclusion is inferred from that opaque result. The replacement adds a
+bounded GitHub annotation containing only the failed gate ID and integer exit
+code; it does not expose gate output, retry a command, or change acceptance.
+RED/GREEN evidence is under
+`.artifacts/quality/rel002-ci-observability-20260721/`, and rejected-run metadata
+plus the public page are under
+`.artifacts/ci/rel002-final-python-pin/`.
+
+The cheapest exact runner-environment experiment then reproduced the red gate:
+with `GITHUB_ACTIONS=true`, two CLI tests compared ANSI-styled Rich help as raw
+bytes, so style boundaries split `--base-behavior`, `--final-behavior`, and
+`--behavior-ir`. Both tests pass without that variable. The correction keeps
+colored CLI output intact and compares its unstyled semantic text in tests;
+focused RED/GREEN covers both CI-colored and ordinary output.
+
 The final revision-bound acceptance evidence is retained at
 `.artifacts/quality/rel002-final-ci-closure-20260721/release-evidence.json`.
 The same published revision passes the canonical GitHub Actions workflow and

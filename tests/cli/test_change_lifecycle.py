@@ -4,6 +4,7 @@ import hashlib
 import shutil
 from pathlib import Path
 
+from click import unstyle
 from typer.testing import CliRunner
 
 from tests.change_lifecycle._fixture_factory import (
@@ -774,9 +775,10 @@ def test_cli_change_downstream_help_marks_behavior_pair_required() -> None:
         result = runner.invoke(app, ["change", command, "--help"])
 
         assert result.exit_code == 0, result.output
-        assert "--base-behavior" in result.stdout
-        assert "--final-behavior" in result.stdout
-        assert result.stdout.count("required") >= 2
+        help_text = unstyle(result.stdout)
+        assert "--base-behavior" in help_text
+        assert "--final-behavior" in help_text
+        assert help_text.count("required") >= 2
 
 
 def test_cli_change_archives_exact_accepted_chain_and_final_behavior(

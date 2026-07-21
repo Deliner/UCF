@@ -10,6 +10,7 @@ from dataclasses import replace
 from pathlib import Path
 
 import pytest
+import tools.quality_gates as quality_gates
 from tools.package_contract import (
     EXPECTED_SCHEMA_ASSETS,
     EXPECTED_WHEEL_ASSETS,
@@ -63,6 +64,59 @@ def test_run_gates_continues_after_failure_and_writes_complete_logs(tmp_path, ca
     assert terminal_output.index("failure output") < terminal_output.index(
         "last output"
     )
+
+
+def test_github_failure_annotation_exposes_only_gate_identity_and_exit_code(
+    tmp_path, capsys, monkeypatch
+):
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    gates = (
+        Gate(
+            name="opaque-fail",
+            command=(
+                sys.executable,
+                "-c",
+                "print('private diagnostic'); raise SystemExit(17)",
+            ),
+        ),
+        Gate(
+            name="later-pass",
+            command=(sys.executable, "-c", "raise SystemExit(0)"),
+        ),
+    )
+    monkeypatch.setattr(
+        quality_gates,
+        "select_profile_gates",
+        lambda _profile, _root, _changed_files: gates,
+    )
+
+    run_gates(gates, log_dir=tmp_path / "nested")
+    assert not any(
+        line.startswith("::error ")
+        for line in capsys.readouterr().out.splitlines()
+    )
+
+    assert (
+        main(
+            [
+                "--profile",
+                "automation",
+                "--log-dir",
+                str(tmp_path / "top-level"),
+            ]
+        )
+        == 1
+    )
+
+    annotations = [
+        line
+        for line in capsys.readouterr().out.splitlines()
+        if line.startswith("::error ")
+    ]
+    assert annotations == [
+        "::error title=UCF quality gate failed::opaque-fail exited with code 17"
+    ]
+    assert "private diagnostic" not in annotations[0]
 
 
 @pytest.mark.parametrize("name", ["", "../escape", "not safe", "UPPER_CASE"])
