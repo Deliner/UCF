@@ -56,6 +56,25 @@ bytes, so style boundaries split `--base-behavior`, `--final-behavior`, and
 colored CLI output intact and compares its unstyled semantic text in tests;
 focused RED/GREEN covers both CI-colored and ordinary output.
 
+Published candidate `c27e63a` was rejected by GitHub Actions run
+`29852283557`. The new bounded annotation proves `python-tests` exited 1 while
+all setup steps succeeded. The exact revision independently passes 8/8 both in
+the source checkout and in a new public HTTPS clone under
+`GITHUB_ACTIONS=true`; therefore neither those passes nor the prior Rich fix is
+treated as hosted acceptance. Public logs and the retained artifact still
+require authentication. A second focused RED/GREEN extends diagnostics only
+for the Python gate: it emits deduplicated, ASCII-whitelisted pytest node IDs
+from summary lines, capped at twenty, while excluding exception messages and
+all other log content. Evidence is under
+`.artifacts/quality/rel002-pytest-observability-20260721/` and
+`.artifacts/agents/rel002-final-cli-help/`.
+
+The clean-clone verification's first complete attempt separately hit GitHub's
+unauthenticated REST quota in `packaging-contract`; its summary identified that
+different gate and exact 403. A later complete 8/8 replay is retained rather
+than accepting a single-gate retry. This is an operational release-check risk,
+not evidence for the hosted `python-tests` failure.
+
 The final revision-bound acceptance evidence is retained at
 `.artifacts/quality/rel002-final-ci-closure-20260721/release-evidence.json`.
 The same published revision passes the canonical GitHub Actions workflow and

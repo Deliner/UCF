@@ -24,6 +24,7 @@ from tools.quality_gates import (
     PACKAGING_TOOL_INPUTS,
     PROFILES,
     Gate,
+    GateResult,
     affected_gates,
     main,
     profile_manifest,
@@ -117,6 +118,34 @@ def test_github_failure_annotation_exposes_only_gate_identity_and_exit_code(
         "::error title=UCF quality gate failed::opaque-fail exited with code 17"
     ]
     assert "private diagnostic" not in annotations[0]
+
+
+def test_github_pytest_annotation_exposes_node_id_without_failure_details(
+    tmp_path, capsys, monkeypatch
+):
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    log_path = tmp_path / "python-tests.log"
+    log_path.write_text(
+        "FAILED tests/unit/test_widget.py::test_public_behavior - "
+        "RuntimeError: private diagnostic\n"
+        "FAILED tests/unit/test_widget.py::test_public_behavior - duplicate\n"
+        "FAILED tests/unit/test_widget.py::test_bad%0A::error - injection\n",
+        encoding="utf-8",
+    )
+    result = GateResult(
+        gate=quality_gates.PYTHON_TESTS,
+        returncode=1,
+        duration_seconds=1.0,
+        log_path=log_path,
+    )
+
+    quality_gates._print_github_failure_annotations((result,))
+
+    assert capsys.readouterr().out.splitlines() == [
+        "::error title=UCF quality gate failed::python-tests exited with code 1",
+        "::error title=UCF pytest failure::"
+        "tests/unit/test_widget.py::test_public_behavior",
+    ]
 
 
 @pytest.mark.parametrize("name", ["", "../escape", "not safe", "UPPER_CASE"])

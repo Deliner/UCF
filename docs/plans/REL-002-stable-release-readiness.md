@@ -258,6 +258,12 @@ resumed without broadening the accepted preview boundary.
   `GITHUB_ACTIONS=true` runner signal. Reproduce two CLI-help failures caused by
   ANSI style boundaries, keep colored help unchanged, and compare unstyled
   semantic text. Prove both focused tests green with and without the CI signal.
+- [x] 2026-07-21: Publish candidate `c27e63a` and reject it after canonical run
+  `29852283557` identifies `python-tests` exit 1. Retain the exact-SHA local and
+  new public-clone 8/8 contradictions without promoting either to hosted
+  acceptance. Add a focused RED/GREEN for public-safe pytest node-ID
+  annotations: deduplicate, ASCII-whitelist, cap at twenty, and never expose
+  exception details or arbitrary log lines.
 - [x] 2026-07-21: Obtain independent release, dependency-order, and public-claim
   acceptance on that exact final published revision; inspect the final diff and
   only then return REL-002, the backlog, and automation state to verified.
@@ -427,6 +433,16 @@ recovers the exact user-visible semantic text and proves all three required
 options without turning color off. This explains a deterministic workflow-only
 failure class without claiming access to the retained hosted log.
 
+The replacement still fails in hosted run `29852283557`, but the bounded gate
+annotation narrows the result to `python-tests` without exposing retained
+output. Exact-SHA local and fresh-clone profiles both pass 8/8 under
+`GITHUB_ACTIONS=true`, falsifying a deterministic failure caused solely by that
+signal. The clean clone's separate unauthenticated API-quota failure occurred
+in `packaging-contract`, not the annotated hosted gate, and its subsequent full
+8/8 replay cannot explain away the hosted red. The cheapest remaining useful
+experiment is therefore to publish bounded pytest node IDs already present in
+the public source/test summary while keeping exception text private.
+
 ## Decision Log
 
 - **2026-07-21 — do not broaden product capability during release closure.**
@@ -535,6 +551,15 @@ failure class without claiming access to the retained hosted log.
   Keep production color/help behavior unchanged; use Click's public `unstyle`
   helper only in the two semantic assertions and verify colored plus uncolored
   cases.
+
+- **2026-07-21 — expose bounded pytest identity, not failure details.** Author:
+  root agent after candidate `c27e63a` reports only `python-tests` exit 1.
+  Parse only canonical `FAILED tests/...py::...` summary lines, accept an ASCII
+  source-like node-ID grammar, deduplicate, and stop at twenty. Publish only
+  those node IDs as GitHub annotations. Reject control characters and arbitrary
+  lines; do not publish exception messages, log tails, environment values, or
+  artifact contents. This is diagnostic observability and does not change test
+  selection or acceptance.
 
 - **2026-07-21 — remove test-only scheduler compression, not production
   safety.** Author: root agent after two independent diagnoses and Ubuntu
@@ -730,6 +755,13 @@ CI-colored RED and dual-environment GREEN are retained under
 `.artifacts/quality/rel002-ci-observability-20260721/`. The implementation
 changes only test observation via `click.unstyle`; production CLI presentation
 and required-option behavior are unchanged.
+
+Candidate `c27e63a` proves that correction is necessary but not sufficient:
+actual run `29852283557` identifies the Python gate as red while the same SHA
+passes 8/8 locally and in a fresh public clone with the CI signal. The next
+diagnostic publishes only bounded public pytest node IDs. A separately observed
+unauthenticated GitHub API quota failure is retained as a packaging risk and is
+not mislabeled as the hosted Python failure.
 
 The implementation's rejected name-based rollback history remains documented.
 The accepted publisher uses an anonymous staged inode and no name-based

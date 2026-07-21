@@ -15,6 +15,10 @@ from pathlib import Path
 
 GATE_MANIFEST_SCHEMA_VERSION = 1
 SAFE_GATE_ID = re.compile(r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$")
+SAFE_PYTEST_NODE_ID = re.compile(
+    r"^tests/[A-Za-z0-9_./-]+\.py::[A-Za-z0-9_:.\[\],=@+-]+$"
+)
+MAX_PYTEST_FAILURE_ANNOTATIONS = 20
 
 
 @dataclass(frozen=True)
@@ -376,6 +380,33 @@ def _print_github_failure_annotations(results: Sequence[GateResult]) -> None:
                 f"{result.gate.name} exited with code {result.returncode}",
                 flush=True,
             )
+            if result.gate.name == PYTHON_TESTS.name:
+                for node_id in _pytest_failure_node_ids(result.log_path):
+                    print(
+                        "::error title=UCF pytest failure::" f"{node_id}",
+                        flush=True,
+                    )
+
+
+def _pytest_failure_node_ids(log_path: Path) -> tuple[str, ...]:
+    node_ids: list[str] = []
+    seen: set[str] = set()
+    try:
+        log_file = log_path.open(encoding="utf-8", errors="replace")
+    except OSError:
+        return ()
+    with log_file:
+        for line in log_file:
+            if not line.startswith("FAILED "):
+                continue
+            node_id = line.removeprefix("FAILED ").split(" - ", 1)[0]
+            if not SAFE_PYTEST_NODE_ID.fullmatch(node_id) or node_id in seen:
+                continue
+            seen.add(node_id)
+            node_ids.append(node_id)
+            if len(node_ids) == MAX_PYTEST_FAILURE_ANNOTATIONS:
+                break
+    return tuple(node_ids)
 
 
 def _summary_line(result: GateResult) -> str:

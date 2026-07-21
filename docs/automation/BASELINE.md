@@ -103,6 +103,24 @@ the same artifact directory proves semantic assertions after `click.unstyle`
 under both CI-colored and ordinary output. No color, help, or required-option
 behavior was disabled.
 
+Candidate `c27e63a` is rejected independently. Canonical run `29852283557`
+binds the exact published SHA and proves successful setup followed by
+`python-tests` exit 1. The same SHA passes all eight gates in both the source
+checkout and a fresh public HTTPS clone with the exact CI signal, so local
+success is retained only as contradictory diagnostic evidence. The public
+annotation does not expose the failing pytest item and authentication is still
+required for logs/artifact contents. A focused RED/GREEN therefore adds only
+deduplicated, bounded, ASCII-whitelisted pytest node IDs from canonical summary
+lines; exception text and arbitrary log lines remain private. Evidence is under
+`.artifacts/agents/rel002-final-cli-help/` and
+`.artifacts/quality/rel002-pytest-observability-20260721/`.
+
+The fresh clone also established a separate operational failure mode: one full
+attempt reached 7/8 because `packaging-contract` received an unauthenticated
+GitHub API 403 rate-limit response. After quota recovery the entire profile was
+replayed and passed 8/8. Because the hosted annotation names `python-tests`,
+that observed packaging failure is not substituted as its cause.
+
 The earlier strict governance candidate is retained at
 `.artifacts/quality/rel002-final-20260721/release-evidence-governance-candidate-0f10681.json`.
 It passed with exact local/remote revision `0f10681`, a 1,050-file selected
