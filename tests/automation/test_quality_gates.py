@@ -244,12 +244,13 @@ def test_complete_profile_runs_the_packaging_contract():
     assert packaging_gates[0].working_directory == Path(".")
 
 
-def test_complete_profile_keeps_seven_observable_unfiltered_gates():
+def test_complete_profile_keeps_eight_observable_unfiltered_gates():
     assert [gate.name for gate in PROFILES["all"]] == [
         "automation-tests",
         "python-tests",
         "python-lint",
         "spec-validation",
+        "rel001-benchmark",
         "packaging-contract",
         "web-build",
         "web-lint",
@@ -263,6 +264,47 @@ def test_complete_profile_keeps_seven_observable_unfiltered_gates():
     assert not any(
         token.startswith("tests/") for token in python_tests.command
     )
+
+    [benchmark] = [
+        gate for gate in PROFILES["all"] if gate.name == "rel001-benchmark"
+    ]
+    assert benchmark.command == (
+        "uv",
+        "run",
+        "--locked",
+        "--extra",
+        "dev",
+        "python",
+        "tools/rel001_benchmark.py",
+        "verify-published",
+        "--report",
+        "docs/benchmarks/rel001-report.json",
+        "--repetitions",
+        "3",
+    )
+
+
+@pytest.mark.parametrize(
+    "changed_path",
+    [
+        "tools/rel001_benchmark.py",
+        "tools/rel001_benchmark_scenarios.py",
+        "tools/installed_python_legacy_quote_smoke.py",
+        "tools/installed_typescript_fastify_smoke.py",
+        "tools/installed_go_stdlib_smoke.py",
+        "tools/installed_go_stdlib_platform_smoke.py",
+        "docs/benchmarks/rel001-report.json",
+        "src/ucf/ir/codec.py",
+        "adapters/typescript-fastify/src/main.ts",
+        "tests/fixtures/brownfield/go_stdlib_legacy_quote/go.mod",
+        "pyproject.toml",
+        "uv.lock",
+    ],
+)
+def test_benchmark_inputs_route_to_rel001_gate(changed_path):
+    assert "rel001-benchmark" in {
+        gate.name for gate in affected_gates((changed_path,))
+    }
 
 
 def test_packaging_contract_covers_behavior_and_trust_ir_boundaries():
@@ -467,6 +509,50 @@ def test_packaging_contract_covers_exact_ratchet_schema_boundary():
     )
 
 
+def test_packaging_contract_covers_parallel_ratchet_v2_schema_boundary():
+    ratchet_v1_schemas = {
+        "ucf/schemas/ratchet/v1/policy.schema.json",
+        "ucf/schemas/ratchet/v1/assessment.schema.json",
+        "ucf/schemas/ratchet/v1/baseline.schema.json",
+        "ucf/schemas/ratchet/v1/evaluation-report.schema.json",
+    }
+    ratchet_v2_schemas = {
+        "ucf/schemas/ratchet/v2/policy.schema.json",
+        "ucf/schemas/ratchet/v2/assessment.schema.json",
+        "ucf/schemas/ratchet/v2/baseline.schema.json",
+        "ucf/schemas/ratchet/v2/evaluation-report.schema.json",
+    }
+
+    assert ratchet_v1_schemas.isdisjoint(ratchet_v2_schemas)
+    assert ratchet_v2_schemas <= EXPECTED_SCHEMA_ASSETS
+    for coordinate in (
+        "urn:ucf:ratchet:policy:2.0.0",
+        "urn:ucf:ratchet:assessment:2.0.0",
+        "urn:ucf:ratchet:baseline:2.0.0",
+        "urn:ucf:ratchet:evaluation-report:2.0.0",
+        '"x-ucf-ratchet-version"',
+        '"2.0.0"',
+    ):
+        assert coordinate in INSTALLED_ASSET_SMOKE
+    for parser in (
+        "parse_ratchet_policy_json_v2",
+        "parse_ratchet_assessment_json_v2",
+        "parse_ratchet_baseline_json_v2",
+        "parse_ratchet_evaluation_report_json_v2",
+    ):
+        assert parser in INSTALLED_ASSET_SMOKE
+    for marker in (
+        "from ucf.ratchet.v2 import (",
+        "RatchetPolicyV2",
+        "RatchetRuleV2",
+        "RatchetEvaluatorSelectionV2",
+        "canonical_ratchet_json_v2",
+        "derive_policy_id_v2",
+        "ratchet-v2-schemas=",
+    ):
+        assert marker in INSTALLED_ASSET_SMOKE
+
+
 def test_packaging_contract_runs_installed_ratchet_transaction():
     source = (ROOT / "tools" / "package_contract.py").read_text(
         encoding="utf-8"
@@ -483,6 +569,45 @@ def test_packaging_contract_runs_installed_ratchet_transaction():
     assert "ratchet-regression-report" in source
     assert "ratchet-successor-sentinel" in source
     assert "expected_returncode=1" in source
+
+
+def test_packaging_contract_runs_installed_ratchet_v2_transaction():
+    source = (ROOT / "tools" / "package_contract.py").read_text(
+        encoding="utf-8"
+    )
+    tree = ast.parse(source)
+    scripts = {
+        target.id: ast.literal_eval(node.value)
+        for node in tree.body
+        if isinstance(node, ast.Assign)
+        and len(node.targets) == 1
+        and isinstance((target := node.targets[0]), ast.Name)
+        and target.id
+        in {
+            "INSTALLED_RATCHET_V2_AUTHOR",
+            "INSTALLED_RATCHET_V2_ASSERT",
+        }
+    }
+
+    assert set(scripts) == {
+        "INSTALLED_RATCHET_V2_AUTHOR",
+        "INSTALLED_RATCHET_V2_ASSERT",
+    }
+    assert all("tests." not in script for script in scripts.values())
+    for required in (
+        "_smoke_installed_ratchet_v2",
+        "_ratchet_v2_cli_command",
+        'operation="establish"',
+        'operation="evaluate"',
+        'operation="advance"',
+        '"migrate-from-v1"',
+        '"--accepted-baseline-id"',
+        '"--accepted-source-baseline-id"',
+        "MAX_INSTALLED_RATCHET_DOCUMENT_BYTES",
+        "PASS_WITH_LEGACY_COVERAGE_DEBT",
+        "MIGRATED_V1",
+    ):
+        assert required in source
 
 
 def test_packaging_contract_covers_exact_runtime_evidence_schemas():
@@ -657,6 +782,15 @@ def test_generation_contract_generators_route_to_packaging_contract():
         }
 
 
+def test_ratchet_v2_schema_generator_routes_to_packaging_contract():
+    generator = "tools/generate_ratchet_v2_schema.py"
+
+    assert generator in PACKAGING_TOOL_INPUTS
+    assert "packaging-contract" in {
+        gate.name for gate in affected_gates((generator,))
+    }
+
+
 def test_packaging_contract_runs_installed_runtime_evidence_transaction():
     source = (ROOT / "tools" / "package_contract.py").read_text(
         encoding="utf-8"
@@ -804,6 +938,28 @@ def test_packaging_contract_closes_and_runs_the_external_go_platform():
         }
         for call in platform_smoke_calls
     )
+
+
+def test_packaging_contract_requires_clean_installed_rel001_lane_evidence():
+    source = (ROOT / "tools" / "package_contract.py").read_text(
+        encoding="utf-8"
+    )
+
+    for required in (
+        "_smoke_installed_python_legacy_quote",
+        "installed_python_legacy_quote_smoke.py",
+        "_read_installed_rel001_lane_evidence",
+        '"--evidence-output"',
+        'expected_lane="python"',
+        'expected_lane="typescript_fastify"',
+        'expected_lane="go_http"',
+        'expected_lane="go_platform"',
+        'expected_transports=()',
+        'expected_transports=("http",)',
+        'expected_transports=("cli", "event")',
+        'metrics["verified_claim_count"] != 0',
+    ):
+        assert required in source
 
 
 @pytest.mark.parametrize(

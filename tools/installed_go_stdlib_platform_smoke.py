@@ -10,6 +10,7 @@ import json
 import os
 import stat
 import sys
+import tempfile
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -247,6 +248,8 @@ _TIMEOUTS = ProcessTimeouts(
     terminate=1.0,
     kill=1.0,
 )
+_EVIDENCE_VERSION = "1.0.0"
+_MAX_EVIDENCE_BYTES = 16_777_216
 
 
 class SmokeFailure(RuntimeError):
@@ -262,6 +265,7 @@ class _Arguments:
     adapter: Path
     fixture: Path
     platform_fixture_executable: Path
+    evidence_output: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -291,8 +295,16 @@ class _DeterministicArtifacts:
 
 
 @dataclass(frozen=True)
+class _RuntimeArtifacts:
+    verification_results: tuple[bytes, ...]
+    successor_behaviors: tuple[str, ...]
+    tested_trust: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class _WorkflowResult:
     deterministic: _DeterministicArtifacts
+    runtime: _RuntimeArtifacts
     bundle: OnboardingBundle
     mapping_id: str
     mapping_source_record_ids: tuple[str, ...]
@@ -301,6 +313,12 @@ class _WorkflowResult:
     verified_claim_count: int
     verification_evidence_count: int
     stderr_bytes: int
+
+
+@dataclass(frozen=True)
+class _RunResult:
+    summary: dict[str, object]
+    evidence: dict[str, object]
 
 
 def _parse_arguments(argv: list[str]) -> _Arguments:
@@ -317,6 +335,7 @@ def _parse_arguments(argv: list[str]) -> _Arguments:
         required=True,
         type=Path,
     )
+    parser.add_argument("--evidence-output", type=Path)
     namespace = parser.parse_args(argv)
     fixture = _external_directory(namespace.fixture)
     adapter = _external_file(namespace.adapter, executable=True)
@@ -330,11 +349,35 @@ def _parse_arguments(argv: list[str]) -> _Arguments:
         raise SmokeFailure("executable_inside_fixture_rejected")
     if adapter == platform_fixture_executable:
         raise SmokeFailure("executable_identity_collision")
+    evidence_output = (
+        None
+        if namespace.evidence_output is None
+        else _new_output_file(namespace.evidence_output)
+    )
+    if evidence_output is not None and evidence_output.is_relative_to(fixture):
+        raise SmokeFailure("evidence_output_inside_fixture")
     return _Arguments(
         adapter=adapter,
         fixture=fixture,
         platform_fixture_executable=platform_fixture_executable,
+        evidence_output=evidence_output,
     )
+
+
+def _new_output_file(path: Path) -> Path:
+    if not path.is_absolute():
+        raise SmokeFailure("evidence_output_not_absolute")
+    if path.is_symlink():
+        raise SmokeFailure("evidence_output_is_symlink")
+    if path.exists():
+        raise SmokeFailure("evidence_output_exists")
+    try:
+        parent = path.parent.resolve(strict=True)
+    except OSError as error:
+        raise SmokeFailure("evidence_output_parent_missing") from error
+    if parent != path.parent or not parent.is_dir():
+        raise SmokeFailure("evidence_output_parent_not_directory")
+    return path
 
 
 def _external_file(path: Path, *, executable: bool) -> Path:
@@ -465,6 +508,18 @@ def _source_revision(manifest: dict[str, _FileIdentity]) -> str:
         for relative, identity in sorted(manifest.items())
     ).encode("ascii")
     return hashlib.sha256(payload).hexdigest()
+
+
+def _manifest_digest(manifest: dict[str, _FileIdentity]) -> str:
+    records = [
+        {
+            "path": relative,
+            "size": identity.size,
+            "digest": identity.digest,
+        }
+        for relative, identity in sorted(manifest.items())
+    ]
+    return hashlib.sha256(_canonical_json_bytes(records)).hexdigest()
 
 
 def _inventory_request(record_limit: int) -> InventoryRequest:
@@ -1093,6 +1148,8 @@ async def _run_workflow(
             raise SmokeFailure("platform_requests_do_not_share_mapping")
 
         results = []
+        successor_behaviors = []
+        tested_trust = []
         tested_claim_count = 0
         verified_claim_count = 0
         verification_evidence_count = 0
@@ -1176,8 +1233,12 @@ async def _run_workflow(
                 projection.tested_trust,
                 projection.successor_behavior,
             )
-            canonical_ir_json(projection.successor_behavior)
-            canonical_trust_ir_json(projection.tested_trust)
+            successor_behaviors.append(
+                canonical_ir_json(projection.successor_behavior)
+            )
+            tested_trust.append(
+                canonical_trust_ir_json(projection.tested_trust)
+            )
             tested_claim_count += len(tested)
             verified_claim_count += len(verified)
             verification_evidence_count += len(evidence)
@@ -1195,6 +1256,14 @@ async def _run_workflow(
             mapping=canonical_implementation_evidence_json(mapping),
             cli_request=canonical_implementation_evidence_json(requests[0]),
             event_request=canonical_implementation_evidence_json(requests[1]),
+        ),
+        runtime=_RuntimeArtifacts(
+            verification_results=tuple(
+                canonical_implementation_evidence_json(result)
+                for result in results
+            ),
+            successor_behaviors=tuple(successor_behaviors),
+            tested_trust=tuple(tested_trust),
         ),
         bundle=bundle,
         mapping_id=mapping.id,
@@ -1310,11 +1379,14 @@ def _assert_workflow_acceptance(result: _WorkflowResult) -> None:
         or result.stderr_bytes != 0
         or len(result.mapping_source_record_ids) != 10
         or not result.mapping_id.startswith("mapping.")
+        or len(result.runtime.verification_results) != 2
+        or len(result.runtime.successor_behaviors) != 2
+        or len(result.runtime.tested_trust) != 2
     ):
         raise SmokeFailure("workflow_acceptance_mismatch")
 
 
-def _run(arguments: _Arguments) -> dict[str, object]:
+def _run(arguments: _Arguments) -> _RunResult:
     _assert_installed_boundary()
     before_source = _source_manifest(arguments.fixture)
     expected_content = {
@@ -1396,14 +1468,143 @@ def _run(arguments: _Arguments) -> dict[str, object]:
             != before_platform
         ):
             raise SmokeFailure("external_executable_changed_by_workflow")
+    return _RunResult(
+        summary={
+            "candidate_count": 1,
+            "deterministic_sessions": 2,
+            "mismatch_rejections": mismatch_rejections,
+            "status": "PASS",
+            "tested_claim_count": first.tested_claim_count,
+            "verified_claim_count": first.verified_claim_count,
+        },
+        evidence=_build_evidence(before_source, first),
+    )
+
+
+def _build_evidence(
+    source_manifest: dict[str, _FileIdentity],
+    result: _WorkflowResult,
+) -> dict[str, object]:
     return {
-        "candidate_count": 1,
-        "deterministic_sessions": 2,
-        "mismatch_rejections": mismatch_rejections,
-        "status": "PASS",
-        "tested_claim_count": first.tested_claim_count,
-        "verified_claim_count": first.verified_claim_count,
+        "kind": "rel001_lane_evidence",
+        "evidence_version": _EVIDENCE_VERSION,
+        "lane": "go_platform",
+        "status": "passed",
+        "source": {
+            "file_count": len(source_manifest),
+            "byte_count": sum(
+                identity.size for identity in source_manifest.values()
+            ),
+            "manifest_digest": _manifest_digest(source_manifest),
+        },
+        "deterministic": {
+            "inventory": _parsed_resource(result.deterministic.inventory),
+            "discovery": _parsed_resource(result.deterministic.discovery),
+            "decisions": _parsed_resource(result.deterministic.decisions),
+            "bundle": _parsed_resource(result.deterministic.bundle),
+            "mapping": _parsed_resource(result.deterministic.mapping),
+            "verification_requests": [
+                _parsed_resource(result.deterministic.cli_request),
+                _parsed_resource(result.deterministic.event_request),
+            ],
+        },
+        "runtime": {
+            "verification_results": [
+                _parsed_resource(payload)
+                for payload in result.runtime.verification_results
+            ],
+            "successor_behaviors": [
+                _parsed_resource(payload)
+                for payload in result.runtime.successor_behaviors
+            ],
+            "tested_trust": [
+                _parsed_resource(payload) for payload in result.runtime.tested_trust
+            ],
+        },
+        "metrics": {
+            "inventory_record_count": _EXPECTED_INVENTORY_RECORD_COUNT,
+            "candidate_count": 1,
+            "dispositions": {
+                "accepted": 1,
+                "edited": 0,
+                "rejected": 0,
+                "uncertain": 0,
+            },
+            "eligible_interface_count": 9,
+            "uncovered_interface_count": 8,
+            "materialization_count": 1,
+            "mapping_binding_count": 1,
+            "tested_claim_count": result.tested_claim_count,
+            "verified_claim_count": result.verified_claim_count,
+            "verification_evidence_count": result.verification_evidence_count,
+            "transports": ["cli", "event"],
+        },
     }
+
+
+def _parsed_resource(payload: bytes | str) -> dict[str, object]:
+    try:
+        parsed = json.loads(payload)
+    except (json.JSONDecodeError, TypeError, UnicodeDecodeError) as error:
+        raise SmokeFailure("evidence_resource_invalid") from error
+    if type(parsed) is not dict:
+        raise SmokeFailure("evidence_resource_invalid")
+    return parsed
+
+
+def _canonical_json_bytes(payload: object) -> bytes:
+    try:
+        encoded = json.dumps(
+            payload,
+            ensure_ascii=True,
+            allow_nan=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+    except (TypeError, ValueError) as error:
+        raise SmokeFailure("evidence_serialization_failed") from error
+    return (encoded + "\n").encode("ascii")
+
+
+def _publish_evidence(path: Path, evidence: dict[str, object]) -> None:
+    payload = _canonical_json_bytes(evidence)
+    if len(payload) > _MAX_EVIDENCE_BYTES:
+        raise SmokeFailure("evidence_output_too_large")
+    if path.exists() or path.is_symlink():
+        raise SmokeFailure("evidence_output_appeared")
+    descriptor, temporary_name = tempfile.mkstemp(
+        dir=path.parent,
+        prefix=f".{path.name}.",
+        suffix=".tmp",
+    )
+    temporary = Path(temporary_name)
+    try:
+        view = memoryview(payload)
+        written = 0
+        while written < len(view):
+            count = os.write(descriptor, view[written:])
+            if count <= 0:
+                raise SmokeFailure("evidence_output_write_failed")
+            written += count
+        os.fsync(descriptor)
+        os.close(descriptor)
+        descriptor = -1
+        try:
+            os.link(temporary, path, follow_symlinks=False)
+        except FileExistsError as error:
+            raise SmokeFailure("evidence_output_appeared") from error
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+        try:
+            temporary.unlink()
+        except FileNotFoundError:
+            pass
+    directory = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        os.fsync(directory)
+    finally:
+        os.close(directory)
 
 
 def _emit(payload: dict[str, object], *, stream) -> None:
@@ -1423,7 +1624,9 @@ def _emit(payload: dict[str, object], *, stream) -> None:
 def main(argv: list[str] | None = None) -> int:
     try:
         arguments = _parse_arguments(sys.argv[1:] if argv is None else argv)
-        summary = _run(arguments)
+        result = _run(arguments)
+        if arguments.evidence_output is not None:
+            _publish_evidence(arguments.evidence_output, result.evidence)
     except SmokeFailure as error:
         _emit({"code": error.code, "status": "FAIL"}, stream=sys.stderr)
         return 3
@@ -1449,7 +1652,7 @@ def main(argv: list[str] | None = None) -> int:
             stream=sys.stderr,
         )
         return 3
-    _emit(summary, stream=sys.stdout)
+    _emit(result.summary, stream=sys.stdout)
     return 0
 
 

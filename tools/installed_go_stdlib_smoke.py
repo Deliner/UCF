@@ -10,6 +10,7 @@ import json
 import os
 import stat
 import sys
+import tempfile
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -230,6 +231,8 @@ _TIMEOUTS = ProcessTimeouts(
     terminate=1.0,
     kill=1.0,
 )
+_EVIDENCE_VERSION = "1.0.0"
+_MAX_EVIDENCE_BYTES = 16_777_216
 
 
 class SmokeFailure(RuntimeError):
@@ -245,6 +248,7 @@ class _Arguments:
     adapter: Path
     fixture: Path
     fixture_executable: Path
+    evidence_output: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -287,6 +291,12 @@ class _WorkflowResult:
     stderr_bytes: int
 
 
+@dataclass(frozen=True)
+class _RunResult:
+    summary: dict[str, object]
+    evidence: dict[str, object]
+
+
 def _parse_arguments(argv: list[str]) -> _Arguments:
     parser = argparse.ArgumentParser(
         description=(
@@ -297,6 +307,7 @@ def _parse_arguments(argv: list[str]) -> _Arguments:
     parser.add_argument("--adapter", required=True, type=Path)
     parser.add_argument("--fixture", required=True, type=Path)
     parser.add_argument("--fixture-executable", required=True, type=Path)
+    parser.add_argument("--evidence-output", type=Path)
     namespace = parser.parse_args(argv)
     fixture = _external_directory(namespace.fixture)
     adapter = _external_file(namespace.adapter, executable=True)
@@ -306,11 +317,35 @@ def _parse_arguments(argv: list[str]) -> _Arguments:
     )
     if adapter.is_relative_to(fixture) or fixture_executable.is_relative_to(fixture):
         raise SmokeFailure("executable_inside_fixture_rejected")
+    evidence_output = (
+        None
+        if namespace.evidence_output is None
+        else _new_output_file(namespace.evidence_output)
+    )
+    if evidence_output is not None and evidence_output.is_relative_to(fixture):
+        raise SmokeFailure("evidence_output_inside_fixture")
     return _Arguments(
         adapter=adapter,
         fixture=fixture,
         fixture_executable=fixture_executable,
+        evidence_output=evidence_output,
     )
+
+
+def _new_output_file(path: Path) -> Path:
+    if not path.is_absolute():
+        raise SmokeFailure("evidence_output_not_absolute")
+    if path.is_symlink():
+        raise SmokeFailure("evidence_output_is_symlink")
+    if path.exists():
+        raise SmokeFailure("evidence_output_exists")
+    try:
+        parent = path.parent.resolve(strict=True)
+    except OSError as error:
+        raise SmokeFailure("evidence_output_parent_missing") from error
+    if parent != path.parent or not parent.is_dir():
+        raise SmokeFailure("evidence_output_parent_not_directory")
+    return path
 
 
 def _external_file(path: Path, *, executable: bool) -> Path:
@@ -429,6 +464,18 @@ def _hash_file(path: Path, *, failure_prefix: str) -> _FileIdentity:
     if before_identity != after_identity:
         raise SmokeFailure(f"{failure_prefix}_changed_during_hash")
     return _FileIdentity(size=before.st_size, digest=digest.hexdigest())
+
+
+def _manifest_digest(manifest: dict[str, _FileIdentity]) -> str:
+    records = [
+        {
+            "path": relative,
+            "size": identity.size,
+            "digest": identity.digest,
+        }
+        for relative, identity in sorted(manifest.items())
+    ]
+    return hashlib.sha256(_canonical_json_bytes(records)).hexdigest()
 
 
 def _inventory_request(record_limit: int) -> InventoryRequest:
@@ -1212,7 +1259,7 @@ def _assert_workflow_acceptance(result: _WorkflowResult) -> None:
         raise SmokeFailure("workflow_acceptance_mismatch")
 
 
-def _run(arguments: _Arguments) -> None:
+def _run(arguments: _Arguments) -> _RunResult:
     _assert_installed_boundary()
     expected = {
         path: _FileIdentity(size=size, digest=digest)
@@ -1262,9 +1309,134 @@ def _run(arguments: _Arguments) -> None:
         or first.verification_evidence_count != second.verification_evidence_count
     ):
         raise SmokeFailure("workflow_not_deterministic")
+    return _RunResult(
+        summary={"status": "PASS"},
+        evidence=_build_evidence(before_source, first),
+    )
 
 
-def _emit(payload: dict[str, str], *, stream) -> None:
+def _build_evidence(
+    source_manifest: dict[str, _FileIdentity],
+    result: _WorkflowResult,
+) -> dict[str, object]:
+    return {
+        "kind": "rel001_lane_evidence",
+        "evidence_version": _EVIDENCE_VERSION,
+        "lane": "go_http",
+        "status": "passed",
+        "source": {
+            "file_count": len(source_manifest),
+            "byte_count": sum(
+                identity.size for identity in source_manifest.values()
+            ),
+            "manifest_digest": _manifest_digest(source_manifest),
+        },
+        "deterministic": {
+            "inventory": _parsed_resource(result.deterministic.inventory),
+            "discovery": _parsed_resource(result.deterministic.discovery),
+            "decisions": _parsed_resource(result.deterministic.decisions),
+            "bundle": _parsed_resource(result.deterministic.bundle),
+            "mapping": _parsed_resource(result.deterministic.mapping),
+            "verification_requests": [
+                _parsed_resource(result.deterministic.verification_request)
+            ],
+        },
+        "runtime": {
+            "verification_results": [
+                _parsed_resource(result.runtime.verification_result)
+            ],
+            "successor_behaviors": [
+                _parsed_resource(result.runtime.successor_behavior)
+            ],
+            "tested_trust": [_parsed_resource(result.runtime.tested_trust)],
+        },
+        "metrics": {
+            "inventory_record_count": _EXPECTED_INVENTORY_RECORD_COUNT,
+            "candidate_count": 4,
+            "dispositions": {
+                "accepted": 1,
+                "edited": 0,
+                "rejected": 2,
+                "uncertain": 1,
+            },
+            "eligible_interface_count": 12,
+            "uncovered_interface_count": 8,
+            "materialization_count": 1,
+            "mapping_binding_count": 1,
+            "tested_claim_count": result.tested_claim_count,
+            "verified_claim_count": result.verified_claim_count,
+            "verification_evidence_count": result.verification_evidence_count,
+            "transports": ["http"],
+        },
+    }
+
+
+def _parsed_resource(payload: bytes | str) -> dict[str, object]:
+    try:
+        parsed = json.loads(payload)
+    except (json.JSONDecodeError, TypeError, UnicodeDecodeError) as error:
+        raise SmokeFailure("evidence_resource_invalid") from error
+    if type(parsed) is not dict:
+        raise SmokeFailure("evidence_resource_invalid")
+    return parsed
+
+
+def _canonical_json_bytes(payload: object) -> bytes:
+    try:
+        encoded = json.dumps(
+            payload,
+            ensure_ascii=True,
+            allow_nan=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+    except (TypeError, ValueError) as error:
+        raise SmokeFailure("evidence_serialization_failed") from error
+    return (encoded + "\n").encode("ascii")
+
+
+def _publish_evidence(path: Path, evidence: dict[str, object]) -> None:
+    payload = _canonical_json_bytes(evidence)
+    if len(payload) > _MAX_EVIDENCE_BYTES:
+        raise SmokeFailure("evidence_output_too_large")
+    if path.exists() or path.is_symlink():
+        raise SmokeFailure("evidence_output_appeared")
+    descriptor, temporary_name = tempfile.mkstemp(
+        dir=path.parent,
+        prefix=f".{path.name}.",
+        suffix=".tmp",
+    )
+    temporary = Path(temporary_name)
+    try:
+        view = memoryview(payload)
+        written = 0
+        while written < len(view):
+            count = os.write(descriptor, view[written:])
+            if count <= 0:
+                raise SmokeFailure("evidence_output_write_failed")
+            written += count
+        os.fsync(descriptor)
+        os.close(descriptor)
+        descriptor = -1
+        try:
+            os.link(temporary, path, follow_symlinks=False)
+        except FileExistsError as error:
+            raise SmokeFailure("evidence_output_appeared") from error
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+        try:
+            temporary.unlink()
+        except FileNotFoundError:
+            pass
+    directory = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        os.fsync(directory)
+    finally:
+        os.close(directory)
+
+
+def _emit(payload: dict[str, object], *, stream) -> None:
     stream.write(
         json.dumps(
             payload,
@@ -1281,7 +1453,9 @@ def _emit(payload: dict[str, str], *, stream) -> None:
 def main(argv: list[str] | None = None) -> int:
     try:
         arguments = _parse_arguments(sys.argv[1:] if argv is None else argv)
-        _run(arguments)
+        result = _run(arguments)
+        if arguments.evidence_output is not None:
+            _publish_evidence(arguments.evidence_output, result.evidence)
     except SmokeFailure as error:
         _emit({"code": error.code, "status": "FAIL"}, stream=sys.stderr)
         return 3
@@ -1307,7 +1481,7 @@ def main(argv: list[str] | None = None) -> int:
             stream=sys.stderr,
         )
         return 3
-    _emit({"status": "PASS"}, stream=sys.stdout)
+    _emit(result.summary, stream=sys.stdout)
     return 0
 
 

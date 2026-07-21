@@ -1,0 +1,1505 @@
+{
+  "$comment": "Generated deterministically from UCF ratchet profile 2.0.0 models; do not edit by hand. Content identities, canonical order, resolved references, exact source projections, accepted lineage pins, predecessor lineage, and recomputed summaries remain runtime semantics.",
+  "$defs": {
+    "AssessmentId": {
+      "pattern": "^assessment\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "BaselineId": {
+      "pattern": "^baseline\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "BehaviorBaselineLedger": {
+      "additionalProperties": false,
+      "properties": {
+        "allowances": {
+          "items": {
+            "$ref": "#/$defs/ViolationKey"
+          },
+          "maxItems": 100000,
+          "title": "Allowances",
+          "type": "array"
+        },
+        "kind": {
+          "const": "ratchet_behavior_baseline",
+          "title": "Kind",
+          "type": "string"
+        },
+        "protected": {
+          "items": {
+            "$ref": "#/$defs/ViolationKey"
+          },
+          "maxItems": 100000,
+          "title": "Protected",
+          "type": "array"
+        },
+        "subjects": {
+          "items": {
+            "$ref": "#/$defs/BehaviorSubjectSnapshot"
+          },
+          "maxItems": 10000,
+          "title": "Subjects",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "subjects",
+        "allowances",
+        "protected"
+      ],
+      "title": "BehaviorBaselineLedger",
+      "type": "object"
+    },
+    "BehaviorEntityRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "document_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "ir_version": {
+          "const": "1.0.0",
+          "title": "Ir Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "behavior_entity_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/EntityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "document_id",
+        "ir_version",
+        "canonical_digest",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "BehaviorEntityRef",
+      "type": "object"
+    },
+    "BehaviorObservedFingerprint": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm_uri": {
+          "const": "urn:ucf:ratchet:fingerprint:observed-subject:2.0.0",
+          "title": "Algorithm Uri",
+          "type": "string"
+        },
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "behavior_observed_fingerprint",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm_uri",
+        "digest"
+      ],
+      "title": "BehaviorObservedFingerprint",
+      "type": "object"
+    },
+    "BehaviorSemanticFingerprint": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm_uri": {
+          "const": "urn:ucf:ratchet:fingerprint:behavior-subject:2.0.0",
+          "title": "Algorithm Uri",
+          "type": "string"
+        },
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "behavior_semantic_fingerprint",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm_uri",
+        "digest"
+      ],
+      "title": "BehaviorSemanticFingerprint",
+      "type": "object"
+    },
+    "BehaviorSubjectId": {
+      "pattern": "^subject\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "BehaviorSubjectKey": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "behavior_subject_key",
+          "title": "Kind",
+          "type": "string"
+        },
+        "subject_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/EntityKind"
+        }
+      },
+      "required": [
+        "kind",
+        "subject_uri",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "BehaviorSubjectKey",
+      "type": "object"
+    },
+    "BehaviorSubjectRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "behavior_subject_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/BehaviorSubjectId"
+        }
+      },
+      "required": [
+        "kind",
+        "target_id"
+      ],
+      "title": "BehaviorSubjectRef",
+      "type": "object"
+    },
+    "BehaviorSubjectSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/BehaviorSubjectId"
+        },
+        "key": {
+          "$ref": "#/$defs/BehaviorSubjectKey"
+        },
+        "kind": {
+          "const": "behavior_subject_snapshot",
+          "title": "Kind",
+          "type": "string"
+        },
+        "observed": {
+          "$ref": "#/$defs/BehaviorObservedFingerprint"
+        },
+        "semantic": {
+          "$ref": "#/$defs/BehaviorSemanticFingerprint"
+        },
+        "trace": {
+          "$ref": "#/$defs/BehaviorSubjectTrace"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "key",
+        "semantic",
+        "observed",
+        "trace"
+      ],
+      "title": "BehaviorSubjectSnapshot",
+      "type": "object"
+    },
+    "BehaviorSubjectTrace": {
+      "additionalProperties": false,
+      "properties": {
+        "behavior": {
+          "$ref": "#/$defs/BehaviorEntityRef"
+        },
+        "candidate": {
+          "$ref": "#/$defs/CandidateRef"
+        },
+        "decision_id": {
+          "$ref": "#/$defs/DecisionId"
+        },
+        "inventory_source_revision": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "ratchet_behavior_subject_trace",
+          "title": "Kind",
+          "type": "string"
+        },
+        "onboarding_bundle": {
+          "$ref": "#/$defs/OnboardingBundleRef"
+        }
+      },
+      "required": [
+        "kind",
+        "onboarding_bundle",
+        "behavior",
+        "inventory_source_revision",
+        "candidate",
+        "decision_id"
+      ],
+      "title": "BehaviorSubjectTrace",
+      "type": "object"
+    },
+    "CandidateRef": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": {
+          "$ref": "#/$defs/DiscoveryCandidateId"
+        },
+        "discovery_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "candidate_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "semantic_digest": {
+          "$ref": "#/$defs/Digest"
+        }
+      },
+      "required": [
+        "kind",
+        "discovery_digest",
+        "candidate_id",
+        "semantic_digest"
+      ],
+      "title": "CandidateRef",
+      "type": "object"
+    },
+    "CapabilitySelection": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "capability",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/QualifiedName"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "version"
+      ],
+      "title": "CapabilitySelection",
+      "type": "object"
+    },
+    "CoverageBaselineLedger": {
+      "additionalProperties": false,
+      "properties": {
+        "allowances": {
+          "items": {
+            "$ref": "#/$defs/CoverageDebtSnapshot"
+          },
+          "maxItems": 10000,
+          "title": "Allowances",
+          "type": "array"
+        },
+        "groups": {
+          "items": {
+            "$ref": "#/$defs/CoverageSubjectGroup"
+          },
+          "maxItems": 10000,
+          "title": "Groups",
+          "type": "array"
+        },
+        "kind": {
+          "const": "ratchet_coverage_baseline",
+          "title": "Kind",
+          "type": "string"
+        },
+        "protected": {
+          "items": {
+            "$ref": "#/$defs/CoverageDebtKey"
+          },
+          "maxItems": 10000,
+          "title": "Protected",
+          "type": "array"
+        },
+        "qualification": {
+          "$ref": "#/$defs/CoverageQualification"
+        }
+      },
+      "required": [
+        "kind",
+        "qualification",
+        "groups",
+        "allowances",
+        "protected"
+      ],
+      "title": "CoverageBaselineLedger",
+      "type": "object"
+    },
+    "CoverageDebtId": {
+      "pattern": "^debt\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "CoverageDebtKey": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_semantic_digest": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Digest"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "debt_kind": {
+          "$ref": "#/$defs/CoverageDebtKind"
+        },
+        "kind": {
+          "const": "coverage_debt_key",
+          "title": "Kind",
+          "type": "string"
+        },
+        "subject": {
+          "$ref": "#/$defs/CoverageSubjectRef"
+        }
+      },
+      "required": [
+        "kind",
+        "debt_kind",
+        "subject",
+        "candidate_semantic_digest"
+      ],
+      "title": "CoverageDebtKey",
+      "type": "object"
+    },
+    "CoverageDebtKind": {
+      "enum": [
+        "uncovered",
+        "uncertain"
+      ],
+      "title": "CoverageDebtKind",
+      "type": "string"
+    },
+    "CoverageDebtSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/CoverageDebtId"
+        },
+        "key": {
+          "$ref": "#/$defs/CoverageDebtKey"
+        },
+        "kind": {
+          "const": "coverage_debt_snapshot",
+          "title": "Kind",
+          "type": "string"
+        },
+        "observed": {
+          "$ref": "#/$defs/CoverageObservedFingerprint"
+        },
+        "reconciliation_trace": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CoverageReconciliationTrace"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "semantic": {
+          "$ref": "#/$defs/CoverageSemanticFingerprint"
+        },
+        "subject_trace": {
+          "$ref": "#/$defs/CoverageSubjectTrace"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "key",
+        "semantic",
+        "observed",
+        "subject_trace",
+        "reconciliation_trace"
+      ],
+      "title": "CoverageDebtSnapshot",
+      "type": "object"
+    },
+    "CoverageObservedFingerprint": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm_uri": {
+          "const": "urn:ucf:ratchet:fingerprint:coverage-observed:2.0.0",
+          "title": "Algorithm Uri",
+          "type": "string"
+        },
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "coverage_observed_fingerprint",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm_uri",
+        "digest"
+      ],
+      "title": "CoverageObservedFingerprint",
+      "type": "object"
+    },
+    "CoverageQualification": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm_uri": {
+          "const": "urn:ucf:ratchet:coverage-qualification:2.0.0",
+          "title": "Algorithm Uri",
+          "type": "string"
+        },
+        "discovery_capability": {
+          "$ref": "#/$defs/CapabilitySelection"
+        },
+        "discovery_procedure_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "discovery_producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "discovery_schema_uri": {
+          "const": "urn:ucf:adapter:discovery-result:1.0.0",
+          "title": "Discovery Schema Uri",
+          "type": "string"
+        },
+        "discovery_version": {
+          "const": "1.0.0",
+          "title": "Discovery Version",
+          "type": "string"
+        },
+        "id": {
+          "$ref": "#/$defs/CoverageQualificationId"
+        },
+        "inventory_capability": {
+          "$ref": "#/$defs/CapabilitySelection"
+        },
+        "inventory_ignore_policy_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "inventory_path_identity": {
+          "const": "unicode-nfc-ascii-casefold-1",
+          "title": "Inventory Path Identity",
+          "type": "string"
+        },
+        "inventory_procedure_uris": {
+          "items": {
+            "$ref": "#/$defs/URI"
+          },
+          "title": "Inventory Procedure Uris",
+          "type": "array"
+        },
+        "inventory_producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "inventory_schema_uri": {
+          "const": "urn:ucf:schema:inventory:1.0.0",
+          "title": "Inventory Schema Uri",
+          "type": "string"
+        },
+        "inventory_version": {
+          "const": "1.0.0",
+          "title": "Inventory Version",
+          "type": "string"
+        },
+        "kind": {
+          "const": "coverage_qualification",
+          "title": "Kind",
+          "type": "string"
+        },
+        "observed_fingerprint_algorithm_uri": {
+          "const": "urn:ucf:ratchet:fingerprint:coverage-observed:2.0.0",
+          "title": "Observed Fingerprint Algorithm Uri",
+          "type": "string"
+        },
+        "reconciliation_algorithm_uri": {
+          "const": "urn:ucf:ratchet:coverage-reconciliation:2.0.0",
+          "title": "Reconciliation Algorithm Uri",
+          "type": "string"
+        },
+        "semantic_fingerprint_algorithm_uri": {
+          "const": "urn:ucf:ratchet:fingerprint:coverage-semantic:2.0.0",
+          "title": "Semantic Fingerprint Algorithm Uri",
+          "type": "string"
+        },
+        "subject_key_algorithm_uri": {
+          "const": "urn:ucf:ratchet:coverage-subject-key:2.0.0",
+          "title": "Subject Key Algorithm Uri",
+          "type": "string"
+        },
+        "subject_uri": {
+          "$ref": "#/$defs/URI"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "algorithm_uri",
+        "subject_uri",
+        "inventory_schema_uri",
+        "inventory_version",
+        "inventory_producer",
+        "inventory_capability",
+        "inventory_path_identity",
+        "inventory_ignore_policy_digest",
+        "inventory_procedure_uris",
+        "discovery_schema_uri",
+        "discovery_version",
+        "discovery_producer",
+        "discovery_capability",
+        "discovery_procedure_uri",
+        "subject_key_algorithm_uri",
+        "reconciliation_algorithm_uri",
+        "semantic_fingerprint_algorithm_uri",
+        "observed_fingerprint_algorithm_uri"
+      ],
+      "title": "CoverageQualification",
+      "type": "object"
+    },
+    "CoverageQualificationId": {
+      "pattern": "^domain\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "CoverageReconciliationSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_semantic_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "disposition": {
+          "$ref": "#/$defs/DispositionKind"
+        },
+        "kind": {
+          "const": "coverage_reconciliation_snapshot",
+          "title": "Kind",
+          "type": "string"
+        },
+        "observed": {
+          "$ref": "#/$defs/CoverageObservedFingerprint"
+        },
+        "replacement_semantic_digest": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Digest"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "semantic": {
+          "$ref": "#/$defs/CoverageSemanticFingerprint"
+        },
+        "trace": {
+          "$ref": "#/$defs/CoverageReconciliationTrace"
+        }
+      },
+      "required": [
+        "kind",
+        "disposition",
+        "candidate_semantic_digest",
+        "replacement_semantic_digest",
+        "semantic",
+        "observed",
+        "trace"
+      ],
+      "title": "CoverageReconciliationSnapshot",
+      "type": "object"
+    },
+    "CoverageReconciliationTrace": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate": {
+          "$ref": "#/$defs/CandidateRef"
+        },
+        "decision_id": {
+          "$ref": "#/$defs/DecisionId"
+        },
+        "kind": {
+          "const": "coverage_reconciliation_trace",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "candidate",
+        "decision_id"
+      ],
+      "title": "CoverageReconciliationTrace",
+      "type": "object"
+    },
+    "CoverageSemanticFingerprint": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm_uri": {
+          "const": "urn:ucf:ratchet:fingerprint:coverage-semantic:2.0.0",
+          "title": "Algorithm Uri",
+          "type": "string"
+        },
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "coverage_semantic_fingerprint",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm_uri",
+        "digest"
+      ],
+      "title": "CoverageSemanticFingerprint",
+      "type": "object"
+    },
+    "CoverageSubjectGroup": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/CoverageSubjectId"
+        },
+        "key": {
+          "$ref": "#/$defs/CoverageSubjectKey"
+        },
+        "kind": {
+          "const": "coverage_subject_group",
+          "title": "Kind",
+          "type": "string"
+        },
+        "observed": {
+          "$ref": "#/$defs/CoverageObservedFingerprint"
+        },
+        "reconciliations": {
+          "items": {
+            "$ref": "#/$defs/CoverageReconciliationSnapshot"
+          },
+          "maxItems": 10000,
+          "title": "Reconciliations",
+          "type": "array"
+        },
+        "semantic": {
+          "$ref": "#/$defs/CoverageSemanticFingerprint"
+        },
+        "state": {
+          "$ref": "#/$defs/CoverageSubjectState"
+        },
+        "trace": {
+          "$ref": "#/$defs/CoverageSubjectTrace"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "key",
+        "state",
+        "semantic",
+        "observed",
+        "reconciliations",
+        "trace"
+      ],
+      "title": "CoverageSubjectGroup",
+      "type": "object"
+    },
+    "CoverageSubjectId": {
+      "pattern": "^coverage\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "CoverageSubjectKey": {
+      "additionalProperties": false,
+      "properties": {
+        "container": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Container"
+        },
+        "interface_kind_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "kind": {
+          "const": "coverage_subject_key",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "subject_uri": {
+          "$ref": "#/$defs/URI"
+        },
+        "target_kind": {
+          "const": "public_interface",
+          "title": "Target Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "subject_uri",
+        "target_kind",
+        "interface_kind_uri",
+        "container",
+        "name"
+      ],
+      "title": "CoverageSubjectKey",
+      "type": "object"
+    },
+    "CoverageSubjectRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "coverage_subject_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/CoverageSubjectId"
+        }
+      },
+      "required": [
+        "kind",
+        "target_id"
+      ],
+      "title": "CoverageSubjectRef",
+      "type": "object"
+    },
+    "CoverageSubjectState": {
+      "enum": [
+        "uncovered",
+        "reconciled"
+      ],
+      "title": "CoverageSubjectState",
+      "type": "string"
+    },
+    "CoverageSubjectTrace": {
+      "additionalProperties": false,
+      "properties": {
+        "interface": {
+          "$ref": "#/$defs/InventoryRecordRef"
+        },
+        "inventory_source_revision": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "coverage_subject_trace",
+          "title": "Kind",
+          "type": "string"
+        },
+        "onboarding_bundle": {
+          "$ref": "#/$defs/OnboardingBundleRef"
+        }
+      },
+      "required": [
+        "kind",
+        "onboarding_bundle",
+        "inventory_source_revision",
+        "interface"
+      ],
+      "title": "CoverageSubjectTrace",
+      "type": "object"
+    },
+    "DecisionId": {
+      "pattern": "^decision\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "Digest": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "sha-256",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "kind": {
+          "const": "digest",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/DigestValue"
+        }
+      },
+      "required": [
+        "kind",
+        "algorithm",
+        "value"
+      ],
+      "title": "Digest",
+      "type": "object"
+    },
+    "DigestValue": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "DiscoveryCandidateId": {
+      "pattern": "^candidate\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "DispositionKind": {
+      "enum": [
+        "accepted",
+        "edited",
+        "rejected",
+        "uncertain"
+      ],
+      "title": "DispositionKind",
+      "type": "string"
+    },
+    "EntityKind": {
+      "enum": [
+        "action",
+        "use_case",
+        "step",
+        "binding",
+        "effect",
+        "observation",
+        "invariant",
+        "provenance",
+        "verification_evidence",
+        "capability_requirement"
+      ],
+      "title": "EntityKind",
+      "type": "string"
+    },
+    "EvaluationId": {
+      "pattern": "^evaluation\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 255,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+      "type": "string"
+    },
+    "InventoryRecordId": {
+      "pattern": "^(?:api|diagnostic|entry|ignore|interface|manifest|provenance|test)\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "InventoryRecordKind": {
+      "enum": [
+        "api_description",
+        "build_manifest",
+        "inventory_diagnostic",
+        "inventory_ignore_match",
+        "inventory_provenance",
+        "public_interface",
+        "repository_entry",
+        "test_asset"
+      ],
+      "title": "InventoryRecordKind",
+      "type": "string"
+    },
+    "InventoryRecordRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "inventory_record_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/InventoryRecordId"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/InventoryRecordKind"
+        }
+      },
+      "required": [
+        "kind",
+        "target_kind",
+        "target_id"
+      ],
+      "title": "InventoryRecordRef",
+      "type": "object"
+    },
+    "NormalizedVersion": {
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "type": "string"
+    },
+    "OnboardingBundleRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "onboarding_bundle_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:onboarding:bundle:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "schema_uri",
+        "schema_version",
+        "canonical_digest"
+      ],
+      "title": "OnboardingBundleRef",
+      "type": "object"
+    },
+    "PolicyId": {
+      "pattern": "^policy\\.[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "Producer": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "producer",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/QualifiedName"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "version"
+      ],
+      "title": "Producer",
+      "type": "object"
+    },
+    "QualifiedName": {
+      "maxLength": 255,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*)+$",
+      "type": "string"
+    },
+    "RatchetAssessmentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "ratchet_assessment_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:ratchet:assessment:2.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "2.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/AssessmentId"
+        }
+      },
+      "required": [
+        "kind",
+        "schema_uri",
+        "schema_version",
+        "target_id",
+        "canonical_digest"
+      ],
+      "title": "RatchetAssessmentRef",
+      "type": "object"
+    },
+    "RatchetBaselineOrigin": {
+      "enum": [
+        "initial",
+        "successor",
+        "migrated_v1"
+      ],
+      "title": "RatchetBaselineOrigin",
+      "type": "string"
+    },
+    "RatchetBaselineRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "generation": {
+          "$ref": "#/$defs/SafeInteger"
+        },
+        "kind": {
+          "const": "ratchet_baseline_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:ratchet:baseline:2.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "2.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/BaselineId"
+        }
+      },
+      "required": [
+        "kind",
+        "schema_uri",
+        "schema_version",
+        "target_id",
+        "canonical_digest",
+        "generation"
+      ],
+      "title": "RatchetBaselineRef",
+      "type": "object"
+    },
+    "RatchetEvaluationReportRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "ratchet_evaluation_report_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:ratchet:evaluation-report:2.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "2.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/EvaluationId"
+        }
+      },
+      "required": [
+        "kind",
+        "schema_uri",
+        "schema_version",
+        "target_id",
+        "canonical_digest"
+      ],
+      "title": "RatchetEvaluationReportRef",
+      "type": "object"
+    },
+    "RatchetPolicyRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "ratchet_policy_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:ratchet:policy:2.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "2.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/PolicyId"
+        }
+      },
+      "required": [
+        "kind",
+        "schema_uri",
+        "schema_version",
+        "target_id",
+        "canonical_digest"
+      ],
+      "title": "RatchetPolicyRef",
+      "type": "object"
+    },
+    "RatchetRuleRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "ratchet_rule_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "version": {
+          "$ref": "#/$defs/NormalizedVersion"
+        }
+      },
+      "required": [
+        "kind",
+        "target_id",
+        "version"
+      ],
+      "title": "RatchetRuleRef",
+      "type": "object"
+    },
+    "RatchetV1AssessmentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "ratchet_assessment_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:ratchet:assessment:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/AssessmentId"
+        }
+      },
+      "required": [
+        "kind",
+        "schema_uri",
+        "schema_version",
+        "target_id",
+        "canonical_digest"
+      ],
+      "title": "RatchetV1AssessmentRef",
+      "type": "object"
+    },
+    "RatchetV1BaselineRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "generation": {
+          "$ref": "#/$defs/SafeInteger"
+        },
+        "kind": {
+          "const": "ratchet_baseline_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:ratchet:baseline:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/BaselineId"
+        }
+      },
+      "required": [
+        "kind",
+        "schema_uri",
+        "schema_version",
+        "target_id",
+        "canonical_digest",
+        "generation"
+      ],
+      "title": "RatchetV1BaselineRef",
+      "type": "object"
+    },
+    "RatchetV1MigrationSource": {
+      "additionalProperties": false,
+      "properties": {
+        "assessment": {
+          "$ref": "#/$defs/RatchetV1AssessmentRef"
+        },
+        "baseline": {
+          "$ref": "#/$defs/RatchetV1BaselineRef"
+        },
+        "kind": {
+          "const": "ratchet_v1_migration_source",
+          "title": "Kind",
+          "type": "string"
+        },
+        "onboarding_bundle": {
+          "$ref": "#/$defs/OnboardingBundleRef"
+        },
+        "policy": {
+          "$ref": "#/$defs/RatchetV1PolicyRef"
+        }
+      },
+      "required": [
+        "kind",
+        "policy",
+        "baseline",
+        "assessment",
+        "onboarding_bundle"
+      ],
+      "title": "RatchetV1MigrationSource",
+      "type": "object"
+    },
+    "RatchetV1PolicyRef": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "kind": {
+          "const": "ratchet_policy_ref",
+          "title": "Kind",
+          "type": "string"
+        },
+        "schema_uri": {
+          "const": "urn:ucf:ratchet:policy:1.0.0",
+          "title": "Schema Uri",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "target_id": {
+          "$ref": "#/$defs/PolicyId"
+        }
+      },
+      "required": [
+        "kind",
+        "schema_uri",
+        "schema_version",
+        "target_id",
+        "canonical_digest"
+      ],
+      "title": "RatchetV1PolicyRef",
+      "type": "object"
+    },
+    "SafeInteger": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "URI": {
+      "maxLength": 2048,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9+.-]*:[^\\s]+$",
+      "type": "string"
+    },
+    "ViolationKey": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "violation_key",
+          "title": "Kind",
+          "type": "string"
+        },
+        "rule": {
+          "$ref": "#/$defs/RatchetRuleRef"
+        },
+        "slot": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "subject": {
+          "$ref": "#/$defs/BehaviorSubjectRef"
+        }
+      },
+      "required": [
+        "kind",
+        "rule",
+        "subject",
+        "slot"
+      ],
+      "title": "ViolationKey",
+      "type": "object"
+    }
+  },
+  "$id": "urn:ucf:ratchet:baseline:2.0.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "behavior": {
+      "$ref": "#/$defs/BehaviorBaselineLedger"
+    },
+    "coverage": {
+      "$ref": "#/$defs/CoverageBaselineLedger"
+    },
+    "generation": {
+      "$ref": "#/$defs/SafeInteger"
+    },
+    "id": {
+      "$ref": "#/$defs/BaselineId"
+    },
+    "kind": {
+      "const": "ratchet_baseline",
+      "title": "Kind",
+      "type": "string"
+    },
+    "migrated_from": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RatchetV1MigrationSource"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "origin": {
+      "$ref": "#/$defs/RatchetBaselineOrigin"
+    },
+    "policy": {
+      "$ref": "#/$defs/RatchetPolicyRef"
+    },
+    "predecessor": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RatchetBaselineRef"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "ratchet_version": {
+      "const": "2.0.0",
+      "title": "Ratchet Version",
+      "type": "string"
+    },
+    "schema_uri": {
+      "const": "urn:ucf:ratchet:baseline:2.0.0",
+      "title": "Schema Uri",
+      "type": "string"
+    },
+    "source_assessment": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RatchetAssessmentRef"
+        },
+        {
+          "$ref": "#/$defs/RatchetV1AssessmentRef"
+        }
+      ],
+      "title": "Source Assessment"
+    },
+    "source_evaluation": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RatchetEvaluationReportRef"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "kind",
+    "ratchet_version",
+    "schema_uri",
+    "id",
+    "origin",
+    "generation",
+    "policy",
+    "source_assessment",
+    "source_evaluation",
+    "predecessor",
+    "migrated_from",
+    "behavior",
+    "coverage"
+  ],
+  "title": "UCF ratchet baseline profile 2.0.0",
+  "type": "object",
+  "x-ucf-document-kind": "ratchet_baseline",
+  "x-ucf-normative-algorithms": [
+    "urn:ucf:ratchet:fingerprint:observed-subject:2.0.0",
+    "urn:ucf:ratchet:fingerprint:behavior-subject:2.0.0",
+    "urn:ucf:ratchet:fingerprint:coverage-observed:2.0.0",
+    "urn:ucf:ratchet:coverage-qualification:2.0.0",
+    "urn:ucf:ratchet:coverage-reconciliation:2.0.0",
+    "urn:ucf:ratchet:fingerprint:coverage-semantic:2.0.0",
+    "urn:ucf:ratchet:coverage-subject-key:2.0.0",
+    "urn:ucf:ratchet:evaluate:2.0.0"
+  ],
+  "x-ucf-ratchet-version": "2.0.0",
+  "x-ucf-runtime-semantic-checks": [
+    "strict UTF-8 and duplicate-member JSON decoding",
+    "maximum JSON nesting depth 128",
+    "content-derived document, subject, debt, and violation IDs",
+    "exact policy, bundle, assessment, baseline, and report refs",
+    "independently pinned accepted baseline and migration tip IDs",
+    "canonical unique rules, groups, debts, and classifications",
+    "language-neutral Behavior and coverage projections",
+    "complete comparison domain and rule coverage before advance",
+    "fail-first Behavior, coverage, and combined outcomes",
+    "granular inherited, changed, resolved, and reintroduced debt",
+    "immutable predecessor-bound tightening and protections",
+    "source-complete v1 migration without reset or downgrade",
+    "maximum 256 policy rules",
+    "maximum 10000 current subjects",
+    "maximum 100000 violation identities"
+  ]
+}

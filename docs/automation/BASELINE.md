@@ -1,15 +1,54 @@
 # Repository quality baseline
 
-Observed on 2026-07-20 from `/home/deliner/projects/ucf`. The current accepted
-local run is under `.artifacts/quality/20260720T155500Z/`; independent VER-002
-contract, CLI/documentation, packaging, and final acceptance reviews are
-summarized under `.artifacts/agents/ver002-contract-review/`. Physical
+Observed on 2026-07-21 from `/home/deliner/projects/ucf`. The current accepted
+local run is under `.artifacts/quality/rel001-benchmark-20260721/`; physical
 clean-source acceptance is under
-`.artifacts/agents/ver002-clean-source-snapshot/20260720T160959Z-ver002/`.
-Counts are evidence from those runs, not allowances to reset when they
-regress.
+`.artifacts/agents/rel001-clean-source-snapshot/20260721T034500Z-rel001/`.
+Counts are evidence from those runs, not allowances to reset when they regress.
 
 ## Current green baseline
+
+From a physical source-only snapshot with fresh locked Python and frontend
+installs, the command:
+
+    python3 tools/quality_gates.py --profile all
+
+exited zero after running all eight phases:
+
+    PASS automation-tests         exit=0
+    PASS python-tests             exit=0
+    PASS python-lint              exit=0
+    PASS spec-validation          exit=0
+    PASS rel001-benchmark         exit=0
+    PASS packaging-contract       exit=0
+    PASS web-build                exit=0
+    PASS web-lint                 exit=0
+
+Detailed observations:
+
+- automation contracts: 141 passed;
+- Python: 2,080 passed and 90% source coverage;
+- Ruff over `src`, `tests`, `tools`, and the project Stop hook: no findings;
+- specifications: 113 loaded, 0 errors, and 0 warnings;
+- the checked REL-001 report replayed three complete real-stack repetitions at
+  structural digest
+  `c0ef71a90d671d29adabd3c705903244b5cbde9351f51e39da675264ebd6746a`;
+- packaging built two byte-identical wheels and exercised the installed UCF
+  contracts, Ratchet v2 and migration, Python, TypeScript/Fastify, Go HTTP,
+  Go CLI/event, generation, lifecycle, governance, and evidence-status lanes
+  outside checkout imports; accepted wheel SHA-256 is
+  `17cc39364e513d1f0cf6f5d94508146de8da5748ee7928d11e8dd2d8cd105489`;
+- frontend TypeScript/Vite production build and ESLint passed;
+- `git diff --check` reported no whitespace errors.
+
+The accepted snapshot contains 1,034 regular source files. Checkout and
+snapshot manifests remained byte-identical before and after at SHA-256
+`c8dd5c83796d2db24be725149546a44c0d6d227a60ee42946387169ea64c8858`.
+Exact output is retained in the snapshot's `quality-gates.console.log` and
+`source-manifest-comparison.log`. The independent final benchmark security
+review also replayed the corrected lifecycle projection and accepted it.
+
+## Prior VER-002 green baseline
 
 From a checkout with Python and frontend dependencies installed from the
 repository manifests, the command:
@@ -498,6 +537,33 @@ Both produce wheel SHA-256
 the physical snapshot covers 937 byte-stable regular source files at manifest
 SHA-256
 `52013a5c0957410a1c8819a14c9314415015a55d19150d54aedac98f0a552712`.
+
+## End-to-end adoption benchmark and Ratchet v2 resolution
+
+REL-001 closes the three-stack adoption-proof gap without promoting evidence
+levels or broadening the core IR. A parallel Ratchet `2.0.0` dual ledger keeps
+accepted Behavior violations separate from unresolved coverage debt while v1
+remains unchanged. Exact inherited uncertainty may remain; new, changed, or
+reintroduced uncertainty blocks; comparable resolution is protected. The real
+Python, TypeScript/Fastify, and Go adapters pass the common conformance boundary
+and execute unchanged brownfield fixture flows. Exact HTTP, CLI, and local
+file-spool event procedures produce five `tested` claims and zero `verified`
+claims.
+
+The closed published report records 13 candidates, 7 oracle false candidates,
+13 candidate decisions, 1 ambiguity resolution, 0 mapping approvals, 0 change
+approvals, 4 mappings, 5 materializations, 18 uncovered interfaces, and 20
+unresolved debt entries. Its three-run structural digest is
+`c0ef71a90d671d29adabd3c705903244b5cbde9351f51e39da675264ebd6746a`.
+Runtime samples and authored/derived overhead remain separate from structural
+identity, and scripted review counts are not called human effort.
+
+Independent reviews found and closed provenance, runtime matrix, transport,
+tool identity, overhead, installed-wheel, bounded-I/O, failure-receipt,
+lifecycle determinism, and clean-snapshot race defects. Retained evidence is
+under `.artifacts/quality/rel001-benchmark-20260721/` and
+`.artifacts/agents/rel001-*/`. CAP-213 remains experimental and bounded to the
+exact frozen fixtures, Linux/x86_64 environment, pinned tools, and procedures.
 
 ## Remaining trust gaps
 

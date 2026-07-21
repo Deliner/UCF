@@ -134,6 +134,10 @@ EXPECTED_SCHEMA_ASSETS = {
     "ucf/schemas/ratchet/v1/baseline.schema.json",
     "ucf/schemas/ratchet/v1/evaluation-report.schema.json",
     "ucf/schemas/ratchet/v1/policy.schema.json",
+    "ucf/schemas/ratchet/v2/assessment.schema.json",
+    "ucf/schemas/ratchet/v2/baseline.schema.json",
+    "ucf/schemas/ratchet/v2/evaluation-report.schema.json",
+    "ucf/schemas/ratchet/v2/policy.schema.json",
     "ucf/schemas/runtime_evidence/v1/environment.schema.json",
     "ucf/schemas/runtime_evidence/v1/policy.schema.json",
     "ucf/schemas/runtime_evidence/v1/request.schema.json",
@@ -157,6 +161,48 @@ TYPESCRIPT_FASTIFY_ADAPTER_BIN = "ucf-typescript-fastify-adapter"
 TYPESCRIPT_FASTIFY_NODE_VERSION = "v22.22.3"
 TYPESCRIPT_FASTIFY_NPM_VERSION = "10.9.8"
 MAX_TYPESCRIPT_FASTIFY_TARBALL_BYTES = 2 * 1024 * 1024
+MAX_INSTALLED_RATCHET_DOCUMENT_BYTES = 1024 * 1024
+MAX_INSTALLED_REL001_EVIDENCE_BYTES = 16 * 1024 * 1024
+REL001_LANE_EVIDENCE_KEYS = frozenset(
+    {
+        "kind",
+        "evidence_version",
+        "lane",
+        "status",
+        "source",
+        "deterministic",
+        "runtime",
+        "metrics",
+    }
+)
+REL001_DETERMINISTIC_EVIDENCE_KEYS = frozenset(
+    {
+        "inventory",
+        "discovery",
+        "decisions",
+        "bundle",
+        "mapping",
+        "verification_requests",
+    }
+)
+REL001_RUNTIME_EVIDENCE_KEYS = frozenset(
+    {"verification_results", "successor_behaviors", "tested_trust"}
+)
+REL001_METRIC_KEYS = frozenset(
+    {
+        "inventory_record_count",
+        "candidate_count",
+        "dispositions",
+        "eligible_interface_count",
+        "uncovered_interface_count",
+        "materialization_count",
+        "mapping_binding_count",
+        "tested_claim_count",
+        "verified_claim_count",
+        "verification_evidence_count",
+        "transports",
+    }
+)
 GO_STDLIB_BUILD_FLAGS = (
     "-mod=readonly",
     "-trimpath",
@@ -509,6 +555,143 @@ if successor.allowances or not successor.protected:
     raise SystemExit("installed successor did not protect the improvement")
 if reintroduced.outcome is not EvaluationOutcome.FAIL:
     raise SystemExit("installed protected resolution did not block reintroduction")
+"""
+
+INSTALLED_RATCHET_V2_AUTHOR = """\
+import sys
+from pathlib import Path
+
+from ucf.adapter_protocol import CapabilitySelection
+from ucf.ir.models import Producer
+from ucf.onboarding import parse_onboarding_bundle_json
+from ucf.ratchet import parse_ratchet_policy_json as parse_v1_policy_json
+from ucf.ratchet.v2 import (
+    RATCHET_EVALUATOR_CAPABILITY,
+    RATCHET_POLICY_SCHEMA_URI,
+    RATCHET_VERSION,
+    RatchetPolicy,
+    RatchetRule,
+    build_ratchet_assessment,
+    canonical_ratchet_json,
+    derive_policy_id,
+)
+
+bundle_path = Path(sys.argv[1])
+source_policy_path = Path(sys.argv[2])
+target_policy_path = Path(sys.argv[3])
+assessment_path = Path(sys.argv[4])
+bundle = parse_onboarding_bundle_json(bundle_path.read_bytes())
+source_policy = parse_v1_policy_json(source_policy_path.read_bytes())
+rules = tuple(
+    RatchetRule.model_validate_json(rule.model_dump_json())
+    for rule in source_policy.rules
+)
+provisional = RatchetPolicy(
+    kind="ratchet_policy",
+    ratchet_version=RATCHET_VERSION,
+    schema_uri=RATCHET_POLICY_SCHEMA_URI,
+    id="policy." + ("0" * 64),
+    evaluator=CapabilitySelection(
+        kind="capability",
+        name=RATCHET_EVALUATOR_CAPABILITY,
+        version=RATCHET_VERSION,
+    ),
+    rules=rules,
+)
+policy = provisional.model_copy(
+    update={"id": derive_policy_id(provisional)}
+)
+assessment = build_ratchet_assessment(
+    policy,
+    bundle,
+    producer=Producer(
+        kind="producer",
+        name="org.ucf.installed-smoke-assessor",
+        version="2.0.0",
+    ),
+    procedure_uri="urn:ucf:ratchet-assessment:installed-smoke:2.0.0",
+    capture_context=bundle.capture_context,
+)
+target_policy_path.write_bytes(canonical_ratchet_json(policy))
+assessment_path.write_bytes(canonical_ratchet_json(assessment))
+"""
+
+INSTALLED_RATCHET_V2_ASSERT = """\
+import stat
+import sys
+from pathlib import Path
+
+from ucf.ratchet import (
+    canonical_ratchet_json as canonical_v1_ratchet_json,
+    parse_ratchet_baseline_json as parse_v1_baseline_json,
+)
+from ucf.ratchet.v2 import (
+    CombinedOutcome,
+    RatchetBaselineOrigin,
+    canonical_ratchet_json,
+    parse_ratchet_baseline_json,
+    parse_ratchet_evaluation_report_json,
+)
+
+MAX_DOCUMENT_BYTES = 1024 * 1024
+
+def read_bounded(path):
+    metadata = path.lstat()
+    if not stat.S_ISREG(metadata.st_mode):
+        raise SystemExit(f"installed ratchet v2 output is not regular: {path}")
+    with path.open("rb") as stream:
+        payload = stream.read(MAX_DOCUMENT_BYTES + 1)
+    if len(payload) > MAX_DOCUMENT_BYTES:
+        raise SystemExit(f"installed ratchet v2 output is oversized: {path}")
+    return payload
+
+source_path = Path(sys.argv[1])
+baseline_path = Path(sys.argv[2])
+report_path = Path(sys.argv[3])
+successor_path = Path(sys.argv[4])
+migrated_path = Path(sys.argv[5])
+source = parse_v1_baseline_json(read_bounded(source_path))
+baseline = parse_ratchet_baseline_json(read_bounded(baseline_path))
+report = parse_ratchet_evaluation_report_json(read_bounded(report_path))
+successor = parse_ratchet_baseline_json(read_bounded(successor_path))
+migrated = parse_ratchet_baseline_json(read_bounded(migrated_path))
+
+if read_bounded(source_path) != canonical_v1_ratchet_json(source):
+    raise SystemExit("installed Ratchet v1 migration source is not canonical")
+for path, document in (
+    (baseline_path, baseline),
+    (report_path, report),
+    (successor_path, successor),
+    (migrated_path, migrated),
+):
+    if read_bounded(path) != canonical_ratchet_json(document):
+        raise SystemExit(f"installed Ratchet v2 output is not canonical: {path}")
+if baseline.origin is not RatchetBaselineOrigin.INITIAL or baseline.generation != 0:
+    raise SystemExit("installed Ratchet v2 establish has invalid lineage")
+if report.baseline.target_id != baseline.id:
+    raise SystemExit("installed Ratchet v2 report lost the accepted baseline ID")
+if report.combined_outcome is not CombinedOutcome.PASS_WITH_LEGACY_COVERAGE_DEBT:
+    raise SystemExit("unchanged installed Ratchet v2 debt did not qualify its pass")
+if (
+    successor.origin is not RatchetBaselineOrigin.SUCCESSOR
+    or successor.generation != baseline.generation + 1
+    or successor.predecessor is None
+    or successor.predecessor.target_id != baseline.id
+    or successor.source_evaluation is None
+    or successor.source_evaluation.target_id != report.id
+):
+    raise SystemExit("installed Ratchet v2 successor has invalid lineage")
+if (
+    migrated.origin is not RatchetBaselineOrigin.MIGRATED_V1
+    or migrated.generation != source.generation
+    or migrated.migrated_from is None
+    or migrated.migrated_from.baseline.target_id != source.id
+):
+    raise SystemExit("installed v1-to-v2 migration has invalid lineage")
+if len(migrated.behavior.allowances) != len(source.allowances):
+    raise SystemExit("installed v1-to-v2 migration lost behavior debt")
+if not migrated.coverage.allowances:
+    raise SystemExit("installed v1-to-v2 migration lost uncertain coverage debt")
 """
 
 INSTALLED_RUNTIME_EVIDENCE_ASSERT = """\
@@ -1148,6 +1331,7 @@ from ucf.ir import (
     parse_trust_ir_json,
     validate_trust_against_behavior,
 )
+from ucf.ir.models import Producer
 from ucf.inventory import (
     canonical_inventory_json,
     parse_inventory_request_json,
@@ -1171,6 +1355,20 @@ from ucf.ratchet import (
     parse_ratchet_baseline_json,
     parse_ratchet_evaluation_report_json,
     parse_ratchet_policy_json,
+)
+from ucf.ratchet.v2 import (
+    RATCHET_EVALUATOR_CAPABILITY as RATCHET_EVALUATOR_CAPABILITY_V2,
+    RATCHET_POLICY_SCHEMA_URI as RATCHET_POLICY_SCHEMA_URI_V2,
+    RATCHET_VERSION as RATCHET_VERSION_V2,
+    RatchetEvaluatorSelection as RatchetEvaluatorSelectionV2,
+    RatchetPolicy as RatchetPolicyV2,
+    RatchetRule as RatchetRuleV2,
+    canonical_ratchet_json as canonical_ratchet_json_v2,
+    derive_policy_id as derive_policy_id_v2,
+    parse_ratchet_assessment_json as parse_ratchet_assessment_json_v2,
+    parse_ratchet_baseline_json as parse_ratchet_baseline_json_v2,
+    parse_ratchet_evaluation_report_json as parse_ratchet_evaluation_report_json_v2,
+    parse_ratchet_policy_json as parse_ratchet_policy_json_v2,
 )
 from ucf.runtime_evidence import (
     canonical_runtime_evidence_json,
@@ -1452,6 +1650,88 @@ if len(ratchet_parsers) != len(ratchet_resources):
     raise SystemExit("installed ratchet parser surface is incomplete")
 if not canonical_ratchet_json:
     raise SystemExit("installed ratchet serializer is unavailable")
+
+ratchet_v2_schema_directory = package_root / "schemas" / "ratchet" / "v2"
+ratchet_v2_resources = {
+    ratchet_v2_schema_directory / "policy.schema.json": (
+        "urn:ucf:ratchet:policy:2.0.0",
+        "ratchet_policy",
+    ),
+    ratchet_v2_schema_directory / "assessment.schema.json": (
+        "urn:ucf:ratchet:assessment:2.0.0",
+        "ratchet_assessment",
+    ),
+    ratchet_v2_schema_directory / "baseline.schema.json": (
+        "urn:ucf:ratchet:baseline:2.0.0",
+        "ratchet_baseline",
+    ),
+    ratchet_v2_schema_directory / "evaluation-report.schema.json": (
+        "urn:ucf:ratchet:evaluation-report:2.0.0",
+        "ratchet_evaluation_report",
+    ),
+}
+for ratchet_v2_schema_path, coordinates in ratchet_v2_resources.items():
+    expected_id, expected_kind = coordinates
+    ratchet_v2_schema = json.loads(ratchet_v2_schema_path.read_text())
+    properties = ratchet_v2_schema.get("properties", {})
+    if ratchet_v2_schema.get("$id") != expected_id:
+        raise SystemExit(
+            "unexpected packaged ratchet v2 schema identity: "
+            f"{ratchet_v2_schema.get('$id')!r}"
+        )
+    if ratchet_v2_schema.get("x-ucf-ratchet-version") != "2.0.0":
+        raise SystemExit("unexpected packaged ratchet v2 version marker")
+    if ratchet_v2_schema.get("x-ucf-document-kind") != expected_kind:
+        raise SystemExit("unexpected packaged ratchet v2 kind marker")
+    if ratchet_v2_schema.get("additionalProperties") is not False:
+        raise SystemExit("packaged ratchet v2 root schema is not closed")
+    if properties.get("kind", {}).get("const") != expected_kind:
+        raise SystemExit("unexpected packaged ratchet v2 document kind")
+    if properties.get("ratchet_version", {}).get("const") != "2.0.0":
+        raise SystemExit("unexpected packaged ratchet v2 document version")
+    if properties.get("schema_uri", {}).get("const") != expected_id:
+        raise SystemExit(
+            "packaged ratchet v2 schema URI differs from its resource ID"
+        )
+
+ratchet_v2_rule = RatchetRuleV2(
+    kind="ratchet_rule",
+    id="installed-smoke",
+    version="1.0.0",
+    procedure_uri="urn:ucf:ratchet-rule:installed-smoke:1.0.0",
+    producer=Producer(
+        kind="producer",
+        name="org.ucf.installed-smoke-rules",
+        version="1.0.0",
+    ),
+    summary="Exercise the installed Ratchet 2.0.0 policy boundary.",
+)
+ratchet_v2_provisional = RatchetPolicyV2(
+    kind="ratchet_policy",
+    ratchet_version=RATCHET_VERSION_V2,
+    schema_uri=RATCHET_POLICY_SCHEMA_URI_V2,
+    id="policy." + ("0" * 64),
+    evaluator=RatchetEvaluatorSelectionV2(
+        kind="capability",
+        name=RATCHET_EVALUATOR_CAPABILITY_V2,
+        version=RATCHET_VERSION_V2,
+    ),
+    rules=(ratchet_v2_rule,),
+)
+ratchet_v2_policy = ratchet_v2_provisional.model_copy(
+    update={"id": derive_policy_id_v2(ratchet_v2_provisional)}
+)
+ratchet_v2_encoded = canonical_ratchet_json_v2(ratchet_v2_policy)
+if parse_ratchet_policy_json_v2(ratchet_v2_encoded) != ratchet_v2_policy:
+    raise SystemExit("installed Ratchet 2.0.0 policy round-trip failed")
+ratchet_v2_parsers = (
+    parse_ratchet_policy_json_v2,
+    parse_ratchet_assessment_json_v2,
+    parse_ratchet_baseline_json_v2,
+    parse_ratchet_evaluation_report_json_v2,
+)
+if len(ratchet_v2_parsers) != len(ratchet_v2_resources):
+    raise SystemExit("installed ratchet v2 parser surface is incomplete")
 
 runtime_evidence_schema_directory = (
     package_root / "schemas" / "runtime_evidence" / "v1"
@@ -1792,6 +2072,7 @@ print(
 print(f"inventory-schemas={sorted(map(str, inventory_resources))}")
 print(f"onboarding-schemas={sorted(map(str, onboarding_resources))}")
 print(f"ratchet-schemas={sorted(map(str, ratchet_resources))}")
+print(f"ratchet-v2-schemas={sorted(map(str, ratchet_v2_resources))}")
 print(
     "runtime-evidence-schemas="
     f"{sorted(map(str, runtime_evidence_resources))}"
@@ -3040,6 +3321,73 @@ def _ratchet_cli_command(
     return tuple(command)
 
 
+def _ratchet_v2_cli_command(
+    *,
+    ucf: Path,
+    operation: str,
+    policy: Path,
+    bundle: Path,
+    assessment: Path,
+    output: Path,
+    baseline: Path | None = None,
+    accepted_baseline_id: str | None = None,
+    evaluation: Path | None = None,
+) -> tuple[str, ...]:
+    command = [
+        str(ucf),
+        "ratchet",
+        "v2",
+        operation,
+        "--policy",
+        str(policy),
+        "--onboarding-bundle",
+        str(bundle),
+        "--assessment",
+        str(assessment),
+    ]
+    if baseline is not None:
+        command.extend(("--baseline", str(baseline)))
+    if accepted_baseline_id is not None:
+        command.extend(
+            ("--accepted-baseline-id", accepted_baseline_id)
+        )
+    if evaluation is not None:
+        command.extend(("--evaluation", str(evaluation)))
+    command.extend(("--output", str(output)))
+    return tuple(command)
+
+
+def _read_bounded_ratchet_document(path: Path, *, label: str) -> bytes:
+    try:
+        metadata = path.lstat()
+        if not stat.S_ISREG(metadata.st_mode):
+            raise PackageContractError(f"{label} is not a regular file")
+        with path.open("rb") as stream:
+            payload = stream.read(MAX_INSTALLED_RATCHET_DOCUMENT_BYTES + 1)
+    except OSError as error:
+        raise PackageContractError(f"{label} is unavailable") from error
+    if len(payload) > MAX_INSTALLED_RATCHET_DOCUMENT_BYTES:
+        raise PackageContractError(f"{label} exceeds the document limit")
+    return payload
+
+
+def _bounded_ratchet_document_id(path: Path, *, label: str) -> str:
+    payload = _read_bounded_ratchet_document(path, label=label)
+    try:
+        document = json.loads(payload)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise PackageContractError(f"{label} is not valid JSON") from error
+    identifier = document.get("id") if isinstance(document, dict) else None
+    if (
+        not isinstance(identifier, str)
+        or not identifier.startswith("baseline.")
+        or len(identifier) != len("baseline.") + 64
+        or any(character not in "0123456789abcdef" for character in identifier[9:])
+    ):
+        raise PackageContractError(f"{label} has an invalid baseline ID")
+    return identifier
+
+
 def _runtime_evidence_cli_command(
     *,
     ucf: Path,
@@ -3297,8 +3645,179 @@ def _smoke_installed_ratchet(
             "<installed-ratchet-assert> <ratchet-outputs>"
         ),
     )
+    _smoke_installed_ratchet_v2(
+        python=python,
+        ucf=ucf,
+        run_directory=run_directory,
+        bundle=bundle,
+        source_policy=policy,
+        source_assessment=initial,
+        source_baseline=baseline_a,
+        environment=environment,
+    )
+    if baseline_a.read_bytes() != accepted_baseline:
+        raise PackageContractError(
+            "installed Ratchet v2 smoke mutated its v1 source baseline"
+        )
     if tuple(run_directory.glob(".ratchet-*.tmp")):
         raise PackageContractError("failed installed ratchet left temporary output")
+
+
+def _smoke_installed_ratchet_v2(
+    *,
+    python: Path,
+    ucf: Path,
+    run_directory: Path,
+    bundle: Path,
+    source_policy: Path,
+    source_assessment: Path,
+    source_baseline: Path,
+    environment: dict[str, str],
+) -> None:
+    source_baseline_before = _read_bounded_ratchet_document(
+        source_baseline,
+        label="installed Ratchet v1 source baseline",
+    )
+    target_policy = run_directory / "ratchet-v2-policy.json"
+    assessment = run_directory / "ratchet-v2-assessment.json"
+    _run(
+        (
+            str(python),
+            "-I",
+            "-c",
+            INSTALLED_RATCHET_V2_AUTHOR,
+            str(bundle),
+            str(source_policy),
+            str(target_policy),
+            str(assessment),
+        ),
+        run_directory,
+        environment,
+        display_command=(
+            f"{shlex.quote(str(python))} -I -c "
+            "<installed-ratchet-v2-author> <ratchet-v2-documents>"
+        ),
+    )
+
+    baseline = run_directory / "ratchet-v2-baseline.json"
+    _run(
+        _ratchet_v2_cli_command(
+            ucf=ucf,
+            operation="establish",
+            policy=target_policy,
+            bundle=bundle,
+            assessment=assessment,
+            output=baseline,
+        ),
+        run_directory,
+        environment,
+    )
+    accepted_baseline_id = _bounded_ratchet_document_id(
+        baseline,
+        label="installed Ratchet v2 baseline",
+    )
+
+    report = run_directory / "ratchet-v2-unchanged-report.json"
+    _run(
+        _ratchet_v2_cli_command(
+            ucf=ucf,
+            operation="evaluate",
+            policy=target_policy,
+            bundle=bundle,
+            assessment=assessment,
+            baseline=baseline,
+            accepted_baseline_id=accepted_baseline_id,
+            output=report,
+        ),
+        run_directory,
+        environment,
+    )
+    successor = run_directory / "ratchet-v2-successor.json"
+    _run(
+        _ratchet_v2_cli_command(
+            ucf=ucf,
+            operation="advance",
+            policy=target_policy,
+            bundle=bundle,
+            assessment=assessment,
+            baseline=baseline,
+            accepted_baseline_id=accepted_baseline_id,
+            evaluation=report,
+            output=successor,
+        ),
+        run_directory,
+        environment,
+    )
+
+    accepted_source_id = _bounded_ratchet_document_id(
+        source_baseline,
+        label="installed Ratchet v1 source baseline",
+    )
+    migrated = run_directory / "ratchet-v2-migrated-from-v1.json"
+    _run(
+        (
+            str(ucf),
+            "ratchet",
+            "v2",
+            "migrate-from-v1",
+            "--target-policy",
+            str(target_policy),
+            "--source-policy",
+            str(source_policy),
+            "--source-baseline",
+            str(source_baseline),
+            "--source-assessment",
+            str(source_assessment),
+            "--onboarding-bundle",
+            str(bundle),
+            "--accepted-source-baseline-id",
+            accepted_source_id,
+            "--output",
+            str(migrated),
+        ),
+        run_directory,
+        environment,
+    )
+
+    outputs = {
+        "target policy": target_policy,
+        "assessment": assessment,
+        "baseline": baseline,
+        "evaluation": report,
+        "successor": successor,
+        "migration": migrated,
+    }
+    for label, path in outputs.items():
+        _read_bounded_ratchet_document(
+            path,
+            label=f"installed Ratchet v2 {label}",
+        )
+    _run(
+        (
+            str(python),
+            "-I",
+            "-c",
+            INSTALLED_RATCHET_V2_ASSERT,
+            str(source_baseline),
+            str(baseline),
+            str(report),
+            str(successor),
+            str(migrated),
+        ),
+        run_directory,
+        environment,
+        display_command=(
+            f"{shlex.quote(str(python))} -I -c "
+            "<installed-ratchet-v2-assert> <ratchet-v2-outputs>"
+        ),
+    )
+    if _read_bounded_ratchet_document(
+        source_baseline,
+        label="installed Ratchet v1 source baseline",
+    ) != source_baseline_before:
+        raise PackageContractError(
+            "installed Ratchet v2 transaction mutated its v1 source"
+        )
 
 
 def _smoke_installed_runtime_evidence(
@@ -3712,6 +4231,136 @@ def _copy_stable_driver(
     destination.write_bytes(payload)
     if destination.read_bytes() != payload:
         raise PackageContractError(f"external installed {label} driver copy differs")
+
+
+def _read_installed_rel001_lane_evidence(
+    path: Path,
+    *,
+    expected_lane: str,
+    expected_transports: tuple[str, ...],
+) -> dict[str, object]:
+    try:
+        metadata = path.lstat()
+        if not stat.S_ISREG(metadata.st_mode):
+            raise PackageContractError(
+                "installed REL-001 evidence is not a regular file"
+            )
+        with path.open("rb") as stream:
+            payload = stream.read(MAX_INSTALLED_REL001_EVIDENCE_BYTES + 1)
+    except OSError as error:
+        raise PackageContractError(
+            "installed REL-001 evidence is unavailable"
+        ) from error
+    if len(payload) > MAX_INSTALLED_REL001_EVIDENCE_BYTES:
+        raise PackageContractError("installed REL-001 evidence is oversized")
+    try:
+        evidence = json.loads(payload)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise PackageContractError(
+            "installed REL-001 evidence is invalid JSON"
+        ) from error
+    if type(evidence) is not dict:
+        raise PackageContractError("installed REL-001 evidence is not an object")
+    canonical = (
+        json.dumps(
+            evidence,
+            ensure_ascii=True,
+            allow_nan=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        + "\n"
+    ).encode("ascii")
+    if payload != canonical:
+        raise PackageContractError("installed REL-001 evidence is not canonical")
+    if set(evidence) != REL001_LANE_EVIDENCE_KEYS or (
+        evidence["kind"] != "rel001_lane_evidence"
+        or evidence["evidence_version"] != "1.0.0"
+        or evidence["lane"] != expected_lane
+        or evidence["status"] != "passed"
+    ):
+        raise PackageContractError(
+            "installed REL-001 evidence has incompatible coordinates"
+        )
+
+    source = evidence["source"]
+    deterministic = evidence["deterministic"]
+    runtime = evidence["runtime"]
+    metrics = evidence["metrics"]
+    if (
+        type(source) is not dict
+        or set(source) != {"file_count", "byte_count", "manifest_digest"}
+        or type(deterministic) is not dict
+        or set(deterministic) != REL001_DETERMINISTIC_EVIDENCE_KEYS
+        or type(runtime) is not dict
+        or set(runtime) != REL001_RUNTIME_EVIDENCE_KEYS
+        or type(metrics) is not dict
+        or set(metrics) != REL001_METRIC_KEYS
+    ):
+        raise PackageContractError(
+            "installed REL-001 evidence has an incompatible shape"
+        )
+    digest = source["manifest_digest"]
+    if (
+        type(source["file_count"]) is not int
+        or source["file_count"] <= 0
+        or type(source["byte_count"]) is not int
+        or source["byte_count"] <= 0
+        or not isinstance(digest, str)
+        or len(digest) != 64
+        or any(character not in "0123456789abcdef" for character in digest)
+    ):
+        raise PackageContractError(
+            "installed REL-001 evidence has invalid source identity"
+        )
+    if any(
+        type(deterministic[name]) is not dict
+        for name in REL001_DETERMINISTIC_EVIDENCE_KEYS
+        if name != "verification_requests"
+    ) or not _nonempty_document_array(deterministic["verification_requests"]):
+        raise PackageContractError(
+            "installed REL-001 deterministic evidence is incomplete"
+        )
+    if any(
+        not _nonempty_document_array(runtime[name])
+        for name in REL001_RUNTIME_EVIDENCE_KEYS
+    ):
+        raise PackageContractError(
+            "installed REL-001 runtime evidence is incomplete"
+        )
+
+    dispositions = metrics["dispositions"]
+    integer_metrics = REL001_METRIC_KEYS - {"dispositions", "transports"}
+    if (
+        type(dispositions) is not dict
+        or set(dispositions) != {"accepted", "edited", "rejected", "uncertain"}
+        or any(type(value) is not int or value < 0 for value in dispositions.values())
+        or any(
+            type(metrics[name]) is not int or metrics[name] < 0
+            for name in integer_metrics
+        )
+        or metrics["transports"] != list(expected_transports)
+        or metrics["tested_claim_count"] <= 0
+        or metrics["verification_evidence_count"] <= 0
+        or metrics["verified_claim_count"] != 0
+    ):
+        raise PackageContractError(
+            "installed REL-001 evidence metrics are invalid or overclaimed"
+        )
+    print(
+        f"rel001-{expected_lane}-evidence-sha256="
+        f"{hashlib.sha256(payload).hexdigest()}",
+        flush=True,
+    )
+    return evidence
+
+
+def _nonempty_document_array(value: object) -> bool:
+    return (
+        type(value) is list
+        and bool(value)
+        and all(type(document) is dict for document in value)
+    )
 
 
 def _smoke_installed_evidence_status(
@@ -4263,6 +4912,75 @@ def reserve_item(*, item_id: str) -> str:
         )
 
 
+def _smoke_installed_python_legacy_quote(
+    *,
+    python: Path,
+    run_directory: Path,
+    repository_root: Path,
+    environment: dict[str, str],
+) -> None:
+    fixture_root = run_directory / "rel001-python-legacy-quote"
+    adapter_root = run_directory / "rel001-python-adapter"
+    shutil.copytree(
+        repository_root
+        / "tests"
+        / "fixtures"
+        / "brownfield"
+        / "python_legacy_quote",
+        fixture_root,
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+    )
+    adapter_root.mkdir()
+    source_adapter_root = repository_root / "tests" / "fixtures" / "adapters"
+    adapter = adapter_root / "inventory_reference_adapter.py"
+    shutil.copy2(source_adapter_root / adapter.name, adapter)
+    shutil.copytree(
+        source_adapter_root / "inventory_reference",
+        adapter_root / "inventory_reference",
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+    )
+    fixture_before = _tree_manifest(fixture_root)
+    adapter_before = _tree_manifest(adapter_root)
+
+    source_driver = (
+        repository_root / "tools" / "installed_python_legacy_quote_smoke.py"
+    )
+    external_driver = run_directory / "installed_python_legacy_quote_smoke.py"
+    _copy_stable_driver(
+        source=source_driver,
+        destination=external_driver,
+        label="Python legacy quote",
+    )
+    evidence_output = run_directory / "rel001-python-lane-evidence.json"
+    _run(
+        (
+            str(python),
+            "-I",
+            str(external_driver),
+            "--adapter",
+            str(adapter),
+            "--fixture",
+            str(fixture_root),
+            "--evidence-output",
+            str(evidence_output),
+        ),
+        run_directory,
+        environment,
+    )
+    _read_installed_rel001_lane_evidence(
+        evidence_output,
+        expected_lane="python",
+        expected_transports=(),
+    )
+    if (
+        _tree_manifest(fixture_root) != fixture_before
+        or _tree_manifest(adapter_root) != adapter_before
+    ):
+        raise PackageContractError(
+            "installed Python REL-001 workflow changed its fixture or adapter"
+        )
+
+
 def _smoke_installed_typescript_fastify(
     *,
     python: Path,
@@ -4285,6 +5003,7 @@ def _smoke_installed_typescript_fastify(
         destination=external_driver,
         label="TypeScript/Fastify",
     )
+    evidence_output = run_directory / "rel001-typescript-lane-evidence.json"
 
     _run(
         (
@@ -4295,9 +5014,16 @@ def _smoke_installed_typescript_fastify(
             str(adapter_entry),
             "--fixture",
             str(fixture_root),
+            "--evidence-output",
+            str(evidence_output),
         ),
         fixture_root,
         environment,
+    )
+    _read_installed_rel001_lane_evidence(
+        evidence_output,
+        expected_lane="typescript_fastify",
+        expected_transports=("http",),
     )
     if typescript_fastify_fixture_manifest(fixture_root) != fixture_source_manifest:
         raise PackageContractError(
@@ -4388,6 +5114,7 @@ def _smoke_installed_go_stdlib(
         destination=external_driver,
         label="Go standard-library",
     )
+    evidence_output = run_directory / "rel001-go-http-lane-evidence.json"
     _run(
         (
             str(python),
@@ -4399,9 +5126,16 @@ def _smoke_installed_go_stdlib(
             str(distribution.fixture_root),
             "--fixture-executable",
             str(distribution.fixture_entry),
+            "--evidence-output",
+            str(evidence_output),
         ),
         distribution.fixture_root,
         environment,
+    )
+    _read_installed_rel001_lane_evidence(
+        evidence_output,
+        expected_lane="go_http",
+        expected_transports=("http",),
     )
 
     _smoke_installed_go_stdlib_platform(
@@ -4443,6 +5177,7 @@ def _smoke_installed_go_stdlib_platform(
         destination=external_driver,
         label="Go standard-library platform",
     )
+    evidence_output = run_directory / "rel001-go-platform-lane-evidence.json"
     _run(
         (
             str(python),
@@ -4454,9 +5189,16 @@ def _smoke_installed_go_stdlib_platform(
             str(distribution.platform_fixture_root),
             "--platform-fixture-executable",
             str(distribution.platform_fixture_entry),
+            "--evidence-output",
+            str(evidence_output),
         ),
         run_directory,
         environment,
+    )
+    _read_installed_rel001_lane_evidence(
+        evidence_output,
+        expected_lane="go_platform",
+        expected_transports=("cli", "event"),
     )
     if (
         go_stdlib_adapter_manifest(distribution.adapter_root)
@@ -5200,6 +5942,12 @@ def _smoke_installed_wheel(
     _smoke_installed_generation(
         python=python,
         ucf=ucf,
+        run_directory=run_directory,
+        repository_root=repository_root,
+        environment=isolated,
+    )
+    _smoke_installed_python_legacy_quote(
+        python=python,
         run_directory=run_directory,
         repository_root=repository_root,
         environment=isolated,

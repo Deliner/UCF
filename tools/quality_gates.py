@@ -95,6 +95,23 @@ SPEC_VALIDATION = Gate(
         "specs",
     ),
 )
+REL001_BENCHMARK = Gate(
+    name="rel001-benchmark",
+    command=(
+        "uv",
+        "run",
+        "--locked",
+        "--extra",
+        "dev",
+        "python",
+        "tools/rel001_benchmark.py",
+        "verify-published",
+        "--report",
+        "docs/benchmarks/rel001-report.json",
+        "--repetitions",
+        "3",
+    ),
+)
 PACKAGING_CONTRACT = Gate(
     name="packaging-contract",
     command=("uv", "run", "--locked", "python", "tools/package_contract.py"),
@@ -117,6 +134,7 @@ PROFILES: dict[str, tuple[Gate, ...]] = {
         PYTHON_TESTS,
         PYTHON_LINT,
         SPEC_VALIDATION,
+        REL001_BENCHMARK,
         PACKAGING_CONTRACT,
         WEB_BUILD,
         WEB_LINT,
@@ -128,14 +146,31 @@ PACKAGING_TOOL_INPUTS = {
     "tests/generation/_fixture_factory.py",
     "tools/generate_change_governance_schema.py",
     "tools/generate_generation_schema.py",
+    "tools/generate_ratchet_v2_schema.py",
     "tools/go_stdlib_adapter_contract.py",
     "tools/go_stdlib_platform_contract.py",
     "tools/go_stdlib_toolchain.py",
     "tools/installed_go_stdlib_smoke.py",
     "tools/installed_go_stdlib_platform_smoke.py",
+    "tools/installed_python_legacy_quote_smoke.py",
     "tools/installed_typescript_fastify_smoke.py",
     "tools/package_contract.py",
     "tools/quality_gates.py",
+    "tools/rel001_benchmark.py",
+    "tools/rel001_benchmark_scenarios.py",
+    "tools/typescript_fastify_adapter_contract.py",
+}
+
+REL001_BENCHMARK_TOOL_INPUTS = {
+    "tools/go_stdlib_adapter_contract.py",
+    "tools/go_stdlib_platform_contract.py",
+    "tools/go_stdlib_toolchain.py",
+    "tools/installed_go_stdlib_platform_smoke.py",
+    "tools/installed_go_stdlib_smoke.py",
+    "tools/installed_python_legacy_quote_smoke.py",
+    "tools/installed_typescript_fastify_smoke.py",
+    "tools/rel001_benchmark.py",
+    "tools/rel001_benchmark_scenarios.py",
     "tools/typescript_fastify_adapter_contract.py",
 }
 
@@ -148,6 +183,13 @@ def affected_gates(changed_files: Sequence[str]) -> tuple[Gate, ...]:
     selected: set[Gate] = {AUTOMATION_TESTS}
     for raw_path in changed_files:
         path = raw_path.removeprefix("./").replace("\\", "/")
+        if (
+            path in REL001_BENCHMARK_TOOL_INPUTS
+            or path == "docs/benchmarks/rel001-report.json"
+            or path.startswith(("src/ucf/", "adapters/", "tests/fixtures/"))
+            or path in {"pyproject.toml", "uv.lock"}
+        ):
+            selected.add(REL001_BENCHMARK)
         if path.startswith("web/"):
             selected.update((WEB_BUILD, WEB_LINT))
         elif path.startswith(("adapters/", "tests/fixtures/")):

@@ -41,6 +41,8 @@ adapter_app = typer.Typer(help="Out-of-process adapter protocol operations")
 app.add_typer(adapter_app, name="adapter")
 ratchet_app = typer.Typer(help="Versioned brownfield baseline-and-ratchet operations")
 app.add_typer(ratchet_app, name="ratchet")
+ratchet_v2_app = typer.Typer(help="Ratchet 2.0.0 dual-ledger operations")
+ratchet_app.add_typer(ratchet_v2_app, name="v2")
 change_app = typer.Typer(
     help="Versioned OpenSpec-compatible change lifecycle operations"
 )
@@ -2267,6 +2269,294 @@ def ratchet_advance(
         raise typer.Exit(code=3) from error
     if blocked:
         raise typer.Exit(code=1)
+
+
+@ratchet_v2_app.command("establish")
+def ratchet_v2_establish(
+    policy_path: Path = typer.Option(..., "--policy"),
+    onboarding_bundle_path: Path = typer.Option(..., "--onboarding-bundle"),
+    assessment_path: Path = typer.Option(..., "--assessment"),
+    output: Path = typer.Option(..., "--output"),
+) -> None:
+    """Establish an immutable Ratchet 2.0.0 dual-ledger baseline."""
+    from pydantic import ValidationError
+
+    from ucf.ir import IRValidationError
+    from ucf.onboarding import (
+        OnboardingValidationError,
+        parse_onboarding_bundle_json,
+    )
+    from ucf.ratchet.v2 import (
+        RatchetValidationError,
+        canonical_ratchet_json,
+        establish_ratchet_baseline,
+        parse_ratchet_assessment_json,
+        parse_ratchet_baseline_json,
+        parse_ratchet_policy_json,
+    )
+
+    try:
+        destination = _file_destination(
+            output,
+            inputs=(policy_path, onboarding_bundle_path, assessment_path),
+            label="ratchet v2 output",
+        )
+        policy = parse_ratchet_policy_json(policy_path.read_bytes())
+        bundle = parse_onboarding_bundle_json(onboarding_bundle_path.read_bytes())
+        assessment = parse_ratchet_assessment_json(assessment_path.read_bytes())
+        baseline = establish_ratchet_baseline(policy, bundle, assessment)
+        encoded = canonical_ratchet_json(baseline)
+        validated = parse_ratchet_baseline_json(encoded)
+        _atomic_write(destination, canonical_ratchet_json(validated))
+    except (
+        IRValidationError,
+        OnboardingValidationError,
+        RatchetValidationError,
+        ValidationError,
+        OSError,
+        TypeError,
+        ValueError,
+    ) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+
+
+@ratchet_v2_app.command("evaluate")
+def ratchet_v2_evaluate(
+    policy_path: Path = typer.Option(..., "--policy"),
+    onboarding_bundle_path: Path = typer.Option(..., "--onboarding-bundle"),
+    baseline_path: Path = typer.Option(..., "--baseline"),
+    assessment_path: Path = typer.Option(..., "--assessment"),
+    accepted_baseline_id: str = typer.Option(..., "--accepted-baseline-id"),
+    output: Path = typer.Option(..., "--output"),
+) -> None:
+    """Evaluate both ledgers against an independently accepted baseline."""
+    from pydantic import ValidationError
+
+    from ucf.ir import IRValidationError
+    from ucf.onboarding import (
+        OnboardingValidationError,
+        parse_onboarding_bundle_json,
+    )
+    from ucf.ratchet.v2 import (
+        CombinedOutcome,
+        RatchetValidationError,
+        canonical_ratchet_json,
+        evaluate_ratchet,
+        parse_ratchet_assessment_json,
+        parse_ratchet_baseline_json,
+        parse_ratchet_evaluation_report_json,
+        parse_ratchet_policy_json,
+    )
+
+    try:
+        destination = _file_destination(
+            output,
+            inputs=(
+                policy_path,
+                onboarding_bundle_path,
+                baseline_path,
+                assessment_path,
+            ),
+            label="ratchet v2 output",
+        )
+        policy = parse_ratchet_policy_json(policy_path.read_bytes())
+        bundle = parse_onboarding_bundle_json(onboarding_bundle_path.read_bytes())
+        baseline = parse_ratchet_baseline_json(baseline_path.read_bytes())
+        assessment = parse_ratchet_assessment_json(assessment_path.read_bytes())
+        report = evaluate_ratchet(
+            policy,
+            baseline,
+            bundle,
+            assessment,
+            accepted_baseline_id=accepted_baseline_id,
+        )
+        encoded = canonical_ratchet_json(report)
+        validated = parse_ratchet_evaluation_report_json(encoded)
+        _atomic_write(destination, canonical_ratchet_json(validated))
+    except (
+        IRValidationError,
+        OnboardingValidationError,
+        RatchetValidationError,
+        ValidationError,
+        OSError,
+        TypeError,
+        ValueError,
+    ) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+    if report.combined_outcome not in {
+        CombinedOutcome.PASS,
+        CombinedOutcome.PASS_WITH_LEGACY_COVERAGE_DEBT,
+    }:
+        raise typer.Exit(code=1)
+
+
+@ratchet_v2_app.command("advance")
+def ratchet_v2_advance(
+    policy_path: Path = typer.Option(..., "--policy"),
+    onboarding_bundle_path: Path = typer.Option(..., "--onboarding-bundle"),
+    baseline_path: Path = typer.Option(..., "--baseline"),
+    assessment_path: Path = typer.Option(..., "--assessment"),
+    evaluation_path: Path = typer.Option(..., "--evaluation"),
+    accepted_baseline_id: str = typer.Option(..., "--accepted-baseline-id"),
+    output: Path = typer.Option(..., "--output"),
+) -> None:
+    """Advance both ledgers after an exact passing Ratchet 2.0.0 report."""
+    from pydantic import ValidationError
+
+    from ucf.ir import IRValidationError
+    from ucf.onboarding import (
+        OnboardingValidationError,
+        parse_onboarding_bundle_json,
+    )
+    from ucf.ratchet.v2 import (
+        CombinedOutcome,
+        RatchetValidationError,
+        advance_ratchet_baseline,
+        canonical_ratchet_json,
+        parse_ratchet_assessment_json,
+        parse_ratchet_baseline_json,
+        parse_ratchet_evaluation_report_json,
+        parse_ratchet_policy_json,
+        validate_ratchet_evaluation_report,
+    )
+
+    try:
+        destination = _file_destination(
+            output,
+            inputs=(
+                policy_path,
+                onboarding_bundle_path,
+                baseline_path,
+                assessment_path,
+                evaluation_path,
+            ),
+            label="ratchet v2 output",
+        )
+        policy = parse_ratchet_policy_json(policy_path.read_bytes())
+        bundle = parse_onboarding_bundle_json(onboarding_bundle_path.read_bytes())
+        baseline = parse_ratchet_baseline_json(baseline_path.read_bytes())
+        assessment = parse_ratchet_assessment_json(assessment_path.read_bytes())
+        report = parse_ratchet_evaluation_report_json(
+            evaluation_path.read_bytes()
+        )
+        validate_ratchet_evaluation_report(
+            policy,
+            baseline,
+            bundle,
+            assessment,
+            report,
+            accepted_baseline_id=accepted_baseline_id,
+        )
+        blocked = report.combined_outcome not in {
+            CombinedOutcome.PASS,
+            CombinedOutcome.PASS_WITH_LEGACY_COVERAGE_DEBT,
+        }
+        if not blocked:
+            successor = advance_ratchet_baseline(
+                policy,
+                baseline,
+                bundle,
+                assessment,
+                report,
+                accepted_predecessor_id=accepted_baseline_id,
+            )
+            encoded = canonical_ratchet_json(successor)
+            validated = parse_ratchet_baseline_json(encoded)
+            _atomic_write(destination, canonical_ratchet_json(validated))
+    except (
+        IRValidationError,
+        OnboardingValidationError,
+        RatchetValidationError,
+        ValidationError,
+        OSError,
+        TypeError,
+        ValueError,
+    ) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
+    if blocked:
+        raise typer.Exit(code=1)
+
+
+@ratchet_v2_app.command("migrate-from-v1")
+def ratchet_v2_migrate_from_v1(
+    target_policy_path: Path = typer.Option(..., "--target-policy"),
+    source_policy_path: Path = typer.Option(..., "--source-policy"),
+    source_baseline_path: Path = typer.Option(..., "--source-baseline"),
+    source_assessment_path: Path = typer.Option(..., "--source-assessment"),
+    onboarding_bundle_path: Path = typer.Option(..., "--onboarding-bundle"),
+    accepted_source_baseline_id: str = typer.Option(
+        ...,
+        "--accepted-source-baseline-id",
+    ),
+    output: Path = typer.Option(..., "--output"),
+) -> None:
+    """Migrate one exact, independently accepted Ratchet 1.x tip."""
+    from pydantic import ValidationError
+
+    from ucf.ir import IRValidationError
+    from ucf.onboarding import (
+        OnboardingValidationError,
+        parse_onboarding_bundle_json,
+    )
+    from ucf.ratchet import (
+        parse_ratchet_assessment_json as parse_v1_assessment_json,
+    )
+    from ucf.ratchet import parse_ratchet_baseline_json as parse_v1_baseline_json
+    from ucf.ratchet import parse_ratchet_policy_json as parse_v1_policy_json
+    from ucf.ratchet.v2 import (
+        RatchetValidationError,
+        canonical_ratchet_json,
+        migrate_ratchet_v1_baseline,
+        parse_ratchet_baseline_json,
+        parse_ratchet_policy_json,
+    )
+
+    try:
+        destination = _file_destination(
+            output,
+            inputs=(
+                target_policy_path,
+                source_policy_path,
+                source_baseline_path,
+                source_assessment_path,
+                onboarding_bundle_path,
+            ),
+            label="ratchet v2 migration output",
+        )
+        target_policy = parse_ratchet_policy_json(target_policy_path.read_bytes())
+        source_policy = parse_v1_policy_json(source_policy_path.read_bytes())
+        source_baseline = parse_v1_baseline_json(
+            source_baseline_path.read_bytes()
+        )
+        source_assessment = parse_v1_assessment_json(
+            source_assessment_path.read_bytes()
+        )
+        bundle = parse_onboarding_bundle_json(onboarding_bundle_path.read_bytes())
+        migrated = migrate_ratchet_v1_baseline(
+            target_policy,
+            source_policy,
+            source_baseline,
+            source_assessment,
+            bundle,
+            accepted_source_baseline_id=accepted_source_baseline_id,
+        )
+        encoded = canonical_ratchet_json(migrated)
+        validated = parse_ratchet_baseline_json(encoded)
+        _atomic_write(destination, canonical_ratchet_json(validated))
+    except (
+        IRValidationError,
+        OnboardingValidationError,
+        RatchetValidationError,
+        ValidationError,
+        OSError,
+        TypeError,
+        ValueError,
+    ) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(code=3) from error
 
 
 def _atomic_write(destination: Path, content: bytes) -> None:

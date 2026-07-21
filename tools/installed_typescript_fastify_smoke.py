@@ -13,6 +13,7 @@ import signal
 import stat
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -44,6 +45,7 @@ from ucf.implementation_evidence import (
     OnboardingBundleBinding,
     canonical_execution_environment_digest,
     canonical_implementation_evidence_digest,
+    canonical_implementation_evidence_json,
     execution_verification_request_to_payload,
     execution_verification_result_from_payload,
     implementation_mapping_request_to_payload,
@@ -108,6 +110,7 @@ from ucf.onboarding import (
     RejectedDecision,
     build_onboarding_bundle,
     canonical_onboarding_digest,
+    canonical_onboarding_json,
     derive_decision_id,
     discovery_request_to_payload,
     discovery_result_from_payload,
@@ -206,6 +209,35 @@ _TIMEOUTS = ProcessTimeouts(
     terminate=1.0,
     kill=1.0,
 )
+_MAX_EVIDENCE_OUTPUT_BYTES = 16 * 1024 * 1024
+_DETERMINISTIC_EVIDENCE_KEYS = frozenset(
+    {
+        "inventory",
+        "discovery",
+        "decisions",
+        "bundle",
+        "mapping",
+        "verification_requests",
+    }
+)
+_RUNTIME_EVIDENCE_KEYS = frozenset(
+    {"verification_results", "successor_behaviors", "tested_trust"}
+)
+_METRIC_KEYS = frozenset(
+    {
+        "inventory_record_count",
+        "candidate_count",
+        "dispositions",
+        "eligible_interface_count",
+        "uncovered_interface_count",
+        "materialization_count",
+        "mapping_binding_count",
+        "tested_claim_count",
+        "verified_claim_count",
+        "verification_evidence_count",
+        "transports",
+    }
+)
 
 
 class SmokeFailure(RuntimeError):
@@ -220,12 +252,20 @@ class SmokeFailure(RuntimeError):
 class _Arguments:
     adapter: Path
     fixture: Path
+    evidence_output: Path | None = None
 
 
 @dataclass(frozen=True)
 class _SourceFile:
     size: int
     digest: str
+
+
+@dataclass(frozen=True)
+class _WorkflowEvidence:
+    deterministic: dict[str, object]
+    runtime: dict[str, object]
+    metrics: dict[str, object]
 
 
 @dataclass(frozen=True)
@@ -236,6 +276,7 @@ class _WorkflowResult:
     verification_outcome: str
     claim_level: str
     stderr_bytes: int
+    evidence: _WorkflowEvidence | None = None
 
 
 def _parse_arguments(argv: list[str]) -> _Arguments:
@@ -247,11 +288,44 @@ def _parse_arguments(argv: list[str]) -> _Arguments:
     )
     parser.add_argument("--adapter", required=True, type=Path)
     parser.add_argument("--fixture", required=True, type=Path)
+    parser.add_argument("--evidence-output", type=Path)
     namespace = parser.parse_args(argv)
+    evidence_output = (
+        None
+        if namespace.evidence_output is None
+        else _new_evidence_output(namespace.evidence_output)
+    )
+    fixture = _external_directory(namespace.fixture)
+    if (
+        evidence_output is not None
+        and evidence_output.parent.resolve(strict=True).is_relative_to(fixture)
+    ):
+        raise SmokeFailure("evidence_output_inside_fixture")
     return _Arguments(
         adapter=_external_file(namespace.adapter, executable=True),
-        fixture=_external_directory(namespace.fixture),
+        fixture=fixture,
+        evidence_output=evidence_output,
     )
+
+
+def _new_evidence_output(path: Path) -> Path:
+    if not path.is_absolute():
+        raise SmokeFailure("evidence_output_not_absolute")
+    try:
+        metadata = path.lstat()
+    except FileNotFoundError:
+        pass
+    else:
+        if stat.S_ISLNK(metadata.st_mode):
+            raise SmokeFailure("evidence_output_is_symlink")
+        raise SmokeFailure("evidence_output_exists")
+    try:
+        parent = path.parent.stat()
+    except FileNotFoundError as error:
+        raise SmokeFailure("evidence_output_parent_missing") from error
+    if not stat.S_ISDIR(parent.st_mode):
+        raise SmokeFailure("evidence_output_parent_not_directory")
+    return path
 
 
 def _external_file(path: Path, *, executable: bool) -> Path:
@@ -369,6 +443,68 @@ def _hash_source_file(path: Path) -> _SourceFile:
     if identity_before != identity_after:
         raise SmokeFailure("fixture_source_changed_during_hash")
     return _SourceFile(size=before.st_size, digest=digest.hexdigest())
+
+
+def _canonical_json_bytes(payload: object) -> bytes:
+    return (
+        json.dumps(
+            payload,
+            ensure_ascii=True,
+            allow_nan=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        + "\n"
+    ).encode("ascii")
+
+
+def _parsed_canonical_json(payload: str | bytes) -> object:
+    return json.loads(payload)
+
+
+def _lane_evidence(
+    source_manifest: dict[str, _SourceFile],
+    workflow: _WorkflowEvidence,
+) -> dict[str, object]:
+    if frozenset(workflow.deterministic) != _DETERMINISTIC_EVIDENCE_KEYS:
+        raise SmokeFailure("deterministic_evidence_shape_mismatch")
+    if frozenset(workflow.runtime) != _RUNTIME_EVIDENCE_KEYS:
+        raise SmokeFailure("runtime_evidence_shape_mismatch")
+    if frozenset(workflow.metrics) != _METRIC_KEYS:
+        raise SmokeFailure("evidence_metrics_shape_mismatch")
+    requests = workflow.deterministic["verification_requests"]
+    if not isinstance(requests, list) or len(requests) != 1:
+        raise SmokeFailure("deterministic_evidence_shape_mismatch")
+    if any(
+        not isinstance(items, list) or len(items) != 1
+        for items in workflow.runtime.values()
+    ):
+        raise SmokeFailure("runtime_evidence_shape_mismatch")
+    manifest_records = [
+        {
+            "path": path,
+            "size": source_manifest[path].size,
+            "digest": source_manifest[path].digest,
+        }
+        for path in sorted(source_manifest)
+    ]
+    source = {
+        "file_count": len(manifest_records),
+        "byte_count": sum(item.size for item in source_manifest.values()),
+        "manifest_digest": hashlib.sha256(
+            _canonical_json_bytes(manifest_records)
+        ).hexdigest(),
+    }
+    return {
+        "kind": "rel001_lane_evidence",
+        "evidence_version": "1.0.0",
+        "lane": "typescript_fastify",
+        "status": "passed",
+        "source": source,
+        "deterministic": workflow.deterministic,
+        "runtime": workflow.runtime,
+        "metrics": workflow.metrics,
+    }
 
 
 def _assert_fixture_is_fresh(root: Path) -> None:
@@ -801,6 +937,7 @@ async def _run_workflow(arguments: _Arguments) -> _WorkflowResult:
         requested_capabilities=capabilities,
         timeouts=_TIMEOUTS,
     )
+    workflow_evidence = None
     try:
         initialized = await adapter.start()
         if (
@@ -991,8 +1128,81 @@ async def _run_workflow(arguments: _Arguments) -> _WorkflowResult:
             projection.tested_trust,
             projection.successor_behavior,
         )
-        canonical_ir_json(projection.successor_behavior)
-        canonical_trust_ir_json(projection.tested_trust)
+        successor_behavior_json = canonical_ir_json(
+            projection.successor_behavior
+        )
+        tested_trust_json = canonical_trust_ir_json(
+            projection.tested_trust
+        )
+        if arguments.evidence_output is not None:
+            dispositions = {
+                summary.disposition.value: len(summary.candidate_ids)
+                for summary in bundle.baseline.dispositions
+            }
+            workflow_evidence = _WorkflowEvidence(
+                deterministic={
+                    "inventory": _parsed_canonical_json(
+                        canonical_inventory_json(inventory)
+                    ),
+                    "discovery": _parsed_canonical_json(
+                        canonical_onboarding_json(discovery)
+                    ),
+                    "decisions": _parsed_canonical_json(
+                        canonical_onboarding_json(decisions)
+                    ),
+                    "bundle": _parsed_canonical_json(
+                        canonical_onboarding_json(bundle)
+                    ),
+                    "mapping": _parsed_canonical_json(
+                        canonical_implementation_evidence_json(mapping)
+                    ),
+                    "verification_requests": [
+                        _parsed_canonical_json(
+                            canonical_implementation_evidence_json(
+                                verification_request
+                            )
+                        )
+                    ],
+                },
+                runtime={
+                    "verification_results": [
+                        _parsed_canonical_json(
+                            canonical_implementation_evidence_json(
+                                verification
+                            )
+                        )
+                    ],
+                    "successor_behaviors": [
+                        _parsed_canonical_json(successor_behavior_json)
+                    ],
+                    "tested_trust": [
+                        _parsed_canonical_json(tested_trust_json)
+                    ],
+                },
+                metrics={
+                    "inventory_record_count": len(inventory.records),
+                    "candidate_count": len(discovery.candidates),
+                    "dispositions": dispositions,
+                    "eligible_interface_count": len(
+                        discovery.coverage.eligible_subjects
+                    ),
+                    "uncovered_interface_count": len(
+                        discovery.coverage.uncovered_subjects
+                    ),
+                    "materialization_count": len(
+                        bundle.baseline.materializations
+                    ),
+                    "mapping_binding_count": len(mapping.bindings),
+                    "tested_claim_count": sum(
+                        claim.level is ClaimLevel.TESTED for claim in claims
+                    ),
+                    "verified_claim_count": sum(
+                        claim.level is ClaimLevel.VERIFIED for claim in claims
+                    ),
+                    "verification_evidence_count": len(evidence),
+                    "transports": ["http"],
+                },
+            )
     finally:
         await adapter.close()
     return _WorkflowResult(
@@ -1002,10 +1212,11 @@ async def _run_workflow(arguments: _Arguments) -> _WorkflowResult:
         verification_outcome=verification.outcome,
         claim_level=claims[0].level.value,
         stderr_bytes=adapter.stderr_total_bytes,
+        evidence=workflow_evidence,
     )
 
 
-def _run(arguments: _Arguments) -> None:
+def _run(arguments: _Arguments) -> dict[str, object] | None:
     _assert_installed_boundary()
     _assert_fixture_is_fresh(arguments.fixture)
     before = _source_manifest(arguments.fixture)
@@ -1029,9 +1240,57 @@ def _run(arguments: _Arguments) -> None:
         or result.stderr_bytes != 0
     ):
         raise SmokeFailure("workflow_acceptance_mismatch")
+    if arguments.evidence_output is None:
+        return None
+    if result.evidence is None:
+        raise SmokeFailure("workflow_evidence_missing")
+    return _lane_evidence(before, result.evidence)
 
 
-def _emit(payload: dict[str, str], *, stream) -> None:
+def _path_entry_exists(path: Path) -> bool:
+    try:
+        path.lstat()
+    except FileNotFoundError:
+        return False
+    return True
+
+
+def _publish_evidence(
+    destination: Path,
+    evidence: dict[str, object],
+) -> None:
+    content = _canonical_json_bytes(evidence)
+    if len(content) > _MAX_EVIDENCE_OUTPUT_BYTES:
+        raise SmokeFailure("evidence_output_too_large")
+    if _path_entry_exists(destination):
+        raise SmokeFailure("evidence_output_appeared")
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{destination.name}.",
+        suffix=".tmp",
+        dir=destination.parent,
+    )
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as stream:
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        try:
+            os.link(temporary, destination, follow_symlinks=False)
+        except FileExistsError as error:
+            raise SmokeFailure("evidence_output_appeared") from error
+        temporary.unlink()
+        directory_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+        parent_descriptor = os.open(destination.parent, directory_flags)
+        try:
+            os.fsync(parent_descriptor)
+        finally:
+            os.close(parent_descriptor)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def _emit(payload: dict[str, object], *, stream) -> None:
     stream.write(
         json.dumps(
             payload,
@@ -1050,7 +1309,11 @@ def main(argv: list[str] | None = None) -> int:
         arguments = _parse_arguments(
             sys.argv[1:] if argv is None else argv
         )
-        _run(arguments)
+        evidence = _run(arguments)
+        if arguments.evidence_output is not None:
+            if evidence is None:
+                raise SmokeFailure("workflow_evidence_missing")
+            _publish_evidence(arguments.evidence_output, evidence)
     except SmokeFailure as error:
         _emit({"code": error.code, "status": "FAIL"}, stream=sys.stderr)
         return 3

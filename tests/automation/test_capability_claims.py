@@ -16,6 +16,7 @@ RUNTIME_EVIDENCE_PATH = ROOT / "docs" / "RUNTIME_EVIDENCE.md"
 EVIDENCE_STATUS_PATH = ROOT / "docs" / "EVIDENCE_STATUS.md"
 CHANGE_LIFECYCLE_PATH = ROOT / "docs" / "CHANGE_LIFECYCLE.md"
 GENERATION_PATH = ROOT / "docs" / "GENERATION.md"
+REL001_BENCHMARK_PATH = ROOT / "docs" / "benchmarks" / "REL-001.md"
 TYPESCRIPT_FASTIFY_ADAPTER_PATH = (
     ROOT / "adapters" / "typescript-fastify" / "README.md"
 )
@@ -125,6 +126,47 @@ def test_planned_claims_have_dependency_ordered_backlog_owners() -> None:
         owners = set(re.findall(r"\b[A-Z]+-\d+\b", row["evidence"]))
         assert owners, row
         assert owners <= backlog_ids, (row, owners - backlog_ids)
+
+
+def test_rel001_benchmark_claim_is_experimental_replayable_and_bounded() -> None:
+    rows = {row["id"]: row for row in _capability_rows()}
+    benchmark = rows["CAP-213"]
+
+    assert benchmark["status"] == "experimental"
+    for exact_scope in (
+        "three ecosystem",
+        "four frozen component",
+        "13 candidates",
+        "5 tested",
+        "zero verified",
+        "http, cli, and event",
+    ):
+        assert exact_scope in benchmark["scope"].lower()
+    for evidence_path in (
+        "docs/benchmarks/rel001-report.json",
+        "tools/rel001_benchmark.py",
+        "tests/automation/test_rel001_benchmark.py",
+        "quality_gates.py --profile all",
+    ):
+        assert evidence_path in benchmark["evidence"]
+    for boundary in (
+        "linux/x86_64",
+        "scripted",
+        "not human",
+        "not a population",
+        "not stable",
+    ):
+        assert boundary in benchmark["limits"].lower()
+
+    guide = REL001_BENCHMARK_PATH.read_text(encoding="utf-8")
+    for exact_claim in (
+        "c0ef71a90d671d29adabd3c705903244b5cbde9351f51e39da675264ebd6746a",
+        "pass_with_legacy_coverage_debt",
+        "verified: 0",
+        "verify-published",
+        "Linux/x86_64",
+    ):
+        assert exact_claim in guide
 
 
 def test_change_lifecycle_claim_is_experimental_and_bounded() -> None:

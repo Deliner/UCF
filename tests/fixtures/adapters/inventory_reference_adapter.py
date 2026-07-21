@@ -8,6 +8,8 @@ import re
 import sys
 import threading
 from dataclasses import dataclass
+from datetime import UTC, datetime
+from pathlib import Path
 
 from inventory_reference.discovery import (
     DISCOVERY_CAPABILITY,
@@ -15,6 +17,21 @@ from inventory_reference.discovery import (
     build_discovery_result,
     decode_discovery_request,
     encode_discovery_result_payload,
+)
+from inventory_reference.implementation_evidence import (
+    MAPPING_CAPABILITY,
+    VERIFICATION_CAPABILITY,
+    ProfileError,
+    VerificationPlan,
+    build_mapping_payload,
+    build_verification_result_payload,
+    decode_verification_plan,
+)
+from inventory_reference.native_verification import (
+    NativeVerificationCancelled,
+    NativeVerificationError,
+    build_execution_environment,
+    run_native_verification,
 )
 from inventory_reference.profile import (
     INVENTORY_CAPABILITY,
@@ -27,20 +44,43 @@ from inventory_reference.profile import (
     build_inventory_run,
     canonical_json,
     decode_inventory_request,
+    decode_tagged,
     encode_inventory_page_payload,
+    encode_tagged,
 )
 from inventory_reference.traversal import ScanCancelled, scan_repository
 
 MAX_FRAME_BYTES = 1_048_576
 MAX_REQUESTS_PER_SESSION = 65_536
 _REQUEST_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$")
-_VERSION = re.compile(
-    r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$"
-)
+_VERSION = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
 _QUALIFIED_NAME = re.compile(
     r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
     r"(?:\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*)+$"
 )
+_CONTROL_SCHEMA_URI = "urn:ucf:adapter-conformance:control:1.0.0"
+GENERATION_CAPABILITY = "org.ucf.adapter.generation"
+_METHOD_CAPABILITY = {
+    "ucf.inventory": INVENTORY_CAPABILITY,
+    "ucf.discover": DISCOVERY_CAPABILITY,
+    "ucf.map": MAPPING_CAPABILITY,
+    "ucf.generate": GENERATION_CAPABILITY,
+    "ucf.verify": VERIFICATION_CAPABILITY,
+}
+_METHOD_REQUEST_KIND = {
+    "ucf.inventory": "inventory_request",
+    "ucf.discover": "discover_request",
+    "ucf.map": "map_request",
+    "ucf.generate": "generate_request",
+    "ucf.verify": "verify_request",
+}
+_METHOD_RESULT_KIND = {
+    "ucf.inventory": "inventory_result",
+    "ucf.discover": "discover_result",
+    "ucf.map": "map_result",
+    "ucf.generate": "generate_result",
+    "ucf.verify": "verify_result",
+}
 _STDOUT_LOCK = threading.Lock()
 
 
@@ -59,25 +99,38 @@ class ProtocolFailure(Exception):
 @dataclass
 class Session:
     mode: str
+    conformance_mode: bool = False
     state: str = "new"
     request_count: int = 0
     request_ids: set[str] | None = None
     inventory_negotiated: bool = False
     discovery_negotiated: bool = False
+    mapping_negotiated: bool = False
+    generation_negotiated: bool = False
+    verification_negotiated: bool = False
     inventory_complete: bool = False
     run: InventoryRun | None = None
     run_key: bytes | None = None
-    pending: PendingInventory | None = None
+    inventory_request: dict[str, object] | None = None
+    mapping: dict[str, object] | None = None
+    pending: PendingOperation | None = None
 
     def __post_init__(self) -> None:
         self.request_ids = set()
 
 
 @dataclass(frozen=True)
-class PendingInventory:
+class PendingOperation:
     request_id: str
     cancel_event: threading.Event
     future: concurrent.futures.Future[dict[str, object]]
+
+
+@dataclass(frozen=True)
+class ControlRequest:
+    operation: str
+    target_request_id: str | None = None
+    tagged_value: object | None = None
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -92,11 +145,17 @@ def main(argv: list[str] | None = None) -> int:
             "wrong-discovery-profile",
             "invalid-candidate",
             "fail-discovery",
+            "block-map",
+            "block-verify",
         ),
         default="normal",
     )
+    parser.add_argument("--conformance", action="store_true")
     arguments = parser.parse_args(argv)
-    session = Session(mode=arguments.mode)
+    session = Session(
+        mode=arguments.mode,
+        conformance_mode=arguments.conformance,
+    )
     executor = concurrent.futures.ThreadPoolExecutor(
         max_workers=1,
         thread_name_prefix="inventory-scan",
@@ -155,7 +214,7 @@ def _dispatch(
 ) -> dict[str, object] | None:
     method = message["method"]
     if method == "ucf.cancel":
-        _cancel_pending_inventory(session, message["params"])
+        _cancel_pending_operation(session, message["params"])
         return None
     request_id = str(message["id"])
     assert session.request_ids is not None
@@ -180,6 +239,11 @@ def _dispatch(
     session.request_count += 1
     if method == "ucf.initialize":
         return _initialize(session, request_id, message["params"])
+    if method in _METHOD_CAPABILITY:
+        _require_operation_capability(session, method, request_id)
+        control = _decode_control_request(message["params"], request_id)
+        if control is not None and control.operation != "block":
+            return _control_response(session, method, request_id, control)
     if method == "ucf.inventory":
         if session.pending is not None:
             raise ProtocolFailure(
@@ -195,15 +259,16 @@ def _dispatch(
             request_id,
             message["params"],
             cancel_event,
+            control,
         )
-        pending = PendingInventory(
+        pending = PendingOperation(
             request_id=request_id,
             cancel_event=cancel_event,
             future=future,
         )
         session.pending = pending
         future.add_done_callback(
-            lambda completed: _complete_inventory_operation(
+            lambda completed: _complete_operation(
                 session,
                 pending,
                 completed,
@@ -219,6 +284,73 @@ def _dispatch(
                 request_id=request_id,
             )
         return _discover(session, request_id, message["params"])
+    if method == "ucf.map":
+        if session.pending is not None:
+            raise ProtocolFailure(
+                code="too_many_pending",
+                category="protocol_failure",
+                message="mapping is illegal while an operation is pending",
+                request_id=request_id,
+            )
+        cancel_event = threading.Event()
+        future = executor.submit(
+            _run_map_operation,
+            session,
+            request_id,
+            message["params"],
+            cancel_event,
+        )
+        pending = PendingOperation(
+            request_id=request_id,
+            cancel_event=cancel_event,
+            future=future,
+        )
+        session.pending = pending
+        future.add_done_callback(
+            lambda completed: _complete_operation(
+                session,
+                pending,
+                completed,
+            )
+        )
+        return None
+    if method == "ucf.verify":
+        if session.pending is not None:
+            raise ProtocolFailure(
+                code="too_many_pending",
+                category="protocol_failure",
+                message="only one operation may be pending",
+                request_id=request_id,
+            )
+        cancel_event = threading.Event()
+        future = executor.submit(
+            _run_verification_operation,
+            session,
+            request_id,
+            message["params"],
+            cancel_event,
+        )
+        pending = PendingOperation(
+            request_id=request_id,
+            cancel_event=cancel_event,
+            future=future,
+        )
+        session.pending = pending
+        future.add_done_callback(
+            lambda completed: _complete_operation(
+                session,
+                pending,
+                completed,
+            )
+        )
+        return None
+    if method == "ucf.generate":
+        raise ProtocolFailure(
+            code="operation_failed",
+            category="adapter_failure",
+            message="negotiated operation has no implementation",
+            request_id=request_id,
+        )
     if method == "ucf.shutdown":
         if session.pending is not None:
             raise ProtocolFailure(
@@ -236,13 +368,408 @@ def _dispatch(
     )
 
 
-def _cancel_pending_inventory(session: Session, value: object) -> None:
+def _require_operation_capability(
+    session: Session,
+    method: str,
+    request_id: str,
+) -> None:
+    if session.state != "ready":
+        raise ProtocolFailure(
+            code="invalid_lifecycle",
+            category="protocol_failure",
+            message="operations require an initialized session",
+            request_id=request_id,
+        )
+    capability = _METHOD_CAPABILITY[method]
+    negotiated = {
+        INVENTORY_CAPABILITY: session.inventory_negotiated,
+        DISCOVERY_CAPABILITY: session.discovery_negotiated,
+        MAPPING_CAPABILITY: session.mapping_negotiated,
+        GENERATION_CAPABILITY: session.generation_negotiated,
+        VERIFICATION_CAPABILITY: session.verification_negotiated,
+    }.get(capability, False)
+    if not negotiated:
+        raise ProtocolFailure(
+            code="capability_not_negotiated",
+            category="protocol_failure",
+            message="operation capability was not negotiated",
+            request_id=request_id,
+        )
+
+
+def _decode_control_request(
+    value: object,
+    request_id: str,
+) -> ControlRequest | None:
+    params = _expect_object(value, "operation params")
+    payload = params["payload"]
+    if type(payload) is not dict or payload.get("schema_uri") != _CONTROL_SCHEMA_URI:
+        return None
+    _exact_fields(
+        payload,
+        {"kind", "schema_uri", "schema_version", "value"},
+        request_id,
+    )
+    if (
+        payload["kind"] != "adapter_payload"
+        or payload["schema_version"] != INVENTORY_VERSION
+    ):
+        raise ProtocolFailure(
+            code="invalid_params",
+            category="protocol_failure",
+            message="control payload coordinates are invalid",
+            request_id=request_id,
+        )
+    try:
+        logical = decode_tagged(payload["value"])
+    except InvalidProfile as error:
+        raise ProtocolFailure(
+            code="invalid_params",
+            category="protocol_failure",
+            message="control payload is invalid",
+            request_id=request_id,
+        ) from error
+    if type(logical) is not dict or type(logical.get("operation")) is not str:
+        raise ProtocolFailure(
+            code="invalid_params",
+            category="protocol_failure",
+            message="control operation is invalid",
+            request_id=request_id,
+        )
+    operation = logical["operation"]
+    if operation == "block" and set(logical) == {"operation"}:
+        return ControlRequest(operation=operation)
+    if operation == "echo" and set(logical) == {"operation", "value"}:
+        return ControlRequest(
+            operation=operation,
+            tagged_value=encode_tagged(logical["value"]),
+        )
+    target = logical.get("target_request_id")
+    if (
+        operation == "readiness"
+        and set(logical) == {"operation", "target_request_id"}
+        and type(target) is str
+        and _REQUEST_ID.fullmatch(target) is not None
+    ):
+        return ControlRequest(
+            operation=operation,
+            target_request_id=target,
+        )
+    raise ProtocolFailure(
+        code="invalid_params",
+        category="protocol_failure",
+        message="control operation is invalid",
+        request_id=request_id,
+    )
+
+
+def _control_response(
+    session: Session,
+    method: str,
+    request_id: str,
+    control: ControlRequest,
+) -> dict[str, object]:
+    if control.operation == "echo":
+        entries = [
+            _control_entry("operation", {"kind": "string", "value": "echo_result"}),
+            _control_entry("value", control.tagged_value),
+        ]
+    elif control.operation == "readiness":
+        target = control.target_request_id
+        assert target is not None
+        active = session.pending is not None and session.pending.request_id == target
+        entries = [
+            _control_entry(
+                "operation",
+                {"kind": "string", "value": "readiness_result"},
+            ),
+            _control_entry(
+                "target_request_id",
+                {"kind": "string", "value": target},
+            ),
+            _control_entry("active", {"kind": "boolean", "value": active}),
+        ]
+    else:
+        raise ProtocolFailure(
+            code="invalid_params",
+            category="protocol_failure",
+            message="control operation is unavailable for this method",
+            request_id=request_id,
+        )
+    payload = {
+        "kind": "adapter_payload",
+        "schema_uri": _CONTROL_SCHEMA_URI,
+        "schema_version": INVENTORY_VERSION,
+        "value": {"kind": "record", "entries": entries},
+    }
+    return _success_response(
+        request_id,
+        {"kind": _METHOD_RESULT_KIND[method], "payload": payload},
+    )
+
+
+def _control_entry(name: str, value: object) -> dict[str, object]:
+    return {"kind": "record_entry", "name": name, "value": value}
+
+
+def _map_implementation(
+    session: Session,
+    request_id: str,
+    value: object,
+    cancel_event: threading.Event,
+) -> dict[str, object]:
+    snapshot = _refresh_current_inventory(
+        session,
+        request_id,
+        cancel_event,
+    )
+    params = _expect_object(value, "mapping params")
+    try:
+        product = build_mapping_payload(
+            params["payload"],
+            current_inventory=snapshot,
+        )
+    except ProfileError as error:
+        raise _profile_failure(error, request_id) from error
+    if cancel_event.is_set():
+        raise ScanCancelled
+    response = _success_response(
+        request_id,
+        {"kind": "map_result", "payload": product.payload},
+    )
+    if _bounded_response_size(response) > MAX_FRAME_BYTES:
+        raise ProtocolFailure(
+            code="operation_failed",
+            category="adapter_failure",
+            message="mapping result exceeds the response frame",
+            request_id=request_id,
+        )
+    session.mapping = product.logical
+    return response
+
+
+def _run_map_operation(
+    session: Session,
+    request_id: str,
+    value: object,
+    cancel_event: threading.Event,
+) -> dict[str, object]:
+    try:
+        if session.mode == "block-map":
+            cancel_event.wait()
+            raise ScanCancelled
+        return _map_implementation(
+            session,
+            request_id,
+            value,
+            cancel_event,
+        )
+    except ProtocolFailure as error:
+        return _error_response(error)
+    except ScanCancelled:
+        return _error_response(
+            ProtocolFailure(
+                code="request_cancelled",
+                category="cancelled",
+                message="request was cancelled",
+                request_id=request_id,
+            )
+        )
+    except OSError:
+        return _error_response(
+            ProtocolFailure(
+                code="operation_failed",
+                category="adapter_failure",
+                message="mapping source is unavailable",
+                request_id=request_id,
+            )
+        )
+    except (AssertionError, KeyError, TypeError, ValueError):
+        return _error_response(
+            ProtocolFailure(
+                code="internal_error",
+                category="adapter_failure",
+                message="mapping operation failed",
+                request_id=request_id,
+            )
+        )
+
+
+def _prepare_verification(
+    session: Session,
+    request_id: str,
+    value: object,
+    cancel_event: threading.Event,
+) -> tuple[VerificationPlan, dict[str, object]]:
+    if session.mapping is None:
+        raise ProtocolFailure(
+            code="invalid_lifecycle",
+            category="protocol_failure",
+            message="verification requires a current mapping",
+            request_id=request_id,
+        )
+    snapshot = _refresh_current_inventory(
+        session,
+        request_id,
+        cancel_event,
+    )
+    try:
+        environment = build_execution_environment(
+            _inventory_root(session, request_id),
+            snapshot,
+        )
+        if cancel_event.is_set():
+            raise NativeVerificationCancelled
+        params = _expect_object(value, "verification params")
+        plan = decode_verification_plan(
+            params["payload"],
+            current_inventory=snapshot,
+            mapping=session.mapping,
+            expected_environment=environment,
+        )
+    except ProfileError as error:
+        raise _profile_failure(error, request_id) from error
+    except NativeVerificationError as error:
+        raise ProtocolFailure(
+            code=error.code,
+            category="adapter_failure",
+            message=str(error),
+            request_id=request_id,
+        ) from error
+    return plan, snapshot
+
+
+def _run_verification_operation(
+    session: Session,
+    request_id: str,
+    value: object,
+    cancel_event: threading.Event,
+) -> dict[str, object]:
+    try:
+        if session.mode == "block-verify":
+            cancel_event.wait()
+            raise NativeVerificationCancelled
+        plan, snapshot = _prepare_verification(
+            session,
+            request_id,
+            value,
+            cancel_event,
+        )
+        execution = run_native_verification(
+            _inventory_root(session, request_id),
+            snapshot,
+            expected_total_cents=plan.expected_total_cents,
+            cancel_event=cancel_event,
+        )
+        _refresh_current_inventory(session, request_id, cancel_event)
+        executed_at = (
+            datetime.now(UTC)
+            .replace(microsecond=0)
+            .strftime("%Y-%m-%dT%H:%M:%SZ")
+        )
+        product = build_verification_result_payload(
+            plan.request,
+            outcome=execution.outcome,
+            executed_at=executed_at,
+        )
+        response = _success_response(
+            request_id,
+            {"kind": "verify_result", "payload": product.payload},
+        )
+        if _bounded_response_size(response) > MAX_FRAME_BYTES:
+            raise NativeVerificationError(
+                "operation_failed",
+                "verification result exceeds the response frame",
+            )
+        return response
+    except (NativeVerificationCancelled, ScanCancelled):
+        return _error_response(
+            ProtocolFailure(
+                code="request_cancelled",
+                category="cancelled",
+                message="request was cancelled",
+                request_id=request_id,
+            )
+        )
+    except ProfileError as error:
+        return _error_response(_profile_failure(error, request_id))
+    except NativeVerificationError as error:
+        return _error_response(
+            ProtocolFailure(
+                code=error.code,
+                category="adapter_failure",
+                message=str(error),
+                request_id=request_id,
+            )
+        )
+    except ProtocolFailure as error:
+        return _error_response(error)
+
+
+def _refresh_current_inventory(
+    session: Session,
+    request_id: str,
+    cancel_event: threading.Event,
+) -> dict[str, object]:
+    if (
+        not session.inventory_complete
+        or session.run is None
+        or session.inventory_request is None
+    ):
+        raise ProtocolFailure(
+            code="invalid_lifecycle",
+            category="protocol_failure",
+            message="operation requires a completed current inventory",
+            request_id=request_id,
+        )
+    request = session.inventory_request
+    scan = scan_repository(
+        root_path=str(request["root_path"]),
+        ignore_rules=tuple(request["ignore_policy"]["rules"]),
+        cancel_event=cancel_event,
+    )
+    current = build_inventory_run(request, scan)
+    if canonical_json(current.snapshot) != canonical_json(session.run.snapshot):
+        session.inventory_complete = False
+        session.mapping = None
+        raise ProtocolFailure(
+            code="operation_failed",
+            category="adapter_failure",
+            message="inventory changed after the accepted snapshot",
+            request_id=request_id,
+        )
+    return current.snapshot
+
+
+def _inventory_root(session: Session, request_id: str) -> Path:
+    request = session.inventory_request
+    if request is None or type(request.get("root_path")) is not str:
+        raise ProtocolFailure(
+            code="invalid_lifecycle",
+            category="protocol_failure",
+            message="operation requires an accepted inventory root",
+            request_id=request_id,
+        )
+    return Path.cwd() / str(request["root_path"])
+
+
+def _profile_failure(error: ProfileError, request_id: str) -> ProtocolFailure:
+    return ProtocolFailure(
+        code=error.code,
+        category=(
+            "protocol_failure"
+            if error.code == "invalid_params"
+            else "adapter_failure"
+        ),
+        message=str(error),
+        request_id=request_id,
+    )
+
+
+def _cancel_pending_operation(session: Session, value: object) -> None:
     params = _expect_object(value, "cancel params")
     pending = session.pending
-    if (
-        pending is not None
-        and params["request_id"] == pending.request_id
-    ):
+    if pending is not None and params["request_id"] == pending.request_id:
         pending.cancel_event.set()
 
 
@@ -251,8 +778,12 @@ def _run_inventory_operation(
     request_id: str,
     value: object,
     cancel_event: threading.Event,
+    control: ControlRequest | None,
 ) -> dict[str, object]:
     try:
+        if control is not None:
+            cancel_event.wait()
+            raise ScanCancelled
         return _inventory(
             session,
             request_id,
@@ -299,19 +830,19 @@ def _run_inventory_operation(
         )
 
 
-def _complete_inventory_operation(
+def _complete_operation(
     session: Session,
-    pending: PendingInventory,
+    pending: PendingOperation,
     future: concurrent.futures.Future[dict[str, object]],
 ) -> None:
     try:
         response = future.result()
-    except Exception:
+    except concurrent.futures.CancelledError:
         response = _error_response(
             ProtocolFailure(
-                code="internal_error",
-                category="adapter_failure",
-                message="inventory operation failed",
+                code="request_cancelled",
+                category="cancelled",
+                message="request was cancelled",
                 request_id=pending.request_id,
             )
         )
@@ -387,7 +918,14 @@ def _initialize(
         supported = name in {
             INVENTORY_CAPABILITY,
             DISCOVERY_CAPABILITY,
+            MAPPING_CAPABILITY,
+            VERIFICATION_CAPABILITY,
         } and _version_at_least(INVENTORY_VERSION, minimum)
+        supported = supported or (
+            session.conformance_mode
+            and name == GENERATION_CAPABILITY
+            and _version_at_least(INVENTORY_VERSION, minimum)
+        )
         if supported:
             selected.append(
                 {
@@ -409,6 +947,15 @@ def _initialize(
     )
     session.discovery_negotiated = any(
         item["name"] == DISCOVERY_CAPABILITY for item in selected
+    )
+    session.mapping_negotiated = any(
+        item["name"] == MAPPING_CAPABILITY for item in selected
+    )
+    session.generation_negotiated = any(
+        item["name"] == GENERATION_CAPABILITY for item in selected
+    )
+    session.verification_negotiated = any(
+        item["name"] == VERIFICATION_CAPABILITY for item in selected
     )
     return _success_response(
         request_id,
@@ -467,6 +1014,7 @@ def _inventory(
     run_key = _inventory_run_key(request)
     if cursor is None:
         session.inventory_complete = False
+        session.mapping = None
         scan = scan_repository(
             root_path=str(request["root_path"]),
             ignore_rules=tuple(request["ignore_policy"]["rules"]),
@@ -474,6 +1022,7 @@ def _inventory(
         )
         session.run = build_inventory_run(request, scan)
         session.run_key = run_key
+        session.inventory_request = json.loads(canonical_json(request))
     elif session.run is None or session.run_key != run_key:
         scan = scan_repository(
             root_path=str(request["root_path"]),
@@ -496,9 +1045,7 @@ def _inventory(
         raise ScanCancelled
     page = build_inventory_page(request, session.run)
     if session.mode == "invalid-page":
-        payload = encode_inventory_page_payload(
-            {"kind": "inventory_page"}
-        )
+        payload = encode_inventory_page_payload({"kind": "inventory_page"})
     else:
         schema_uri = (
             "urn:ucf:adapter:wrong-inventory-page:1.0.0"
@@ -696,6 +1243,9 @@ def _decode_message(frame: bytes) -> dict[str, object]:
         "ucf.initialize",
         "ucf.inventory",
         "ucf.discover",
+        "ucf.map",
+        "ucf.generate",
+        "ucf.verify",
         "ucf.cancel",
         "ucf.shutdown",
     }
@@ -722,10 +1272,7 @@ def _decode_message(frame: bytes) -> dict[str, object]:
             message="cancellation must be a notification",
             request_id=request_id,
         )
-    if (
-        type(message["id"]) is not str
-        or _REQUEST_ID.fullmatch(message["id"]) is None
-    ):
+    if type(message["id"]) is not str or _REQUEST_ID.fullmatch(message["id"]) is None:
         raise ProtocolFailure(
             code="invalid_message",
             category="protocol_failure",
@@ -739,7 +1286,36 @@ def _decode_message(frame: bytes) -> dict[str, object]:
             message="request params must be an object",
             request_id=request_id,
         )
+    _validate_request_params(method, message["params"], request_id)
     return message
+
+
+def _validate_request_params(
+    method: str,
+    value: object,
+    request_id: str,
+) -> None:
+    params = _expect_object(value, "request params")
+    if method == "ucf.initialize":
+        _exact_fields(
+            params,
+            {"kind", "protocol_version", "client", "capabilities"},
+            request_id,
+        )
+        expected_kind = "initialize_request"
+    elif method == "ucf.shutdown":
+        _exact_fields(params, {"kind"}, request_id)
+        expected_kind = "shutdown_request"
+    else:
+        _exact_fields(params, {"kind", "payload"}, request_id)
+        expected_kind = _METHOD_REQUEST_KIND[method]
+    if params["kind"] != expected_kind:
+        raise ProtocolFailure(
+            code="invalid_params",
+            category="protocol_failure",
+            message="request params do not match the method",
+            request_id=request_id,
+        )
 
 
 def _validate_cancel(value: object) -> None:

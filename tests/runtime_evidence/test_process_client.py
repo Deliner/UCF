@@ -327,7 +327,9 @@ def test_timeout_and_caller_cancellation_reap_the_runtime_adapter(
     async def wait_for_pid(path: Path) -> int:
         for _ in range(50):
             if path.exists():
-                return int(path.read_text(encoding="ascii"))
+                value = path.read_text(encoding="ascii")
+                if value.isdecimal():
+                    return int(value)
             await asyncio.sleep(0.01)
         raise AssertionError("runtime adapter did not publish its PID")
 

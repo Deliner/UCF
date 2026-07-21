@@ -40,6 +40,7 @@ def test_affected_profile_selects_only_relevant_stable_gates():
         "python-tests",
         "python-lint",
         "spec-validation",
+        "rel001-benchmark",
         "packaging-contract",
     ]
     assert _gate_names(("unclassified.release-input",)) == [
@@ -66,6 +67,7 @@ def test_affected_profile_routes_platform_distribution_inputs_to_packaging(
         "automation-tests",
         "python-tests",
         "python-lint",
+        "rel001-benchmark",
         "packaging-contract",
     ]
 
