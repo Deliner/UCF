@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from click import unstyle
+from rich.console import Console
 from typer.testing import CliRunner
 
+import ucf.cli as cli_module
 from ucf.cli import app
 
 runner = CliRunner()
@@ -73,7 +76,10 @@ steps:
     assert not output_dir.exists()
 
 
-def test_generate_rejects_mixed_parse_errors_before_writing(tmp_path) -> None:
+def test_generate_rejects_mixed_parse_errors_before_writing(
+    tmp_path, monkeypatch
+) -> None:
+    monkeypatch.setattr(cli_module, "console", Console(width=10))
     specs_dir = tmp_path / "specs"
     output_dir = tmp_path / "generated"
     _write_minimal_supported_specs(specs_dir)
@@ -93,8 +99,9 @@ unknown_field: silently-dropped
     )
 
     assert result.exit_code == 1
-    assert "Parse errors" in result.output
-    assert "invalid.yaml" in result.output
+    terminal_text = unstyle(result.output).replace("\n", "")
+    assert "Parse errors" in terminal_text
+    assert "invalid.yaml" in terminal_text
     assert not output_dir.exists()
 
 

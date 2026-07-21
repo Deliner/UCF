@@ -264,6 +264,19 @@ resumed without broadening the accepted preview boundary.
   acceptance. Add a focused RED/GREEN for public-safe pytest node-ID
   annotations: deduplicate, ASCII-whitelist, cap at twenty, and never expose
   exception details or arbitrary log lines.
+- [x] 2026-07-21: Reject candidate `f9f8fbd`'s first diagnostic parser after an
+  independent threat review and direct probes reproduce summary starvation,
+  a 200,038-character accepted ID, symlink following, and FIFO blocking. Anchor
+  extraction to the last canonical short-summary block; read only the final
+  64 KiB through a nonblocking/no-follow regular descriptor; cap static IDs at
+  512 characters, strip parameter values, deduplicate, and fail closed on I/O.
+- [x] 2026-07-21: Use the bounded node ID emitted by rejected candidate
+  `f9f8fbd` in run `29855245163` to identify the sole failing CLI-generation
+  test. Reproduce it with a hosted-like long
+  pytest base path and a deterministic width-10 Rich console, then compare
+  unstyled semantic text with renderer line breaks removed. Keep production
+  output unchanged and prove the focused test green with ordinary and
+  CI-colored output.
 - [x] 2026-07-21: Obtain independent release, dependency-order, and public-claim
   acceptance on that exact final published revision; inspect the final diff and
   only then return REL-002, the backlog, and automation state to verified.
@@ -443,6 +456,23 @@ in `packaging-contract`, not the annotated hosted gate, and its subsequent full
 experiment is therefore to publish bounded pytest node IDs already present in
 the public source/test summary while keeping exception text private.
 
+The first parser for that experiment did not survive independent adversarial
+review. It searched the entire mutable log by ordinary path: nested or forged
+summary-like lines could exhaust the count cap, a single ID was unbounded, and
+a replaced FIFO or symlink violated the nonblocking diagnostic promise. Direct
+RED probes reproduced all material findings. The corrected boundary reads one
+bounded tail from a nonblocking/no-follow regular descriptor, considers only
+the last canonical pytest summary, and emits only static source node identity;
+parameter values and failure details never cross the annotation boundary.
+
+Before the rejected parser was replaced, its bounded output made the hosted
+result actionable: run `29855245163` named one failing test and no second node.
+A long pytest temporary path reproduced the same assertion because Rich
+legitimately wrapped within the expected heading and filename. The failure was
+therefore test observation, not parse behavior. Forcing a width-10 console
+makes the regression stable, and normalizing only ANSI styling and renderer
+line breaks keeps the assertion on the complete semantic message.
+
 ## Decision Log
 
 - **2026-07-21 — do not broaden product capability during release closure.**
@@ -560,6 +590,23 @@ the public source/test summary while keeping exception text private.
   lines; do not publish exception messages, log tails, environment values, or
   artifact contents. This is diagnostic observability and does not change test
   selection or acceptance.
+
+- **2026-07-21 — treat diagnostic logs as attacker-controlled paths and
+  content.** Author: root agent after independent threat review of `f9f8fbd`.
+  Do not reopen an arbitrary log path with buffered `Path.open`, scan the whole
+  file, or expose parametrization values. Open nonblocking and no-follow,
+  require a regular descriptor, read one bounded tail, choose the last
+  canonical pytest summary, and publish only length-limited static source node
+  IDs. Any unsupported file type, missing summary, or I/O failure yields no
+  detailed annotation while the gate-level failure remains visible.
+
+- **2026-07-21 — make CLI diagnostic assertions independent of terminal
+  wrapping.** Author: root agent after hosted run `29855245163`. Rich's
+  width-dependent line wrapping is presentation, not part of the generate
+  command's semantic error contract. Force a narrow console in the regression
+  test, then remove ANSI styling and renderer newlines before asserting the
+  complete heading and filename. Do not widen the hosted terminal, weaken
+  exit/output assertions, or alter production rendering.
 
 - **2026-07-21 — remove test-only scheduler compression, not production
   safety.** Author: root agent after two independent diagnoses and Ubuntu
@@ -762,6 +809,19 @@ passes 8/8 locally and in a fresh public clone with the CI signal. The next
 diagnostic publishes only bounded public pytest node IDs. A separately observed
 unauthenticated GitHub API quota failure is retained as a packaging risk and is
 not mislabeled as the hosted Python failure.
+
+Candidate `f9f8fbd`'s initial detailed parser is also superseded on security
+grounds before release acceptance. Its independent rejection and focused REDs
+forced a bounded descriptor-based tail reader, outer-summary anchoring, static
+node-ID normalization, and fail-closed filesystem behavior; no test outcome or
+acceptance policy was weakened.
+
+The node ID emitted before that parser was rejected converted the opaque hosted
+failure into a precise reproducible test defect: Rich wrapping split semantic
+labels across physical lines under the hosted path/width combination. A
+deterministic narrow-console RED and ordinary plus CI-colored GREEN show that
+semantic normalization fixes the assertion without changing production output
+or accepting a parse error.
 
 The implementation's rejected name-based rollback history remains documented.
 The accepted publisher uses an anonymous staged inode and no name-based

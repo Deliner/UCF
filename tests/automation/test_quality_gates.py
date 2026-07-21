@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import ast
 import json
+import os
 import re
+import subprocess
 import sys
 import tomllib
 import zipfile
@@ -126,10 +128,15 @@ def test_github_pytest_annotation_exposes_node_id_without_failure_details(
     monkeypatch.setenv("GITHUB_ACTIONS", "true")
     log_path = tmp_path / "python-tests.log"
     log_path.write_text(
+        "FAILED tests/unit/test_fake.py::test_forged - forged before summary\n"
+        "================ short test summary info ================\n"
         "FAILED tests/unit/test_widget.py::test_public_behavior - "
         "RuntimeError: private diagnostic\n"
         "FAILED tests/unit/test_widget.py::test_public_behavior - duplicate\n"
-        "FAILED tests/unit/test_widget.py::test_bad%0A::error - injection\n",
+        "FAILED tests/unit/test_widget.py::test_bad%0A::error - injection\n"
+        "FAILED tests/../../private.py::test_secret - traversal\n"
+        "FAILED tests/unit/test_widget.py::test_parameterized[private-value] - "
+        "private diagnostic\n",
         encoding="utf-8",
     )
     result = GateResult(
@@ -145,7 +152,57 @@ def test_github_pytest_annotation_exposes_node_id_without_failure_details(
         "::error title=UCF quality gate failed::python-tests exited with code 1",
         "::error title=UCF pytest failure::"
         "tests/unit/test_widget.py::test_public_behavior",
+        "::error title=UCF pytest failure::"
+        "tests/unit/test_widget.py::test_parameterized",
     ]
+
+
+def test_pytest_failure_extraction_is_bounded_and_rejects_unsafe_files(
+    tmp_path, monkeypatch
+):
+    huge_id = "tests/unit/test_widget.py::test_" + ("x" * 200_000)
+    huge_log = tmp_path / "huge.log"
+    huge_log.write_text(
+        "================ short test summary info ================\n"
+        f"FAILED {huge_id} - private diagnostic\n",
+        encoding="utf-8",
+    )
+    assert quality_gates._pytest_failure_node_ids(huge_log) == ()
+
+    ordinary_log = tmp_path / "ordinary.log"
+    ordinary_log.write_text(
+        "================ short test summary info ================\n"
+        "FAILED tests/unit/test_widget.py::test_public_behavior - detail\n",
+        encoding="utf-8",
+    )
+    symlink_log = tmp_path / "symlink.log"
+    symlink_log.symlink_to(ordinary_log)
+    assert quality_gates._pytest_failure_node_ids(symlink_log) == ()
+
+    monkeypatch.setattr(os, "pread", lambda *_args: (_ for _ in ()).throw(OSError()))
+    assert quality_gates._pytest_failure_node_ids(ordinary_log) == ()
+
+    fifo_log = tmp_path / "fifo.log"
+    os.mkfifo(fifo_log)
+    probe = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "from pathlib import Path; "
+                "from tools.quality_gates import _pytest_failure_node_ids; "
+                "print(_pytest_failure_node_ids(Path(__import__('sys').argv[1])))"
+            ),
+            str(fifo_log),
+        ],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=1,
+    )
+    assert probe.returncode == 0
+    assert probe.stdout == "()\n"
 
 
 @pytest.mark.parametrize("name", ["", "../escape", "not safe", "UPPER_CASE"])

@@ -5,6 +5,7 @@ import json
 import os
 import re
 import shlex
+import stat
 import subprocess
 import sys
 import time
@@ -16,9 +17,13 @@ from pathlib import Path
 GATE_MANIFEST_SCHEMA_VERSION = 1
 SAFE_GATE_ID = re.compile(r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$")
 SAFE_PYTEST_NODE_ID = re.compile(
-    r"^tests/[A-Za-z0-9_./-]+\.py::[A-Za-z0-9_:.\[\],=@+-]+$"
+    r"^tests/(?:[A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\.py"
+    r"(?:::[A-Za-z_][A-Za-z0-9_]*)+$"
 )
+PYTEST_SHORT_SUMMARY = re.compile(r"^=+ short test summary info =+$")
 MAX_PYTEST_FAILURE_ANNOTATIONS = 20
+MAX_PYTEST_NODE_ID_CHARS = 512
+MAX_PYTEST_DIAGNOSTIC_BYTES = 64 * 1024
 
 
 @dataclass(frozen=True)
@@ -389,24 +394,58 @@ def _print_github_failure_annotations(results: Sequence[GateResult]) -> None:
 
 
 def _pytest_failure_node_ids(log_path: Path) -> tuple[str, ...]:
+    tail = _read_regular_file_tail(log_path)
+    if tail is None:
+        return ()
+    lines = tail.splitlines()
+    summary_start: int | None = None
+    for index, line in enumerate(lines):
+        if PYTEST_SHORT_SUMMARY.fullmatch(line):
+            summary_start = index + 1
+    if summary_start is None:
+        return ()
+
     node_ids: list[str] = []
     seen: set[str] = set()
-    try:
-        log_file = log_path.open(encoding="utf-8", errors="replace")
-    except OSError:
-        return ()
-    with log_file:
-        for line in log_file:
-            if not line.startswith("FAILED "):
-                continue
-            node_id = line.removeprefix("FAILED ").split(" - ", 1)[0]
-            if not SAFE_PYTEST_NODE_ID.fullmatch(node_id) or node_id in seen:
-                continue
-            seen.add(node_id)
-            node_ids.append(node_id)
-            if len(node_ids) == MAX_PYTEST_FAILURE_ANNOTATIONS:
-                break
+    for line in lines[summary_start:]:
+        if not line.startswith("FAILED "):
+            continue
+        raw_node_id = line.removeprefix("FAILED ").split(" - ", 1)[0]
+        node_id = raw_node_id.split("[", 1)[0]
+        if (
+            len(node_id) > MAX_PYTEST_NODE_ID_CHARS
+            or not SAFE_PYTEST_NODE_ID.fullmatch(node_id)
+            or node_id in seen
+        ):
+            continue
+        seen.add(node_id)
+        node_ids.append(node_id)
+        if len(node_ids) == MAX_PYTEST_FAILURE_ANNOTATIONS:
+            break
     return tuple(node_ids)
+
+
+def _read_regular_file_tail(log_path: Path) -> str | None:
+    flags = os.O_RDONLY | os.O_NONBLOCK
+    flags |= getattr(os, "O_CLOEXEC", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(log_path, flags)
+    except OSError:
+        return None
+    try:
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(metadata.st_mode):
+            return None
+        start = max(0, metadata.st_size - MAX_PYTEST_DIAGNOSTIC_BYTES)
+        length = min(metadata.st_size, MAX_PYTEST_DIAGNOSTIC_BYTES)
+        try:
+            content = os.pread(descriptor, length, start)
+        except OSError:
+            return None
+        return content.decode("utf-8", errors="replace")
+    finally:
+        os.close(descriptor)
 
 
 def _summary_line(result: GateResult) -> str:

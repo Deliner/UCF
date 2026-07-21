@@ -69,6 +69,29 @@ all other log content. Evidence is under
 `.artifacts/quality/rel002-pytest-observability-20260721/` and
 `.artifacts/agents/rel002-final-cli-help/`.
 
+Independent threat review rejected the first node-ID parser at candidate
+`f9f8fbd` before it could become accepted release machinery: fabricated lines
+could consume the cap, a huge ID was accepted, and ordinary path reopening
+followed symlinks or blocked on a FIFO. The hardened diagnostic reads at most
+the final 64 KiB from a nonblocking, no-follow regular-file descriptor, uses
+only the last canonical pytest short-summary block, caps each static node ID at
+512 characters, strips parameter values, deduplicates, and fails closed on
+open/read errors. Focused adversarial RED/GREEN evidence and the independent
+rejection are retained under `.artifacts/quality/rel002-pytest-observability-20260721/`
+and `.artifacts/agents/rel002-pytest-identity/security-audit/`.
+
+Before that implementation was superseded, published run `29855245163`
+identified the sole hosted failure as
+`tests/cli/test_generate.py::test_generate_rejects_mixed_parse_errors_before_writing`.
+The cheapest exact experiment reproduced it with a long pytest base path: Rich
+may wrap inside both `Parse errors` and `invalid.yaml`, while the test required
+each rendered token to remain contiguous. A deterministic width-10 console is
+the RED regression; the corrected test removes ANSI styling and renderer line
+breaks before checking semantic text. Production output and parse behavior are
+unchanged. Evidence is under
+`.artifacts/quality/rel002-pytest-observability-20260721/` and
+`.artifacts/agents/rel002-pytest-identity/hosted/`.
+
 The clean-clone verification's first complete attempt separately hit GitHub's
 unauthenticated REST quota in `packaging-contract`; its summary identified that
 different gate and exact 403. A later complete 8/8 replay is retained rather

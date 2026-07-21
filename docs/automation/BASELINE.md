@@ -115,6 +115,28 @@ lines; exception text and arbitrary log lines remain private. Evidence is under
 `.artifacts/agents/rel002-final-cli-help/` and
 `.artifacts/quality/rel002-pytest-observability-20260721/`.
 
+The first implementation of that diagnostic, published as candidate
+`f9f8fbd`, is not accepted. Independent threat review proved that twenty
+fabricated matching lines could starve the real outer summary, a 200,038-byte
+ID passed the count-only cap, and ordinary path reopening followed a symlink or
+blocked on a FIFO. The corrected reader consumes at most the final 64 KiB from
+a nonblocking/no-follow regular-file descriptor, selects only the last
+canonical pytest short-summary block, limits static node IDs to 512 characters,
+removes parameter values, deduplicates, and returns no detail on filesystem or
+read failure. The security RED/GREEN and independent rejection are retained in
+the same artifact tree.
+
+Before the rejected parser was replaced, GitHub Actions run `29855245163`
+exposed the exact sole node:
+`tests/cli/test_generate.py::test_generate_rejects_mixed_parse_errors_before_writing`.
+A hosted-like long pytest base path reproduces the raw-string assertion failure
+because Rich wraps within both expected labels. The deterministic regression
+uses a width-10 console; the test now compares unstyled semantic text with
+renderer line breaks removed. Focused ordinary and CI-colored replays are green
+without changing production CLI behavior. Evidence is retained under
+`.artifacts/quality/rel002-pytest-observability-20260721/` and
+`.artifacts/agents/rel002-pytest-identity/hosted/`.
+
 The fresh clone also established a separate operational failure mode: one full
 attempt reached 7/8 because `packaging-contract` received an unauthenticated
 GitHub API 403 rate-limit response. After quota recovery the entire profile was
