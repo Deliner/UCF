@@ -596,6 +596,40 @@ belongs to VER-001. Dependency, platform, packaging-policy, and advisory
 closure is required by `REL-002`. Later packages must update this list with
 fresh evidence rather than silently deleting it.
 
+## REL-002 release-readiness red baseline
+
+Fresh root and independent observations on 2026-07-21 are retained under
+`.artifacts/quality/rel002-start-20260721/` and `.artifacts/agents/rel002-*/`.
+They are release blockers to remove or explicitly decide, not allowed failures:
+
+- the repository, wheel metadata, and wheel contents contain no UCF project
+  license; no authorized confidential security route or public support route is
+  configured;
+- `uv build --clear` from the dependency-populated clean-status checkout emits
+  a 30,144,882-byte sdist with 6,655 entries, including 5,617 ignored
+  `node_modules` paths. A clean Git snapshot emits about 1.4 MB/1,038 entries,
+  proving the source-distribution boundary is environment-dependent;
+- on CPython 3.12.3, the declared `PyYAML==6.0` floor fails to build. With
+  `PyYAML==6.0.1`, the declared `typer==0.12.0` floor installs but the clean
+  installed `ucf --help` exits one with unsupported `pathlib.Path | None`;
+- fresh `npm audit --package-lock-only --ignore-scripts --json` for the web
+  lock reports 10 findings: 7 high, 1 moderate, and 2 low. Runtime-only reports
+  2 high React Router findings. The TypeScript adapter and frozen fixture locks
+  each report zero;
+- the package contract remains green and the working-tree wheel remains
+  reproducible at SHA-256
+  `17cc39364e513d1f0cf6f5d94508146de8da5748ee7928d11e8dd2d8cd105489`;
+  independently built clean sdists are reproducible and install successfully,
+  so these failures do not imply a core redesign;
+- no release-checklist gate exists. `tools/quality_gates.py` supports only
+  `automation`, `affected`, and `all`; public docs/version/owner metadata are
+  not yet synchronized or machine-checked.
+
+The active ExecPlan records the required human decisions for project license
+and licensor identity, confidential security/public support channels, and the
+stable version/support/deprecation promise. Automation state remains
+`blocked_on_decision` until the project owner supplies them.
+
 ## Baseline update rule
 
 Do not edit counts to make a package appear green. Run

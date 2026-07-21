@@ -4,17 +4,18 @@ project: ucf
 target_state: docs/automation/TARGET_STATE.md
 active_work_package: REL-002
 active_exec_plan: docs/plans/REL-002-stable-release-readiness.md
-status: in_progress
+status: blocked_on_decision
 last_updated: 2026-07-21
 ---
 
 # Automation handoff state
 
-REL-001 is verified and REL-002 is active. The immediate next step is the
-foundational release-surface inventory defined in the active ExecPlan. Do not
-make a stable release claim or select a project license before that experiment
-is recorded. Continue automatically through release closure unless a human
-decision gate in `AGENTS.md` is reached.
+REL-001 is verified. The REL-002 foundational release-surface inventory is
+complete and found a bounded technical closure path, but production edits are
+blocked on three project-owner decisions: license/licensor identity, stable
+release/deprecation commitment, and authorized confidential security/public
+support channels. Exact options, consequences, evidence, and recommendations
+are in the active ExecPlan. No stable release claim has been made.
 
 ## Resume instruction
 
@@ -96,20 +97,38 @@ is binding:
   The reproducible wheel SHA-256 is
   `17cc39364e513d1f0cf6f5d94508146de8da5748ee7928d11e8dd2d8cd105489`.
 
-## REL-002 known inputs, not accepted conclusions
+## REL-002 accepted foundation evidence
 
-Revalidate every item instead of copying old counts into release claims:
+Root and three independent audits agree that no core redesign or new production
+dependency is required, but the current tree is not release-ready:
 
-- `pyproject.toml` currently declares version `0.1.0` and runtime dependency
-  ranges. Preliminary inventory found no root `LICENSE` and no project license
-  metadata. Choosing a license is a human decision gate.
+- No root license, SPDX project metadata, license-bearing wheel member,
+  authorized security intake, public support channel, or aggregate release
+  policy exists. These owner-controlled choices are decision gates.
+- Building from the dependency-populated clean-status checkout reproducibly
+  yields a 30,144,882-byte sdist with 6,655 members, 5,617 below
+  `node_modules`. A clean Git snapshot yields about 1.4 MB/1,038 members. The
+  sdist requires an explicit allowlist and equality gate.
+- On CPython 3.12.3 the declared `PyYAML==6.0` floor fails to build. With
+  `6.0.1`, the declared `typer==0.12.0` floor installs but `ucf --help` fails
+  on `pathlib.Path | None`. Supported floors must be corrected and tested.
+- Fresh npm audit evidence for `web/package-lock.json` is 10 findings: 7 high,
+  1 moderate, and 2 low; the runtime-only tree has 2 high React Router
+  findings. The TypeScript adapter and frozen fixture locks each have zero.
+  Every web finding reports a fix; update or prove exact non-impact.
+- The current wheel/package contract remains green and reproducible at SHA-256
+  `17cc39364e513d1f0cf6f5d94508146de8da5748ee7928d11e8dd2d8cd105489`.
+  Clean-snapshot sdist installation, CLI, and schema smoke also pass.
 - `.github/workflows/quality.yml` currently proves one Ubuntu/Linux job with
   pinned Python/Node/Go setup. Hosted patch-label drift, other operating
   systems/architectures, signing, sdist behavior, and registry publication are
   not yet accepted.
-- `docs/automation/BASELINE.md` previously recorded ten npm vulnerabilities,
-  including five high severity. Obtain fresh advisory output separately for
-  every lock; old counts are not current evidence.
+- `tools/quality_gates.py` exposes `automation`, `affected`, and `all`; the
+  initial ExecPlan's assumed `package` profile does not exist and was corrected.
+  There is no executable release checklist yet.
+- README and Ratchet guidance are stale relative to CAP-212/CAP-213 and the
+  accepted v2 migration. Four `0.1.0` literals lack a synchronization check;
+  root CLI has no `--version`; only 2/28 capability rows name an owner.
 - The adapter protocol/conformance kit and ecosystem profiles remain labeled
   experimental. Support is limited to exact frozen fixtures, versions,
   capabilities, procedures, Linux/x86_64, and the recorded toolchains.
@@ -126,23 +145,45 @@ Revalidate every item instead of copying old counts into release claims:
 - No fixture produces a formal `verified` claim. Public wording must keep
   `observed`, `declared`, `mapped`, `tested`, and `verified` distinct.
 
+Evidence is retained under `.artifacts/quality/rel002-start-20260721/` and:
+
+- `.artifacts/agents/rel002-security-licensing/report.md`;
+- `.artifacts/agents/rel002-packaging-ci/audit-summary.md`;
+- `.artifacts/agents/rel002-policy-claims/report.md`.
+
+## Pending human decisions
+
+The active ExecPlan is authoritative. The recommended combined choice is:
+
+1. Apache-2.0, with owner-confirmed contribution rights and exact copyright
+   holder/year.
+2. Release bounded control-plane `1.0.0`: supported CPython 3.12 on
+   Linux/x86_64, exact documented contracts/install paths, external adapters
+   still experimental; SemVer; no SLA; deprecations retained for at least one
+   minor and 180 days and removed only in a major with migration, except an
+   explicitly documented urgent security withdrawal.
+3. Supply a canonical public repository URL, enable its private vulnerability
+   reporting, use its Issues/Discussions for public support, and name the
+   responsible maintainer/entity. Alternatively provide dedicated private
+   security and public support addresses.
+
+Do not infer the licensor, expose the local Git email, create a hosted
+repository, enable external features, or select weaker/different terms.
+
 ## Immediate execution sequence
 
-1. Read the active ExecPlan, inspect `git status`, and create
-   `.artifacts/quality/rel002-start-20260721/`.
-2. Inventory metadata, license/notices, workflows, locks/advisories, package
-   formats/contents, clean installs, compatibility/migration tables, public
-   stability claims, security/privacy reporting, support, and deprecation.
-3. Build wheel and sdist and run the current package profile without changing
-   release behavior. Record the foundational result and alternatives in the
-   active ExecPlan.
-4. If license selection, a new production dependency, a wire reinterpretation,
-   a weaker gate, destructive migration, or materially broader support promise
-   is required, record options/evidence/recommendation and set
-   `status: blocked_on_decision` before asking the project owner.
-5. Otherwise proceed one acceptance behavior at a time through strict
-   Red-Green-Refactor, independent audits, all eight gates, clean source and
+1. Obtain and record the project owner's answers to DG-REL002-001 through 003
+   in the active ExecPlan; set `status: in_progress` only after all required
+   coordinates are concrete.
+2. Proceed one acceptance behavior at a time through strict
+   Red-Green-Refactor: release inventory/check, license+metadata, sdist closure,
+   dependency/advisory closure, policy/docs/version synchronization, and clean
+   wheel/sdist/adapter release artifacts.
+3. Complete independent audits, all eight gates, clean source and
    clean distribution, final diff/claim review, and REL-002 completion.
+4. If a new production dependency, wire reinterpretation, weaker gate,
+   destructive migration, hosted write, or broader support promise appears,
+   open a new explicit decision gate before acting.
 
 ## Handoff contract
 

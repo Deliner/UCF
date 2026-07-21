@@ -21,7 +21,7 @@ remaining limitation named, owned, justified, and non-misleading.
 ## Foundational Assumption
 
 The root assumption is that the dependency-ordered implementation is complete
-enough for a bounded `0.1.x` release and that REL-002 is primarily closure of
+enough for a bounded release and that REL-002 is primarily closure of
 policy, distribution, dependency, CI, and public-claim contracts rather than a
 hidden core redesign or new production dependency.
 
@@ -54,16 +54,38 @@ new production dependency or license, a reinterpretation of a published wire
 contract, a weaker gate, destructive migration, or materially different
 support promise is a human decision gate under `AGENTS.md`.
 
-Result: pending. Do not implement release-policy changes until the inventory
-and cheapest falsification are recorded here.
+Result: partly confirmed and partly falsified. Root and three independent
+read-only audits found no hidden core redesign or required production
+dependency. The current wheel and package contract are reproducible and green,
+and a clean Git snapshot produces an installable reproducible sdist. However,
+the ordinary dependency-populated checkout produces an environment-dependent
+30,144,882-byte sdist with 6,655 members, including 5,617 `node_modules`
+members; the package has no license grant or release metadata; declared
+dependency floors do not install/run; fresh frontend audits report ten
+advisories including seven high; and there is no executable release profile or
+aggregate policy set. These are bounded REL-002 closure, not a core redesign.
+
+The experiment also falsified the assumption that `0.1.x` can be called the
+requested stable release without an explicit owner decision. SemVer describes
+major version zero as initial development whose public API should not be
+considered stable. License selection, licensor identity, confidential security
+intake, public support channel, and the release/deprecation commitment are
+human decisions. REL-002 is blocked on those decisions before policy or
+metadata implementation; technical blockers remain ordered work after resume.
 
 ## Progress
 
 - [x] 2026-07-21: Accept REL-001 with an independently reviewed three-stack,
   three-fixture benchmark, all eight gates, and a physical clean-source replay.
 - [x] 2026-07-21: Create this self-contained ExecPlan and activate REL-002.
-- [ ] Run and retain the release-surface inventory and foundational
-  falsification; record alternatives, findings, and any human decision gate.
+- [x] 2026-07-21: Run and retain the release-surface inventory and foundational
+  falsification through root plus three independent audits. Reproduce missing
+  license metadata, the 30.1 MB/6,655-entry contaminated sdist, 5,617 bundled
+  `node_modules` entries, false PyYAML/Typer dependency floors, fresh per-lock
+  npm advisories, stale public docs, and the absent release profile.
+- [x] 2026-07-21: Record the license/identity, security/support-channel, and
+  release/deprecation human decision gates; set automation state to
+  `blocked_on_decision` before production edits.
 - [ ] Add one failing release-readiness contract at a time, implement the
   smallest closure, and keep each focused slice green through refactoring.
 - [ ] Publish and machine-check compatibility, migration, security, privacy,
@@ -91,6 +113,35 @@ frozen Linux/x86_64 fixtures and procedures; no fixture has a `verified` claim.
 Release wording must preserve that distinction even if the Python control-plane
 package itself becomes supported.
 
+Hatch's default source-distribution discovery follows the physical working
+tree, not the Git index. Consequently a clean `git status` did not mean a clean
+sdist: ignored frontend and adapter dependencies were redistributed. Root
+reproduced the independent result exactly—30,144,882 bytes, 6,655 archive
+members, and 5,617 paths below `node_modules`. A Git-archive build is only 1.4
+MB/1,038 members. REL-002 needs an explicit bounded sdist inclusion contract
+and equality checks from both dependency-populated and source-only trees.
+
+Declared lower bounds are not demonstrated support bounds. On CPython 3.12.3,
+`PyYAML==6.0` fails to build; substituting `6.0.1` allows installation, but
+`typer==0.12.0` crashes before root help with `Type not yet supported:
+pathlib.Path | None`. Both failures were reproduced independently outside the
+checkout. Fixing floors is ordinary compatibility work; changing the supported
+Python/platform promise or adding an upper bound is a public-contract decision.
+
+Fresh npm registry output differs from the old baseline: the web lock has ten
+findings—seven high, one moderate, and two low—and the production-only tree has
+two high findings in React Router. The TypeScript adapter and frozen fixture
+locks each report zero. Every web finding currently reports a fix, so severity
+cannot be converted to a waiver; update or record an exact non-affected
+disposition and rerun behavior.
+
+The README still says revision-bound evidence and the three-fixture benchmark
+are pending, and the product Ratchet guide describes only v1 despite accepted
+Ratchet v2 and migration. The root CLI lacks `--version`; four independent
+`0.1.0` literals have no synchronization check; only 2 of 28 capability rows
+name an explicit limitation owner. These are claim/checklist gaps rather than
+evidence that REL-001 failed.
+
 ## Decision Log
 
 - **2026-07-21 — do not broaden product capability during release closure.**
@@ -106,13 +157,83 @@ package itself becomes supported.
   checklist or documentation-claim test. Prose alone does not close a critical
   blocker.
 
+- **2026-07-21 — DG-REL002-001: project license and licensor identity.** Status:
+  awaiting project owner. There is no root license, package SPDX expression,
+  license file in the wheel, or demonstrated grant to copy/modify/redistribute
+  UCF. The owner must also confirm authority over the current contributions and
+  provide the exact copyright holder/year. Options:
+
+  1. **Apache-2.0 (recommended):** permissive source/binary use with explicit
+     contributor patent terms, well suited to a multi-vendor adapter/protocol
+     ecosystem. Distribution must carry the license, preserve required notices,
+     and satisfy its modification/attribution conditions.
+  2. **MIT:** shortest, lowest-administration permissive option and familiar to
+     adopters, but it does not provide Apache-2.0's equivalent explicit patent
+     grant/termination language.
+  3. **Proprietary or source-available terms:** retains more owner control but
+     requires exact owner-authored terms and a new compatibility/distribution
+     review; it materially reduces friction-free adapter adoption.
+  4. **Defer licensing:** keep the repository non-releasable. Technical work may
+     continue, but REL-002 cannot be accepted.
+
+  Primary references are the OSI Apache-2.0 and MIT texts and ASF application
+  guidance. This recommendation is engineering/product guidance, not legal
+  advice.
+
+- **2026-07-21 — DG-REL002-002: stable release and deprecation promise.**
+  Status: awaiting project owner. Package `0.1.0` cannot simultaneously follow
+  SemVer and represent a stable public API: SemVer reserves major zero for
+  initial development. Options:
+
+  1. **Bounded `1.0.0` stable control plane (recommended for the requested real
+     production outcome):** support CPython 3.12 on Linux/x86_64, exact
+     documented wire/CLI versions and the wheel/sdist install path; retain
+     external ecosystem adapters and fixture profiles as experimental exact
+     proofs. Use SemVer for the package. Announce deprecations for at least one
+     minor release and 180 days, whichever is longer; remove public contracts
+     only in a major release with a published migration, except an explicitly
+     documented urgent security withdrawal. Community support has no SLA.
+  2. **Supported `0.1.x` production preview:** smaller compatibility commitment
+     and faster iteration, but it must remain labeled preview/non-stable and
+     therefore does not satisfy the requested stable-release result by itself.
+  3. **Broaden evidence before `1.0.0`:** first add more Python minors and OS/
+     architecture jobs, broad adapter artifacts, and optionally signing. This
+     increases time and scope substantially; current public claims do not
+     require it.
+
+  The non-breaking implementation recommendation is to leave
+  `requires-python >=3.12` installable while documenting only the exercised
+  3.12/Linux support tier; untested future Python versions are unqualified, not
+  promised. Exact corrected dependency floors still need automated proof.
+
+- **2026-07-21 — DG-REL002-003: confidential security intake and public support
+  route.** Status: awaiting project owner. No Git remote, project URL, public
+  maintainer identity, or authorized confidential address is configured. Do
+  not publish the local Git email or invent a hosted service. Options:
+
+  1. **Repository-hosted channels (recommended):** owner supplies the canonical
+     public repository URL, enables GitHub private vulnerability reporting, and
+     designates repository administrators/security managers as responders;
+     public support uses repository Issues or Discussions with no SLA.
+  2. **Owner-provided mail channels:** publish a dedicated private security
+     address and a separate public support address, each with an explicit
+     responsible person/entity and no SLA unless the owner chooses one.
+  3. **No intake/support channel:** keep release readiness blocked. A public
+     issue tracker alone is not a safe default for vulnerability disclosure.
+
+  GitHub documents that private vulnerability reporting must be enabled by an
+  owner/admin and provides a private structured report path; enabling it is an
+  external state change that is not authorized implicitly by this task.
+
 ## Outcomes & Retrospective
 
-REL-002 is active. REL-001 supplies the accepted functional and evidence
-boundary; no stable release claim has been made. The first milestone is the
-foundational release inventory. Completion requires comparison with the purpose
-above, fresh release/clean-install evidence, independent review, and an explicit
-accounting of every remaining limitation and owner.
+The foundational milestone is complete and REL-002 is blocked only on the
+three recorded owner decisions before production edits. The bounded technical
+path remains viable: no core redesign or new production dependency is needed.
+After the owner responds, work resumes with sdist closure, dependency/advisory
+updates, release metadata/policies, exact version/support inventory, and an
+executable release profile, followed by independent review and clean release
+replay. No stable release claim has been made.
 
 ## Context and Orientation
 
@@ -190,7 +311,7 @@ artifact files:
       .artifacts/quality/rel002-start-20260721/tracked-files.log
     uv build --clear 2>&1 | tee \
       .artifacts/quality/rel002-start-20260721/build-baseline.log
-    python3 tools/quality_gates.py --profile package 2>&1 | tee \
+    uv run --locked python tools/package_contract.py 2>&1 | tee \
       .artifacts/quality/rel002-start-20260721/package-baseline.log
 
 Record npm advisory evidence separately for each lock and do not merge severity
@@ -262,6 +383,13 @@ Retain concise evidence under:
 - `.artifacts/quality/rel002-rgr-20260721/` for focused RED/GREEN slices;
 - `.artifacts/quality/rel002-final-20260721/` for local acceptance;
 - `.artifacts/agents/rel002-*/` for independent reviews and clean snapshots.
+
+The accepted foundation reports are
+`.artifacts/agents/rel002-security-licensing/report.md`,
+`.artifacts/agents/rel002-packaging-ci/audit-summary.md`, and
+`.artifacts/agents/rel002-policy-claims/report.md`. Root reproductions in the
+start artifact include the sdist manifest/counts, wheel metadata, fresh npm
+audits, missing-profile output, and dependency-floor failures.
 
 Never retain credentials, registry tokens, private dependency metadata, raw
 sensitive runtime values, unbounded command output, or dependency caches.
